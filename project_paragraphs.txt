@@ -1,0 +1,460 @@
+﻿Abuja Smart Mobility Platform
+Concept & Strategy  ·  Young Innovators Smart Mobility Team  ·  27 September 2026
+1. Executive summary
+We are building the software layer that runs Abuja's transport: one platform where riders book and pay with a tap card or QR code, and operators, fleet owners and government see every trip and every naira.
+One-line pitch:  Abuja has the terminals and the buses. We are the system that runs them.
+What it does
+Riders  see routes, fixed fares and departure times, book a seat, and pay by tapping a travel card or showing a QR code. No cash, no fare arguments, no guessing if a vehicle is safe.
+Transport operators  (bus companies, shuttles, fleets) each get their own dashboard for routes, fares, schedules and revenue. This is what "multi-tenant" means.
+Fleet owners and investors  see exactly what each vehicle earns, which ends the driver under-remittance problem.
+Government (FCTA)  gets ridership data and a verified-vehicle register that supports the fight against "one chance" robberies.
+Tag Along  lets verified professionals share rides home with colleagues who live in the same area.
+Why now
+Abuja Tech and Digital Economy Week (ATDEW) 2026, hosted by Young Innovators of Nigeria, is themed "Energising Smart Mobility: Powering Cities of the Future".
+Selected National Innovation Challenge innovators get incubation, mentorship, pilot opportunities and commercialisation support.
+Government is putting new vehicles on the road (electric airport shuttle, 100 electric buses for civil servants, CNG buses nationwide), but the software to run them is missing.
+Working name:  to be decided by the team. This document uses "the platform".
+2. The problem: what Abuja commuters face every day
+Abuja has no structured, reliable mass transit, so most of its estimated 4.3 million residents depend on informal minibuses, taxis, tricycles and expensive ride-hailing ( Daily Trust, Apr 2026 ). Every pain point below comes from recent news reporting.
+Pain point
+What people report
+Source
+Transport eats income
+Some residents spend up to half their income on daily commuting
+Daily Trust
+Fares change without warning
+Fares rise sharply at peak hours and when it rains; drivers raised fares again this month over fuel, maintenance and park levies
+New National Star ,  The Trumpet
+"One chance" robberies
+Stranded commuters at night can no longer tell which taxis are registered; most one-chance vehicles use fake plates or are unpainted
+New National Star ,  The Sun
+Stranded at night
+Queues at Berger, Area 1, AYA, Nyanya, Wuse, Gwarinpa and Kubwa stretch late into the night as drivers stop working early
+New National Star
+Gridlock and fatigue
+The three main corridors into the city (Nyanya–Keffi, Airport/Lugbe, Kubwa) are jammed at both peaks; workers arrive at the office already exhausted
+Daily Trust
+No bus stops or information
+Residents say organised modern bus stops are absent across the FCT; there are no published routes or schedules
+New National Star
+Good services go unused
+The electric airport shuttle struggles for passengers because of limited routes, waiting time and low awareness
+Premium Times
+Cash and transfer friction
+Paying in cash means hunting for change; transfers fail when network is poor
+Team experience; Lagos commuters described the same before Cowry ( Vanguard )
+The human cost:  reporters describe commuters arriving at work tired and drained, and some saying they no longer look forward to leaving home ( Daily Trust ). Young women in Kubwa say fear of one-chance attacks now shapes how they move around the city ( New National Star ).
+3. The gap: vehicles and terminals exist, the system to run them does not
+Abuja's problem is no longer only a shortage of vehicles. It is the missing software layer that connects vehicles, riders and money.
+1. Idle infrastructure.  The FCTA built modern terminals at Mabushi, Kugbo and the Federal Secretariat, with air-conditioned lounges and Wi-Fi. Months later, commuters call them inactive monuments with no working buses, routes or schedules ( New National Star, Sep 2026 ). The FCTA has said operations begin once it procures private operators under a public-private partnership ( The Eagle Online ).
+2. New fleets with no shared system.  Each operator sells tickets its own way:
+Air Shuttle NG  (FAAN with Possible EVs, NEV Electric buses) runs airport to Wuse 2 every 30 minutes, ₦10,000, paid by POS or transfer only ( Abuja Guide ).
+Renewed Hope Mass Transit : 37 of 100 electric buses for civil servants launched in August 2026, with no public route map yet ( WithinNigeria ).
+Abuja Metro  rail, the TFA 360 buses launched with the FCTA, and hundreds of private taxis and minibuses.
+3. The investor trust gap.  Private investors are willing to put vehicles on Abuja's roads, but there is no system to track what those vehicles earn. An owner who buys a ₦10 million car and hires a driver only knows what the driver reports at the end of the day. Under-remittance is common, so trust breaks down and investment stays away.
+4. No proof of safety.  The FCTA is fighting one-chance crime by requiring painted, registered vehicles and profiling all commercial drivers ( BusinessDay ). A rider still has no easy way to check, at the roadside, that a vehicle is registered.
+What exists and why it falls short
+Existing option
+What it does
+Why it is not enough
+Cash, POS, bank transfer
+Pay the driver or conductor
+Disputes over change, failed transfers, no record for owners
+Bolt and other ride-hailing
+Private car trips
+Too expensive for daily commuting; surge pricing. Uber has left Nigeria ( WeeTracker )
+Shuttlers
+Corporate bus-pooling it operates itself
+One company's own buses and routes, not a platform for every operator
+Lagos Cowry card
+Tap-to-pay on regulated Lagos transport
+Lagos only; many Lagos fleets still use cash ( Vanguard )
+4. The solution: one platform for riders, operators, owners and government
+The platform does not own vehicles. It is the shared system every transport provider plugs into, and every rider uses.
+Who
+What they get
+Pain point it answers
+Riders
+Route search, fixed fares, live departure boards, seat booking, one travel card or QR for every operator, trip history, safety features
+Unpredictable fares, no information, cash friction, one-chance fear
+Transport operators
+Their own dashboard: routes, fares, schedules, vehicles, drivers, bookings, revenue, automatic settlement to their bank account
+Revenue leakage, empty seats, no demand data
+Fleet owners and investors
+Per-vehicle earnings, driver scorecards, GPS-versus-revenue alerts
+Driver under-remittance, no trust, no investment
+Government (FCTA, DRTS)
+Verified-vehicle register, ridership and route data, a digital system to run the idle terminals
+One-chance crime, idle terminals, no planning data
+Employers
+Tag Along circles for staff, optional commute subsidies
+Staff lateness and commuting stress
+Core features
+Tap-to-pay travel card and QR codes , one account across every operator on the platform.
+Route fares set by operators , shown before boarding and deducted exactly.
+Live departure board and booking , for example: "Banex Junction to Maitama, loading 7:10–7:20, 6 seats left".
+Operator and fleet-owner dashboards  with automatic settlement.
+Tag Along , verified ride-sharing between colleagues.
+Safety layer : verified vehicles and drivers, scan-to-verify before boarding, live trip sharing (built with Find Me, our AI navigation and safety project).
+Smart assistant  that plans trips in plain language and predicts demand for operators.
+5. How the public will use it
+A rider needs one account and either a phone or a travel card. Nothing else.
+Getting started
+Sign up on the web app with a phone number and verify it.
+Add a payment method (card or bank transfer through our payment partner), or buy a ride pass.
+Collect a branded travel card at a partner terminal or agent, or print a QR travel card, and link it to the account.
+Choose a card security mode:  Tap & Go  or  Tap & Alert  (explained in the payments section).
+A morning commute: Banex Junction to Maitama
+At 6:55am the rider opens the app and searches "Maitama" (or asks the assistant: "get me to Maitama by 8").
+The app shows buses near them, with fares and loading windows: "Operator A, Banex Junction, loading 7:10–7:20, ₦500, 6 seats left".
+The rider books a seat. The operator sees the booking on its dashboard.
+At the bus, the rider scans the vehicle's QR code to confirm it is a registered vehicle on the platform.
+The rider taps their card (or shows their phone QR). The device beeps green: "₦500 paid". The phone gets a receipt.
+The operator's share settles to its bank account automatically. The fleet owner sees the trip on their dashboard.
+Going home: Tag Along
+At 5pm the rider opens Tag Along and sees verified colleagues from nearby offices driving to Lugbe, with their departure time, pickup point and cost share.
+They request a seat, the driver accepts, and both share the trip live with a contact.
+The cost share is paid through the app. No cash changes hands.
+Without a phone
+A rider who does not want to carry a phone (for example, in areas where phone theft is common) uses the card in Tap & Go mode. A daily spending cap limits the loss if the card is stolen, and the card can be blocked from any device.
+6. Payments and fares
+Every ride is paid by tap or scan, at the fare the operator published, and settled straight to the operator. Our company never holds riders' money.
+How the money moves
+The rider taps a card or shows a phone QR at the bus validator.
+The validator knows the vehicle, route and fare, and sends the tap to our platform.
+Our platform checks the card, its security mode and spending cap.
+The payment partner (Paystack or Flutterwave) charges the rider's pass or saved payment method.
+The payment splits automatically: the operator's share goes to its bank account, and a small platform fee goes to us.
+The rider's phone gets an instant receipt with a block-card button.
+How route fares work
+Each validator is assigned to one vehicle, and each vehicle runs a route whose fare the operator sets in its dashboard.
+Fixed-fare routes  (for example, Banex Junction to Lugbe, ₦1,000): one tap deducts the full fare.
+Routes with several stops  (Banex to Maitama is shorter than Banex to Lugbe): the rider taps in and taps out and pays by distance, or picks their stop on the validator screen.
+One card works on every operator on the platform. Fares change only when the operator updates them, and riders see the new price at once.
+Card security modes (the rider chooses in the app)
+Mode
+How it works
+Best for
+Tap & Go
+Pays instantly on tap, no phone needed. Protected by a daily spending cap and a per-tap limit
+Riders who leave their phone at home
+Tap & Alert
+Pays instantly; the phone gets an alert with a "this wasn't me, block my card" button
+Riders who carry their phone
+Tap & Approve
+The rider approves on the phone before payment
+Large amounts only, such as long trips or group bookings
+Approving every tap on the phone would jam boarding at rush hour and fail when network is poor, so Tap & Approve is kept for large amounts.
+How money is held, legally
+In Nigeria, only a CBN-licensed Mobile Money Operator (MMO) may hold customer funds or run wallets; the licence needs ₦2 billion in capital ( Tetra Consultants ).
+Phase 1:  riders buy ride passes or pay per ride with a saved card or transfer, processed by Paystack or Flutterwave. Each operator is a Paystack subaccount, so every payment splits automatically, with a flat fee to our main account ( Paystack split payments ).
+Phase 2:  a reloadable wallet held by a licensed MMO or bank partner. Riders see it as their wallet; the money legally sits with the partner.
+Reliability and fraud controls
+Validators and conductor phones keep working offline and sync payments when they reconnect.
+Phone QR codes change every few seconds and are cryptographically signed, so screenshots cannot be reused.
+Every card has a daily cap and can be blocked instantly from the app or by calling support.
+7. Hardware plan: start with phones, add devices after a pilot
+We launch without imported hardware. Each stage uses the same rider accounts, so nothing is rebuilt when devices arrive.
+Stage
+Device on the bus
+What the rider uses
+When
+1. Demo and pilot
+The conductor's Android phone running our validator app (reads QR codes, and NFC cards on NFC phones)
+Phone QR code, or a printed QR travel card
+Now, for Tech Week and first pilots
+2. Early operators
+Low-cost handheld Android POS devices with NFC and a QR scanner
+Branded NFC travel card, phone QR
+After a signed pilot
+3. Scale
+Compact validators mounted by the bus door: NFC, QR, 4G, GPS, powered by the bus battery
+Travel card, phone QR, later bank cards
+Once operators commit fleets
+Validator costs.  Chinese suppliers list Android bus validators with NFC, QR and 4G at about $135 to $420 ( Alibaba ). One model is $159 each for 1 to 99 units and $149 from 100 units ( Alibaba listing ). Custom logos often need 500-unit orders. Shipping and customs are extra and take weeks, so we order only after an operator signs.
+Travel cards.  We will use MIFARE DESFire cards, which are much harder to clone than older MIFARE Classic cards. The card carries our brand and design and looks nothing like a bank card.
+Why QR first.  In Malaysia, Putrajaya's bus operator launched its own card that could only be bought and topped up at one station; after commuter complaints it replaced the cards with QR payments ( Wikipedia: Nadi Putra ). We support QR from day one and make cards easy to get and top up.
+8. Tag Along: ride home with verified colleagues
+Tag Along matches professionals who work near each other and live in the same area, so one car carries three or four people home instead of one.
+The idea.  Offices cluster in places like Aminu Kano Crescent. Someone at one office and someone at the office next door may both live in Lugbe. The driver posts "leaving Aminu Kano Crescent for Lugbe at 5:30pm, 3 seats". Colleagues nearby see it, tap to join, and share the cost.
+Legal position: cost-sharing, not profit.  The FCTA treats personal cars carrying paying passengers as illegal commercial transport and has impounded such vehicles in repeated crackdowns ( The Eagle Online ). There is a legal route for private cars: DRTS runs an e-hailing scheme that gives registered drivers a unique plate ( Daily Trust ). So Tag Along is designed as follows:
+The contribution is capped at a fair share of fuel and running costs. Drivers recover costs, they do not earn profit. Our legal team must confirm this position with DRTS.
+Drivers who want to earn are guided to register under the DRTS e-hailing scheme and then join the platform as operators.
+Safety design
+Only verified professionals: confirmed work email or employer ID, plus phone and ID verification.
+Organisation and area circles, so riders travel with people from known offices.
+Women-only rides as an option.
+Live trip sharing with a trusted contact, and an emergency button (built with Find Me).
+Ratings for drivers and riders; repeated bad ratings remove access.
+Why it matters.  One-chance crime thrives on strangers in unverified cars. Tag Along puts people in cars with verified colleagues. That makes it an answer to insecurity, not another unregulated taxi.
+9. Revenue transparency for fleet owners
+We make Abuja transport investable by showing owners exactly what each vehicle earns.
+The problem.  An investor buys a ₦10 million car and hires a driver. At the end of the day the driver hands over ₦15,000 and says that was the day's takings. The owner cannot check. Under-remittance erodes trust, and investors keep their money out of transport.
+How the platform fixes it
+Every fare is recorded.  Card and QR payments split straight to the owner's account. The driver never handles that money.
+Owner dashboard.  Trips, passengers and revenue per vehicle, per day, per route, on the owner's phone.
+Reconciliation alerts.  The system compares GPS distance and hours driven with recorded revenue. A car that drove 180 km but logged ₦15,000 is flagged.
+Driver scorecards.  Honest, consistent drivers build a record they can use to earn better terms or a path to owning a vehicle.
+Honest limit.  A driver can still take cash off the books. We shrink this by making cashless the better deal for riders (lower fares, pass discounts, verified safety) and by flagging anomalies. Passenger-counting sensors can close the gap further later.
+Result.  More trustworthy returns bring more private vehicles onto Abuja's roads, which means more supply and fewer stranded commuters.
+10. Smart and AI features
+AI is used where it saves riders time or saves operators money, not as decoration.
+Feature
+Who benefits
+What it does
+Trip assistant
+Riders
+Plans trips in plain language: "get me to Maitama by 8am, cheapest" returns the best bus, Tag Along ride or combination
+Landmark-based directions
+Riders
+Guides riders to pickup points using landmarks, not formal addresses (from Find Me)
+Demand forecasting
+Operators
+Predicts where and when riders will be waiting, so buses go where the queues are
+Fair-fare engine
+Riders, operators
+Operators update fares in one place; riders see the change at once; unusual fare jumps are flagged
+Leakage alerts
+Fleet owners
+Flags vehicles whose distance and hours do not match recorded revenue
+Route insights
+FCTA
+Shows ridership by corridor and time, to plan routes and terminal use
+Other services.  Uber has left Nigeria. As far as we know, Bolt does not offer an open booking API, so the app will deep-link to Bolt with the destination filled in. Full in-app booking needs a partnership, which is a later goal.
+11. Competition and how we differ
+Our competitors run their own vehicles. We are the platform every operator can run on.
+Player
+Model
+Where
+Our difference
+Shuttlers
+Operates buses on fixed routes for commuters and companies; over 430 buses daily; launched Pod shared cars in Lagos in Sep 2026
+Lagos, Abuja, Port Harcourt
+We don't compete for seats; we power operators, government fleets and fleet owners
+Treepz
+Shared rides and ticketing; partnered with CMS to digitise its buses ( Wikipedia )
+Nigeria, Ghana, Uganda
+Our focus is Abuja's public and private fleets, tap cards and owner transparency
+Cowry card (Lagos)
+State-backed tap card for BRT, rail and ferries
+Lagos only
+We bring the same model to Abuja, plus booking, Tag Along and fleet-owner tools
+Bolt
+Private car ride-hailing
+Nationwide
+We serve daily commuters at shared-transport prices and link to Bolt when a private car is needed
+Shuttlers' traction proves Abuja commuters will pay for predictable, scheduled transport. It could even become an operator on our platform.
+12. Business model
+We earn a small fee on every ride and a subscription from the people who manage vehicles. Riders never pay a platform charge on top of the fare.
+Revenue stream
+Who pays
+How
+Per-ride platform fee
+Operators
+A small flat fee per paid ride, taken automatically in the payment split
+Fleet-owner subscription
+Fleet owners and investors
+Monthly fee per vehicle for the owner dashboard, reconciliation alerts and driver scorecards
+Operator software plan
+Larger operators
+Monthly plan for advanced scheduling, analytics and multiple depots
+Travel card sales
+Riders
+One-off card fee covering the card's cost
+Tag Along service fee
+Riders
+Small booking fee on each Tag Along seat, within the cost-sharing cap
+Data and planning services
+FCTA and agencies
+Anonymised ridership and route reports under a government contract
+Employer plans
+Companies
+Tag Along circles and commute subsidies for staff
+Exact prices will be set after the pilot, once we know operators' margins and riders' willingness to pay.
+13. Adoption: why each group will say yes
+Each group adopts for its own reason, so each gets its own pitch.
+Group
+Their reason to join
+How we win them
+Riders
+Fixed fares, verified vehicles, no cash, less waiting
+Free first travel card, launch discounts, onboarding desks at busy junctions (Berger, Area 1, Wuse) and terminals, campus and office ambassadors
+Operators
+See every naira, fill empty seats, get paid the same day
+Free onboarding, no upfront cost, pay only per ride; phones as validators before hardware
+Fleet owners
+Stop under-remittance, prove returns
+Owner dashboard trial on their vehicles; drivers who adopt get better terms
+FCTA and DRTS
+Run the idle terminals, fight one-chance crime, gain planning data
+Offer the platform for the terminal PPP; share the verified-vehicle register; pilot on one corridor
+Investors
+A trustworthy, data-backed way into Abuja transport
+ATDEW Investor Deal Room demo with live pilot numbers
+Employers
+Staff arrive on time and less stressed
+Tag Along circles for office clusters such as Aminu Kano Crescent
+Pilot targets to pursue first
+Air Shuttle NG  (airport to Wuse 2): already cashless, needs awareness and booking.
+Renewed Hope civil-servant electric buses : routes and schedules are still being defined.
+One private minibus or taxi fleet  on a busy corridor such as Lugbe or Kubwa.
+One office cluster  for Tag Along.
+Launch message:  "Know your fare. Know your ride. Just tap."
+14. Scaling to other Nigerian cities
+Every state now running government buses needs ticketing and revenue tracking, and our multi-tenant design lets us add a city as a new tenant, not a rebuild.
+The national CNG transit programme is putting fleets on the road across the country ( State House, Sep 2026 ):
+State
+What is running
+Kaduna
+100 CNG buses offering free rides; about 3.2 million passengers in the first year
+Plateau
+Government-supported buses carrying about 13,000 commuters a day at ₦200
+Enugu
+100 CNG buses; Enugu–Nsukka fare cut from ₦2,500 to ₦1,500
+Kano
+Over 1,000 commercial vehicles converted to CNG
+Edo
+50 CNG buses in service
+FCT
+40% fare reduction on CNG-converted commercial vehicles on some routes, through NURTW
+Lagos shows why this matters: digital fare collection there creates records that let revenue be audited and operator performance be tracked ( Vanguard ). States spending public money on buses will want the same.
+Expansion order:  Abuja first, then one second city where we have strong local ties (Jos, Plateau is a natural candidate), then cities with large state fleets such as Kaduna and Enugu.
+15. Legal, regulatory and other risks
+The two biggest legal risks are holding customer money and Tag Along drivers being treated as illegal taxis, and both have a clear way around them.
+Risk
+Why it matters
+How we handle it
+Owner
+Holding customer funds
+Only CBN-licensed MMOs may hold funds or run wallets; a PSSP licence does not allow it ( Adeola Oyinlade & Co )
+Phase 1: passes and pay-per-ride through Paystack or Flutterwave; Phase 2: wallet held by a licensed partner
+Legal
+Tag Along seen as illegal taxis
+FCTA impounds private cars used for commercial transport
+Cost-sharing cap; verified professionals only; DRTS e-hailing route for drivers who want to earn; seek DRTS endorsement
+Legal
+Data protection
+We hold identity, location and payment data
+Comply with the Nigeria Data Protection Act; collect only what we need; clear privacy policy
+Legal, developers
+Operator agreements
+Settlement, fees and liability must be clear
+Standard operator and fleet-owner agreements before any pilot
+Legal
+Low rider uptake
+The airport shuttle shows good service alone is not enough
+Awareness campaigns, onboarding desks, launch discounts
+Marketing
+Card fraud or cloning
+Money lost, trust damaged
+DESFire cards, daily caps, instant block, rotating signed QR codes
+Developers
+Poor network on routes
+Payments fail at the door
+Offline-first validators that sync later
+Developers
+Hardware delays
+Imports take weeks
+Phones as validators until a pilot is signed
+Operations
+Drivers still take cash
+Owners still lose money
+Cheaper cashless fares; GPS-versus-revenue alerts
+Product
+This is not legal advice. The legal team should confirm each position with a Nigerian lawyer and, where needed, with the CBN and DRTS.
+16. How the research was done
+This version is desk research from Nigerian news, government statements, regulatory guides and supplier listings published mostly between January and September 2026. It still needs our own field data.
+What we reviewed
+Nigerian news reports on Abuja transport, fares, insecurity and terminals (Daily Trust, Premium Times, New National Star, BusinessDay, The Guardian, Pulse, ThisDay).
+Government statements on the airport shuttle, civil-servant electric buses and the national CNG programme.
+Precedents: Lagos Cowry card, Putrajaya's switch from cards to QR.
+Regulation: CBN licence categories (MMO, PSSP) and FCTA and DRTS transport rules.
+Payments: Paystack split-payment documentation.
+Hardware: supplier listings for bus validators.
+Competitors: Shuttlers, Treepz, Cowry, Bolt.
+What we still need (primary research, this week)
+A survey of 50 to 100 commuters at Berger, Area 1, Wuse and Kubwa: what they paid yesterday, how long they waited, whether they have felt unsafe, whether they would use a tap card or QR.
+Interviews with 5 operators or fleet owners about revenue leakage and their willingness to pay.
+One conversation with DRTS or the FCT Transport Secretariat about the terminal PPP and Tag Along.
+17. Execution plan
+The goal is a working pilot on one real route and a live demo in November. Hardware and scale come after an operator signs.
+Phase
+When
+Work
+Gate to move on
+1. Kick-off
+28–30 Sep
+Form the 4 teams; draft business plan; National Innovation Challenge application
+Plan approved
+2. Build the MVP
+October
+Rider web app; operator dashboard; phone validator app; Paystack test mode
+MVP works end to end
+3. Pilot and demo
+November
+One live route; commuter survey; ATDEW live demo; NIC pitch 24–26 Nov
+Operator signs pilot
+4. Scale
+December onward
+Order validators; more operators; launch Tag Along; wallet partner
+—
+National Innovation Challenge applications close 30 Sep 2026 and the pitch event runs 24–26 Nov 2026; confirm both with Young Innovators.
+Teams and responsibilities
+Team
+Owns
+First deliverable
+Developers
+Rider web app, operator and owner dashboards, phone validator app, Paystack integration
+Working tap-to-pay demo on a phone
+Legal
+Payment structure, Tag Along position, operator agreements, data protection
+One-page legal position on payments and Tag Along
+Marketers
+Commuter survey, operator outreach, launch campaign, brand story
+Survey of 50–100 commuters
+Designers
+Name and brand, travel card design, rider app and dashboard screens
+Brand direction and card mock-up
+Immediate next steps
+Task
+Due
+Every member picks a team and the team lead is confirmed
+28 Sep 2026
+Business plan drafted from this document
+28 Sep 2026
+National Innovation Challenge application submitted
+30 Sep 2026
+Legal team confirms the payment structure (passes and pay-per-ride)
+4 Oct 2026
+Marketers start the commuter survey at Berger, Area 1, Wuse and Kubwa
+4 Oct 2026
+Developers set up the repository and Paystack test account
+4 Oct 2026
+First contact with Air Shuttle NG and one private fleet owner
+4 Oct 2026
+Open questions
+What are the exact dates of Abuja Tech and Digital Economy Week 2026?
+What is the product's name?
+Which operator will run our first pilot route?
+Sources
+Daily Trust: Abuja's chaotic transport system drains residents
+Daily Trust: Traffic congestion in Abuja
+New National Star: One-chance robberies
+New National Star: Lack of modern bus stops
+The Trumpet: Fares rise in Abuja and Ibadan
+Premium Times: Airport electric shuttle struggles for passengers
+Abuja Guide: Abuja Air Shuttle
+WithinNigeria: 37 electric buses for civil servants
+The News Chronicle: ATDEW 2026 smart mobility theme
+BusinessDay: FCTA crackdown on unpainted taxis
+The Eagle Online: FCTA crackdown and terminal PPP
+Daily Trust: DRTS e-hailing scheme
+The Sun: One-chance vehicles and fake plates
+Vanguard: Digitising transport and the Cowry card
+Wikipedia: Nadi Putra (Putrajaya)
+State House: National CNG transit programme update
+Tetra Consultants: CBN licence categories
+Adeola Oyinlade & Co: CBN licensing guide
+Paystack: Split payments
+Alibaba: Bus validators
+WeeTracker: Shuttlers Pod and Uber's exit

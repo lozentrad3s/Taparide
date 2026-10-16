@@ -1,0 +1,17 @@
+# Flutter/Dart/Pub related
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+
+# Misc
+.DS_Store
+.idea/
+.vscode/
+
+# Generated review screenshots and golden-test output
+.impeccable/review/
+test/screens/out/
+test/screens/failures/
+*.iml
