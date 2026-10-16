@@ -1,0 +1,192 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-16T12:30:00Z",
+  "title": "Design System: Tap A Ride",
+  "extensions": {
+    "colorMeta": {
+      "forest": { "role": "primary", "displayName": "Abuja Forest", "canonical": "#0B5A3A", "tonalRamp": ["#000F06", "#012E1B", "#014F31", "#2A714F", "#4E936F", "#71B791", "#95DCB5", "#C3FFDD"] },
+      "forest-hover": { "role": "primary", "displayName": "Forest Lift", "canonical": "#0E6B45", "tonalRamp": ["#000F06", "#002E1A", "#014F31", "#1B724C", "#43956C", "#68B98E", "#8CDEB2", "#C3FFDD"] },
+      "forest-deep": { "role": "primary", "displayName": "Night Forest", "canonical": "#06331F", "tonalRamp": ["#000F06", "#012E1A", "#224C36", "#426C55", "#638E75", "#85B197", "#A8D6BB", "#CDFCE0"] },
+      "mint": { "role": "primary", "displayName": "Mint Wash", "canonical": "#E6F2EA", "tonalRamp": ["#060D08", "#1F2822", "#3B453E", "#5A645D", "#7B857E", "#9DA8A1", "#C1CDC5", "#E6F2EA"] },
+      "mint-strong": { "role": "primary", "displayName": "Mint Bar", "canonical": "#CDE6D5", "tonalRamp": ["#000F05", "#162A1E", "#33483A", "#516759", "#72897A", "#94AC9C", "#B8D0C0", "#DDF6E5"] },
+      "leaf": { "role": "secondary", "displayName": "Pin Green", "canonical": "#4DB52A", "tonalRamp": ["#011000", "#0A2E00", "#185001", "#267403", "#369B05", "#59C139", "#7FE761", "#CEFFC1"] },
+      "leaf-text": { "role": "secondary", "displayName": "Readable Leaf", "canonical": "#237A2E", "tonalRamp": ["#001001", "#002F07", "#005111", "#1C7528", "#44974B", "#68BC6D", "#8CE190", "#CBFFCB"] },
+      "amber": { "role": "tertiary", "displayName": "Pending Amber", "canonical": "#8A5A00", "tonalRamp": ["#130900", "#352000", "#5B3A01", "#845602", "#A9772E", "#CE9A53", "#F4BE77", "#FFEBD3"] },
+      "amber-soft": { "role": "tertiary", "displayName": "Amber Wash", "canonical": "#FBF0D9", "tonalRamp": ["#110A00", "#2C2412", "#4A412E", "#6A604C", "#8B816D", "#AEA48E", "#D3C8B2", "#F8EDD6"] },
+      "red": { "role": "tertiary", "displayName": "Signal Red", "canonical": "#C0392B", "tonalRamp": ["#1F0000", "#4C0200", "#800501", "#AE261A", "#D64E3E", "#FE7462", "#FEB3A7", "#FEE9E5"] },
+      "red-soft": { "role": "tertiary", "displayName": "Red Wash", "canonical": "#FBE5E2", "tonalRamp": ["#140706", "#30211F", "#4E3D3B", "#6F5C5A", "#917D7A", "#B4A09D", "#D9C3C1", "#FFE9E6"] },
+      "blue": { "role": "tertiary", "displayName": "Transit Blue", "canonical": "#2861B8", "tonalRamp": ["#000924", "#002155", "#003C8D", "#255EB4", "#4781DB", "#6CA5FE", "#AACBFE", "#E6EFFE"] },
+      "blue-soft": { "role": "tertiary", "displayName": "Blue Wash", "canonical": "#E3ECF9", "tonalRamp": ["#060B14", "#1F252F", "#3B434D", "#5A626D", "#7B838F", "#9DA6B2", "#C1CAD6", "#E6EFFC"] },
+      "ink": { "role": "neutral", "displayName": "Green Ink", "canonical": "#111814", "tonalRamp": ["#070D09", "#202723", "#3C4440", "#5B645F", "#7C8580", "#9EA8A2", "#C2CCC6", "#E7F1EB"] },
+      "ink-soft": { "role": "neutral", "displayName": "Soft Ink", "canonical": "#34423A", "tonalRamp": ["#040E08", "#1B2921", "#38463E", "#57655D", "#77877E", "#99AAA0", "#BDCEC4", "#E2F4E9"] },
+      "muted": { "role": "neutral", "displayName": "Sage Muted", "canonical": "#5B6B62", "tonalRamp": ["#030E08", "#1B2921", "#37463E", "#56665D", "#76877E", "#99AAA0", "#BCCEC4", "#E1F4E9"] },
+      "faint": { "role": "neutral", "displayName": "Faint Sage", "canonical": "#8A9890", "tonalRamp": ["#040E08", "#1D2822", "#39453F", "#58655D", "#79867E", "#9BA9A1", "#BFCDC5", "#E4F3EA"] },
+      "line": { "role": "neutral", "displayName": "Hairline", "canonical": "#DDE6E0", "tonalRamp": ["#070D09", "#202723", "#3D443F", "#5C635E", "#7D857F", "#9FA7A2", "#C3CCC6", "#E8F1EB"] },
+      "line-strong": { "role": "neutral", "displayName": "Strong Hairline", "canonical": "#C6D3CA", "tonalRamp": ["#050E08", "#1E2821", "#3A453E", "#59655D", "#7A867E", "#9CA9A0", "#C0CDC4", "#E5F2E9"] },
+      "ground": { "role": "neutral", "displayName": "Pale Green Ground", "canonical": "#F2F6F3", "tonalRamp": ["#090C0A", "#232624", "#404341", "#5F6260", "#808381", "#A2A6A3", "#C6CAC7", "#ECF0ED"] },
+      "surface": { "role": "neutral", "displayName": "Card White", "canonical": "#FFFFFF", "tonalRamp": ["#0B0B0B", "#252525", "#424242", "#616161", "#828282", "#A5A5A5", "#C9C9C9", "#EEEEEE"] },
+      "surface-sunk": { "role": "neutral", "displayName": "Sunk White", "canonical": "#F7FAF8", "tonalRamp": ["#0A0C0A", "#232624", "#404341", "#5F6260", "#808381", "#A3A6A4", "#C7CAC8", "#ECEFED"] },
+      "on-forest-muted": { "role": "neutral", "displayName": "Forest Mist", "canonical": "#B9D5C5", "tonalRamp": ["#000F07", "#132B1F", "#30483B", "#4F685A", "#6F8A7B", "#92AD9D", "#B5D1C1", "#DAF7E6"] }
+    },
+    "typographyMeta": {
+      "display-large": { "displayName": "Display Large", "purpose": "Landing hero headline on wide screens." },
+      "display-medium": { "displayName": "Display Medium", "purpose": "Landing hero headline on phones and the closing photo band." },
+      "display-small": { "displayName": "Display Small", "purpose": "Landing section titles on wide screens." },
+      "headline-large": { "displayName": "Headline Large", "purpose": "Portal page titles on wide screens, landing section titles on phones, the Tap Card balance." },
+      "headline-medium": { "displayName": "Headline Medium", "purpose": "Portal page titles on phones and landing feature titles." },
+      "headline-small": { "displayName": "Headline Small", "purpose": "Bottom-sheet and dialog titles, promo card titles." },
+      "title-large": { "displayName": "Title Large", "purpose": "Section and panel titles, empty-state titles, app-bar titles, ticket codes." },
+      "title-medium": { "displayName": "Title Medium", "purpose": "Route names in a RouteStrip (set at 700), fares on route rows (set at 800)." },
+      "title-small": { "displayName": "Title Small", "purpose": "List-row titles, legend values, dense RouteStrip names (set at 700)." },
+      "body-large": { "displayName": "Body Large", "purpose": "Landing lead copy, capped at 480 to 640px wide." },
+      "body-medium": { "displayName": "Body Medium", "purpose": "General copy, snackbar and dialog content." },
+      "body-small": { "displayName": "Body Small", "purpose": "Muted captions, meta lines under route names, table subtitles, field errors." },
+      "label-large": { "displayName": "Label Large", "purpose": "Button labels and landing nav links." },
+      "label-medium": { "displayName": "Label Medium", "purpose": "Chip labels, floating field labels, quick-action captions." },
+      "label-small": { "displayName": "Label Small", "purpose": "Navigation labels, tooltips, small labels; uppercase and tracked 0.6px for table headers." },
+      "figure": { "displayName": "Figure", "purpose": "Dashboard numbers on white figure cards." },
+      "figure-large": { "displayName": "Figure Large", "purpose": "Dashboard numbers inside forest fields." }
+    },
+    "shadows": [
+      { "name": "card", "value": "0 6px 18px rgba(11,42,26,0.06), 0 1px 3px rgba(11,42,26,0.04)", "purpose": "Every white panel by default (always paired with a 1px hairline border), quick-action tiles, the verified pill on the hero photograph." },
+      { "name": "raised", "value": "0 14px 32px rgba(11,42,26,0.12), 0 2px 6px rgba(11,42,26,0.06)", "purpose": "An element floating over a photograph, such as the landing next-departure card." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(0.215, 0.61, 0.355, 1)", "purpose": "Ease-out cubic: scroll-to-section (480 to 520ms), photo fade-in (320ms), chart bar growth (520ms plus 50ms per bar), FCTA top-route line growth (700ms)." },
+      { "name": "ease-intro", "value": "cubic-bezier(0.19, 1, 0.22, 1)", "purpose": "Ease-out expo for the landing hero intro: headline, copy, buttons and photo rise 28px and fade in, staggered across 1100ms; skipped entirely under reduced motion." },
+      { "name": "duration-state", "value": "200ms", "purpose": "State changes such as the Tap Card selection ring and payment option selection." }
+    ],
+    "breakpoints": [
+      { "name": "route-row-chevron", "value": "420px" },
+      { "name": "data-list-table", "value": "760px" },
+      { "name": "rider-rail", "value": "900px" },
+      { "name": "landing-wide", "value": "980px" },
+      { "name": "portal-sidebar", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The forest action. Every filled action on a light surface: Get Started, Book Seat, Add funds.",
+      "html": "<button class=\"ds-btn-primary\">Book Seat</button>",
+      "css": ".ds-btn-primary { font-family: Barlow, 'Fira Sans', sans-serif; font-size: 15px; font-weight: 600; line-height: 1.2; color: #FFFFFF; background: #0B5A3A; border: none; border-radius: 12px; padding: 14px 22px; min-height: 50px; min-width: 48px; cursor: pointer; transition: background 0.2s cubic-bezier(0.215, 0.61, 0.355, 1); } .ds-btn-primary:hover { background: #0E6B45; } .ds-btn-primary:focus-visible { outline: 2px solid #0B5A3A; outline-offset: 2px; } .ds-btn-primary:disabled { background: #C6D3CA; color: #5B6B62; cursor: default; }"
+    },
+    {
+      "name": "Outlined Button",
+      "kind": "button",
+      "refersTo": "button-outlined",
+      "description": "Secondary action beside a primary: Partner portal, Share trip, Top up card.",
+      "html": "<button class=\"ds-btn-outlined\">Partner portal</button>",
+      "css": ".ds-btn-outlined { font-family: Barlow, 'Fira Sans', sans-serif; font-size: 15px; font-weight: 600; line-height: 1.2; color: #111814; background: #FFFFFF; border: 1px solid #C6D3CA; border-radius: 12px; padding: 14px 20px; min-height: 50px; cursor: pointer; transition: background 0.2s cubic-bezier(0.215, 0.61, 0.355, 1); } .ds-btn-outlined:hover { background: #F2F6F3; } .ds-btn-outlined:focus-visible { outline: 2px solid #0B5A3A; outline-offset: 2px; }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Filled white field with a strong hairline that turns forest on focus.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field-label\">Phone or email</span><input class=\"ds-input\" placeholder=\"you@example.com\" /></label>",
+      "css": ".ds-field { display: flex; flex-direction: column; gap: 6px; font-family: Barlow, 'Fira Sans', sans-serif; max-width: 320px; } .ds-field-label { font-size: 13px; font-weight: 600; color: #5B6B62; } .ds-input { font-family: inherit; font-size: 15px; line-height: 1.45; color: #111814; background: #FFFFFF; border: 1px solid #C6D3CA; border-radius: 12px; padding: 16px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; } .ds-input::placeholder { color: #5B6B62; } .ds-input:hover { border-color: #8A9890; } .ds-input:focus-visible, .ds-input:focus { border-color: #0B5A3A; box-shadow: 0 0 0 0.8px #0B5A3A; } .ds-field:focus-within .ds-field-label { color: #0B5A3A; }"
+    },
+    {
+      "name": "Departure Time Chips",
+      "kind": "chip",
+      "refersTo": "chip-selected",
+      "description": "Choice chips carrying a published departure time; the chosen time fills forest.",
+      "html": "<div class=\"ds-chips\"><button class=\"ds-chip\">11:30 AM</button><button class=\"ds-chip ds-chip-selected\">12:00 PM</button><button class=\"ds-chip\">12:30 PM</button><button class=\"ds-chip\">1:00 PM</button></div>",
+      "css": ".ds-chips { display: flex; flex-wrap: wrap; gap: 8px; } .ds-chip { font-family: Barlow, 'Fira Sans', sans-serif; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; color: #111814; background: #FFFFFF; border: 1px solid #C6D3CA; border-radius: 8px; padding: 8px 16px; min-height: 40px; cursor: pointer; transition: background 0.2s, color 0.2s; } .ds-chip:hover { background: #F2F6F3; } .ds-chip:focus-visible { outline: 2px solid #0B5A3A; outline-offset: 2px; } .ds-chip-selected, .ds-chip-selected:hover { background: #0B5A3A; border-color: #0B5A3A; color: #FFFFFF; }"
+    },
+    {
+      "name": "Status Pills",
+      "kind": "chip",
+      "refersTo": "status-pill-success",
+      "description": "Fully round status labels whose colour always carries meaning; Demo data is amber.",
+      "html": "<div class=\"ds-pills\"><span class=\"ds-pill ds-pill-success\"><svg viewBox=\"0 0 24 24\" width=\"13\" height=\"13\" fill=\"currentColor\"><path d=\"M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z\"/></svg>Verified</span><span class=\"ds-pill ds-pill-info\">Boarding</span><span class=\"ds-pill ds-pill-warning\">+5 min</span><span class=\"ds-pill ds-pill-danger\">Suspended</span><span class=\"ds-pill ds-pill-neutral\">Completed</span><span class=\"ds-pill ds-pill-brand\">R01</span><span class=\"ds-pill ds-pill-warning\">Demo data</span></div>",
+      "css": ".ds-pills { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; } .ds-pill { display: inline-flex; align-items: center; gap: 4px; font-family: Barlow, 'Fira Sans', sans-serif; font-size: 12px; font-weight: 700; line-height: 1.1; padding: 4px 9px; border-radius: 999px; } .ds-pill-success { background: #E6F2EA; color: #237A2E; } .ds-pill-info { background: #E3ECF9; color: #2861B8; } .ds-pill-warning { background: #FBF0D9; color: #8A5A00; } .ds-pill-danger { background: #FBE5E2; color: #C0392B; } .ds-pill-neutral { background: #F7FAF8; color: #5B6B62; } .ds-pill-brand { background: #0B5A3A; color: #FFFFFF; }"
+    },
+    {
+      "name": "Route Card",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "The signature route row: mode badge, origin and destination joined by the transit-map route line, journey time and next departures, and a heavy tabular fare.",
+      "html": "<a class=\"ds-route-card\" href=\"#\"><span class=\"ds-icon-badge\"><svg viewBox=\"0 0 24 24\" width=\"21\" height=\"21\" fill=\"currentColor\"><path d=\"M4 16c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-6H6V6h12v5z\"/></svg></span><span class=\"ds-route-body\"><span class=\"ds-route-strip\"><span>Wuse</span><svg width=\"48\" height=\"18\" viewBox=\"0 0 48 18\"><line x1=\"7\" y1=\"9\" x2=\"41\" y2=\"9\" stroke=\"#0B5A3A\" stroke-width=\"3\" stroke-linecap=\"round\"/><circle cx=\"7\" cy=\"9\" r=\"6\" fill=\"#FFFFFF\"/><circle cx=\"7\" cy=\"9\" r=\"4.8\" fill=\"none\" stroke=\"#0B5A3A\" stroke-width=\"2.6\"/><circle cx=\"41\" cy=\"9\" r=\"6\" fill=\"#0B5A3A\"/><circle cx=\"41\" cy=\"9\" r=\"2.28\" fill=\"#FFFFFF\"/></svg><span>Maitama</span></span><span class=\"ds-route-meta\">20 mins · 12:00 PM, 12:30 PM, 1:00 PM</span></span><span class=\"ds-route-fare\">₦500</span><svg class=\"ds-route-chevron\" viewBox=\"0 0 24 24\" width=\"22\" height=\"22\" fill=\"currentColor\"><path d=\"M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z\"/></svg></a>",
+      "css": ".ds-route-card { display: flex; align-items: center; gap: 12px; max-width: 420px; padding: 14px 10px 14px 14px; background: #FFFFFF; border: 1px solid #DDE6E0; border-radius: 16px; box-shadow: 0 6px 18px rgba(11,42,26,0.06), 0 1px 3px rgba(11,42,26,0.04); text-decoration: none; color: #111814; font-family: Barlow, 'Fira Sans', sans-serif; transition: background 0.2s cubic-bezier(0.215, 0.61, 0.355, 1); } .ds-route-card:hover { background: #F7FAF8; } .ds-route-card:focus-visible { outline: 2px solid #0B5A3A; outline-offset: 2px; } .ds-icon-badge { flex: none; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 12px; background: #E6F2EA; color: #0B5A3A; } .ds-route-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; } .ds-route-strip { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; line-height: 1.3; } .ds-route-meta { font-size: 13px; line-height: 1.4; color: #5B6B62; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ds-route-fare { font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; } .ds-route-chevron { color: #8A9890; flex: none; }"
+    },
+    {
+      "name": "Forest Figures",
+      "kind": "custom",
+      "refersTo": "forest-field",
+      "description": "The headline figure panel on partner dashboards: a forest-lift to night-forest field with tabular white figures divided by faint white rules. No shadow.",
+      "html": "<div class=\"ds-forest-figures\"><div class=\"ds-figure\"><span class=\"ds-figure-label\">Total Trips</span><span class=\"ds-figure-value\">482</span><span class=\"ds-figure-caption\">this month</span></div><div class=\"ds-figure\"><span class=\"ds-figure-label\">Total Revenue</span><span class=\"ds-figure-value\">₦13,431,600</span><span class=\"ds-figure-caption\">+₦2,600 today</span></div></div>",
+      "css": ".ds-forest-figures { display: flex; max-width: 500px; padding: 20px; border-radius: 22px; background: linear-gradient(135deg, #0E6B45, #06331F); font-family: Barlow, 'Fira Sans', sans-serif; } .ds-figure { flex: 1; display: flex; flex-direction: column; gap: 6px; } .ds-figure + .ds-figure { border-left: 1px solid rgba(255,255,255,0.2); padding-left: 18px; margin-left: 18px; } .ds-figure-label { font-size: 13px; font-weight: 600; color: #B9D5C5; } .ds-figure-value { font-size: 32px; font-weight: 800; line-height: 1; letter-spacing: -0.4px; color: #FFFFFF; font-variant-numeric: tabular-nums; } .ds-figure-caption { font-size: 12px; color: #B9D5C5; }"
+    },
+    {
+      "name": "Ticket",
+      "kind": "custom",
+      "refersTo": "forest-field",
+      "description": "The rider's boarding ticket: forest header with a pin-green route strip and trip facts, a notched perforation, and a white body with the QR code and tabular ticket code.",
+      "html": "<div class=\"ds-ticket-wrap\"><div class=\"ds-ticket\"><div class=\"ds-ticket-head\"><div class=\"ds-ticket-top\"><span>Public transport</span><span class=\"ds-ticket-pill\">Confirmed</span></div><div class=\"ds-ticket-route\"><span>Wuse</span><svg width=\"64\" height=\"18\" viewBox=\"0 0 64 18\"><line x1=\"7\" y1=\"9\" x2=\"57\" y2=\"9\" stroke=\"#4DB52A\" stroke-width=\"3\" stroke-linecap=\"round\"/><circle cx=\"7\" cy=\"9\" r=\"6\" fill=\"#FFFFFF\"/><circle cx=\"7\" cy=\"9\" r=\"4.8\" fill=\"none\" stroke=\"#4DB52A\" stroke-width=\"2.6\"/><circle cx=\"57\" cy=\"9\" r=\"6\" fill=\"#4DB52A\"/><circle cx=\"57\" cy=\"9\" r=\"2.28\" fill=\"#FFFFFF\"/></svg><span>Maitama</span></div><div class=\"ds-ticket-facts\"><div><span>Departs</span><b>Today · 12:30 PM</b></div><div><span>Seat</span><b>S10</b></div><div><span>Fare paid</span><b>₦500</b></div></div></div><div class=\"ds-ticket-perf\"><i></i></div><div class=\"ds-ticket-body\"><svg width=\"96\" height=\"96\" viewBox=\"0 0 24 24\" fill=\"#111814\"><path d=\"M0 0h7v7H0zM2 2v3h3V2zM17 0h7v7h-7zm2 2v3h3V2zM0 17h7v7H0zm2 2v3h3v-3zM9 0h2v2H9zm4 2h2v3h-2zM9 4h2v4H9zm0 6h4v2H9zm6-2h2v4h-2zm4 2h5v2h-5zM0 9h4v2H0zm6 0h2v4H6zm3 5h2v3H9zm4-1h3v2h-3zm5 2h2v4h-2zm3-1h3v2h-3zm-8 4h3v2h-3zm-4 2h2v3H9zm13 0h2v3h-2zm-6 2h4v1h-4z\"/></svg><b class=\"ds-ticket-code\">TR-78UZ3Y</b><span class=\"ds-ticket-hint\">Show this code to the conductor or tap your card at the terminal.</span></div></div></div>",
+      "css": ".ds-ticket-wrap { background: #F2F6F3; padding: 16px; max-width: 380px; font-family: Barlow, 'Fira Sans', sans-serif; } .ds-ticket { border-radius: 22px; overflow: hidden; } .ds-ticket-head { background: #0B5A3A; color: #FFFFFF; padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 16px; } .ds-ticket-top { display: flex; justify-content: space-between; align-items: center; font-size: 15px; font-weight: 600; } .ds-ticket-pill { background: #E6F2EA; color: #237A2E; font-size: 12px; font-weight: 700; padding: 4px 9px; border-radius: 999px; } .ds-ticket-route { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 700; } .ds-ticket-facts { display: flex; flex-wrap: wrap; gap: 12px 28px; } .ds-ticket-facts div { display: flex; flex-direction: column; gap: 2px; } .ds-ticket-facts span { font-size: 12px; font-weight: 600; color: #B9D5C5; } .ds-ticket-facts b { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; } .ds-ticket-perf { position: relative; height: 18px; background: linear-gradient(#0B5A3A 50%, #FFFFFF 50%); } .ds-ticket-perf::before, .ds-ticket-perf::after { content: \"\"; position: absolute; top: -2px; width: 22px; height: 22px; border-radius: 50%; background: #F2F6F3; } .ds-ticket-perf::before { left: -11px; } .ds-ticket-perf::after { right: -11px; } .ds-ticket-perf i { position: absolute; left: 18px; right: 18px; top: 8px; border-top: 1.5px dashed #C6D3CA; } .ds-ticket-body { background: #FFFFFF; padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; } .ds-ticket-code { font-size: 18px; font-weight: 700; letter-spacing: 2px; font-variant-numeric: tabular-nums; color: #111814; } .ds-ticket-hint { font-size: 13px; line-height: 1.4; color: #5B6B62; }"
+    },
+    {
+      "name": "Portal Sidebar",
+      "kind": "nav",
+      "refersTo": "portal-sidebar",
+      "description": "The 260px night-forest navigation of the partner portal on wide screens. The brand lockup (supplied artwork) sits above the user card.",
+      "html": "<nav class=\"ds-sidebar\"><div class=\"ds-sidebar-user\"><span class=\"ds-sidebar-avatar\">DA</span><span><b>Daniel Adeyemi</b><small>Platform admin</small></span></div><a class=\"ds-sidebar-item\" href=\"#\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"currentColor\"><path d=\"M4 10v7h3v-7H4zm6 0v7h3v-7h-3zM2 22h19v-3H2v3zm14-12v7h3v-7h-3zm-4.5-9L2 6v2h19V6l-9.5-5z\"/></svg>FCTA dashboard</a><a class=\"ds-sidebar-item ds-sidebar-item-active\" href=\"#\" aria-current=\"page\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"currentColor\"><path d=\"M4 16c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-6H6V6h12v5z\"/></svg>Operator dashboard</a><a class=\"ds-sidebar-item\" href=\"#\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"currentColor\"><path d=\"M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z\"/></svg>Verification</a></nav>",
+      "css": ".ds-sidebar { width: 260px; background: #06331F; padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; font-family: Barlow, 'Fira Sans', sans-serif; } .ds-sidebar-user { display: flex; align-items: center; gap: 10px; padding: 12px; margin-bottom: 12px; border-radius: 12px; background: rgba(255,255,255,0.07); color: #FFFFFF; } .ds-sidebar-user b { display: block; font-size: 14px; font-weight: 600; } .ds-sidebar-user small { display: block; font-size: 13px; color: #B9D5C5; } .ds-sidebar-avatar { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: #4DB52A; color: #06331F; font-size: 14px; font-weight: 800; } .ds-sidebar-item { display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 12px; font-size: 15px; font-weight: 500; color: #E6F2EA; text-decoration: none; transition: background 0.2s; } .ds-sidebar-item svg { color: #B9D5C5; flex: none; } .ds-sidebar-item:hover { background: rgba(255,255,255,0.06); } .ds-sidebar-item:focus-visible { outline: 2px solid #4DB52A; outline-offset: 1px; } .ds-sidebar-item-active { background: rgba(255,255,255,0.12); color: #FFFFFF; font-weight: 700; } .ds-sidebar-item-active svg { color: #4DB52A; }"
+    },
+    {
+      "name": "Rider Bottom Bar",
+      "kind": "nav",
+      "refersTo": "nav-bar",
+      "description": "The rider app's 68px white bottom navigation on phones; the selected tab sits on a mint pill in forest.",
+      "html": "<nav class=\"ds-bottom-nav\"><a class=\"ds-tab ds-tab-active\" href=\"#\" aria-current=\"page\"><span class=\"ds-tab-ind\"><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" fill=\"currentColor\"><path d=\"M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z\"/></svg></span>Home</a><a class=\"ds-tab\" href=\"#\"><span class=\"ds-tab-ind\"><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" fill=\"currentColor\"><path d=\"M9.78 11.16l-1.42 1.42c-.68-.69-1.34-1.58-1.79-2.94l1.94-.49c.32.89.77 1.5 1.27 2.01zM11 6L7 2 3 6h3.02c.02.81.08 1.54.19 2.17l1.94-.49C8.08 7.2 8.03 6.63 8.02 6H11zm10 0l-4-4-4 4h2.99c-.1 3.68-1.28 4.75-2.54 5.88-.5.44-1.01.92-1.45 1.55-.34-.49-.73-.88-1.13-1.24L9.46 13.6c.93.85 1.54 1.54 1.54 3.4v5h2v-5c0-2.02.71-2.66 1.79-3.63 1.38-1.24 3.08-2.78 3.2-7.37H21z\"/></svg></span>Routes</a><a class=\"ds-tab\" href=\"#\"><span class=\"ds-tab-ind\"><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" fill=\"currentColor\"><path d=\"M22 10V6c0-1.11-.9-2-2-2H4c-1.1 0-1.99.89-1.99 2v4c1.1 0 1.99.9 1.99 2s-.89 2-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-4c-1.1 0-2-.9-2-2s.9-2 2-2zm-9 7.5h-2v-2h2v2zm0-4.5h-2v-2h2v2zm0-4.5h-2v-2h2v2z\"/></svg></span>My Trips</a><a class=\"ds-tab\" href=\"#\"><span class=\"ds-tab-ind\"><svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" fill=\"currentColor\"><path d=\"M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z\"/></svg></span>Profile</a></nav>",
+      "css": ".ds-bottom-nav { display: flex; height: 68px; max-width: 390px; background: #FFFFFF; border-top: 1px solid #DDE6E0; font-family: Barlow, 'Fira Sans', sans-serif; } .ds-tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 600; line-height: 1.2; color: #5B6B62; text-decoration: none; } .ds-tab-ind { display: grid; place-items: center; width: 64px; height: 32px; border-radius: 999px; transition: background 0.2s; } .ds-tab:hover .ds-tab-ind { background: #F2F6F3; } .ds-tab:focus-visible { outline: 2px solid #0B5A3A; outline-offset: -2px; } .ds-tab-active { color: #0B5A3A; font-weight: 700; } .ds-tab-active .ds-tab-ind, .ds-tab-active:hover .ds-tab-ind { background: #E6F2EA; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Published Route Board",
+    "overview": "Tap A Ride is drawn like a well-run terminal's departure board, printed in the logo's own greens. Every route on it carries three facts: a fixed fare, a published departure and a verified vehicle. The interface exists to make those facts readable at a glance, on a mid-range Android phone in Abuja sunlight as much as on an FCTA desktop. The palette comes straight from the logo. A deep forest green does the acting, a bright pin green is kept for signals, and every neutral is tinted with the same green, so even the greys belong to the brand. Barlow, a typeface descended from road-sign lettering, carries every word.\n\nDensity follows the job. The landing page persuades: heavy Barlow 800 headlines, real photographs of Abuja and generous white space around a single floating \"next departure\" card. The rider app and partner portal operate: white bordered cards on a pale green-grey ground, compact rows, tabular fares and honest status pills. The same objects travel across all three surfaces. A booking made in the rider app reappears in operator, fleet and FCTA views, and it is always drawn with the same transit-map route line, the same pill tones and the same forest field for headline numbers.\n\nThe system is calm, factual and flat-leaning. Depth is a whisper: hairline borders plus a soft green-tinted shadow. Colour is meaning: forest means act, pin green means signal, amber means pending or demo, red means danger. Photography is real, openly licensed and credited. Nothing in the world is illustrated, generated or stock.",
+    "keyCharacteristics": [
+      "Forest green actions and fields on white cards over a pale green-grey ground.",
+      "One typeface (Barlow), with hierarchy from weight: 800 display, 700 headline and title, 600 label, 400 body.",
+      "The transit-map route line (hollow origin, small stops, solid destination) wherever a trip is named.",
+      "Tabular, heavy fares and figures; money is always the boldest thing on a row.",
+      "Green-tinted neutrals, shadows and photo scrims; no pure grey or black.",
+      "Real, credited Abuja photography at large radii.",
+      "Demo data is always visibly flagged."
+    ],
+    "rules": [
+      { "name": "The Forest Acts Rule", "body": "Forest is the colour that means \"do this\". On light surfaces every filled action, selection and focus state is forest. The one exception is a destructive confirmation (cancel booking, suspend provider), which fills Signal Red.", "section": "colors" },
+      { "name": "The Pin Green Is a Signal Rule", "body": "On light surfaces pin green marks and never carries words or fills an action. When green text is needed on white or mint, it is Readable Leaf. Pin green fills a button only on a forest field.", "section": "colors" },
+      { "name": "The Green-Tinted Neutrals Rule", "body": "Every neutral, shadow and photo scrim carries the forest hue. Ink is #111814, shadows are rgba(11,42,26,…), scrims are night forest at varying alpha. A pure grey or pure black is off-world.", "section": "colors" },
+      { "name": "The Honest Tone Rule", "body": "Status colour maps to meaning and nothing else: success for verified, on time and confirmed; amber for pending, requested, late and demo; red for suspended and cancelled; blue for boarding, on trip and charging; neutral for completed. Demo figures always carry the amber \"Demo data\" badge.", "section": "colors" },
+      { "name": "The Road-Sign Rule", "body": "One family for everything, from the 64px hero to a table cell. Hierarchy comes from weight and size, never from a second typeface.", "section": "typography" },
+      { "name": "The Tabular Money Rule", "body": "Fares, balances, counts, times and ticket codes use tabular figures. A fare on a row is the heaviest text on that row (800).", "section": "typography" },
+      { "name": "The Bordered Lift Rule", "body": "A white card gets a 1px hairline border and the card shadow together. A card sitting inside another card, such as the route rows inside a landing step tile, drops the shadow and keeps the border.", "section": "elevation" },
+      { "name": "The Flat Field Rule", "body": "Forest and night-forest fields never cast a shadow. Their weight comes from colour alone.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do draw every origin-to-destination pair with the RouteStrip and its route line, with the hollow origin, small stops and solid destination.",
+      "Do show the fare and the next departure on every route card, with the fare in 800-weight tabular figures.",
+      "Do reserve forest (#0B5A3A) for actions, selections and focus, use Forest Lift (#0E6B45) for hover, and fill only destructive confirmations with Signal Red (#C0392B).",
+      "Do put pin green (#4DB52A) on forest fields as the route line, accent and occasional compact button, and use Readable Leaf (#237A2E) whenever green has to be read on a light surface.",
+      "Do pair the hairline border with the card shadow on every white card on the ground.",
+      "Do flag every demo figure with the amber \"Demo data\" badge.",
+      "Do lay night-forest scrims over photographs that carry text, and credit every photograph.",
+      "Do keep touch targets at 48px or more and buttons at 50px tall.",
+      "Do let the landing hero rise in on a 28px ease-out and settle instantly when the system asks for reduced motion."
+    ],
+    "donts": [
+      "Don't set pin green as text on white or mint, or fill a button with it on a light surface.",
+      "Don't introduce a second typeface; Fira Sans exists only for the ₦ glyph.",
+      "Don't use pure greys, pure black, or black-based shadows and scrims; tint them with the forest hue.",
+      "Don't use stock, illustrated or AI-generated imagery; the world is real, credited photographs of Abuja.",
+      "Don't recolour status tones for decoration; amber, red and blue appear only when they carry their meaning.",
+      "Don't re-typeset the \"TAP A RIDE\" wordmark; use the supplied artwork.",
+      "Don't add a shadow to a forest field."
+    ]
+  }
+}
