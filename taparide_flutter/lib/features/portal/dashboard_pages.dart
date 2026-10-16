@@ -337,7 +337,7 @@ class _OperatorPageState extends State<OperatorPage> {
             Figure(label: 'Total Trips', value: Fmt.count(d.totalTrips), delta: d.tripsDelta, onDark: true, large: true, caption: d.tripsDelta == null ? 'all time' : 'this month'),
             Figure(label: 'Total Revenue', value: Fmt.naira(d.revenue), delta: d.revenueDelta, onDark: true, large: true, caption: d.revenueToday > 0 ? '+${Fmt.naira(d.revenueToday)} today' : 'this month'),
           ]);
-          final tiles = Row(children: [
+          final tiles = Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             Expanded(child: FigureCard(label: 'Routes', value: '${d.routes.length}', icon: Icons.alt_route_rounded, onTap: () => context.go('/portal/routes'))),
             const SizedBox(width: 12),
             Expanded(child: FigureCard(label: 'Vehicles', value: '${d.vehicles.length}', icon: Icons.directions_bus_rounded, onTap: () => context.go('/portal/vehicles'))),
@@ -345,8 +345,10 @@ class _OperatorPageState extends State<OperatorPage> {
             Expanded(child: FigureCard(label: c.maxWidth < 600 ? 'Drivers' : 'Active Drivers', value: '${d.activeDrivers}', icon: Icons.badge_rounded)),
           ]);
           return c.maxWidth >= 980
-              ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(flex: 5, child: forest), const SizedBox(width: 18), Expanded(flex: 6, child: tiles)])
-              : Column(children: [forest, const SizedBox(height: 12), tiles]);
+              ? IntrinsicHeight(
+                  child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [Expanded(flex: 5, child: forest), const SizedBox(width: 18), Expanded(flex: 6, child: tiles)]),
+                )
+              : Column(children: [forest, const SizedBox(height: 12), IntrinsicHeight(child: tiles)]);
         }),
         const SizedBox(height: 18),
         _TwoUp(

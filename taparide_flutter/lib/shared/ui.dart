@@ -224,11 +224,12 @@ class RouteStrip extends StatelessWidget {
       child: ExcludeSemantics(
         child: Row(
           children: [
-            Flexible(child: Text(origin, style: style, maxLines: 1, overflow: TextOverflow.ellipsis)),
+            // Space is shared in proportion to name length so a short name never squeezes a long one.
+            Flexible(flex: origin.length.clamp(1, 40), child: Text(origin, style: style, maxLines: 1, overflow: TextOverflow.ellipsis)),
             SizedBox(width: dense ? 8 : 10),
             SizedBox(width: dense ? (14.0 * stops.clamp(2, 4)).clamp(40.0, 56.0) : 64, height: 18, child: RouteLine(stops: stops.clamp(2, 4), color: color)),
             SizedBox(width: dense ? 8 : 10),
-            Flexible(child: Text(destination, style: style, maxLines: 1, overflow: TextOverflow.ellipsis)),
+            Flexible(flex: destination.length.clamp(1, 40), child: Text(destination, style: style, maxLines: 1, overflow: TextOverflow.ellipsis)),
           ],
         ),
       ),

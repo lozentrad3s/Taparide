@@ -66,13 +66,19 @@ class RouteMap extends StatelessWidget {
                 child: i == last ? const _DestinationPin() : _StopDot(start: i == 0),
               ),
           ]),
-          const RichAttributionWidget(
-            showFlutterMapAttribution: false,
-            alignment: AttributionAlignment.bottomRight,
-            attributions: [
-              TextSourceAttribution('OpenStreetMap contributors'),
-              TextSourceAttribution('CARTO'),
-            ],
+          // Tile credit, always visible as the providers require.
+          const Align(
+            alignment: Alignment.bottomRight,
+            child: Padding(
+              padding: EdgeInsets.all(6),
+              child: DecoratedBox(
+                decoration: BoxDecoration(color: Color(0xD9FFFFFF), borderRadius: BorderRadius.all(Radius.circular(4))),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  child: Text('© OpenStreetMap · © CARTO', style: TextStyle(fontSize: 10, color: AppColors.inkSoft)),
+                ),
+              ),
+            ),
           ),
         ],
       ),
