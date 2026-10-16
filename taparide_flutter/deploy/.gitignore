@@ -1,0 +1,5 @@
+node_modules
+.vercel
+.env*
+# Flutter web build, copied in before each deploy
+public

@@ -1,4 +1,5 @@
 import '../models.dart';
+import '../partner_models.dart';
 
 enum BackendErrorKind { auth, permission, validation, insufficientFunds, notFound, network, unknown }
 
@@ -59,4 +60,17 @@ abstract class Backend {
   Future<TransitRoute> updateRouteFare(String routeId, int fare);
   Future<Vehicle> registerVehicle({required String operatorId, required VehicleKind kind, required String plate, required String model, required int capacity, String? ownerId});
   Future<AppUser> setUserRole(String userId, UserRole role, {String? providerId});
+
+  // ---- partner registration
+  /// Session token for calls to the Tap A Ride API (AI assistant, document checks). Null in demo mode.
+  Future<String?> accessToken();
+  Future<PartnerApplication> submitPartnerApplication(PartnerApplication draft, List<DocumentFile> documents);
+  Future<List<PartnerApplication>> fetchMyApplications();
+
+  /// Review queue (FCTA and platform admins).
+  Future<List<PartnerApplication>> fetchPartnerApplications();
+  Future<PartnerApplication> reviewPartnerApplication(String applicationId, ApplicationStatus decision, String note);
+
+  /// Bytes or a short-lived URL to show an uploaded document to its owner or a reviewer.
+  Future<DocumentFile> openDocument(DocumentFile document);
 }

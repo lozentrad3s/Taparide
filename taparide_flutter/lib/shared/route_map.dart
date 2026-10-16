@@ -14,14 +14,37 @@ abstract final class MapTiles {
 }
 
 /// Real map of the route: the line in brand green with its named stops.
-class RouteMap extends StatelessWidget {
-  const RouteMap({super.key, required this.stops, this.interactive = true, this.padding = const EdgeInsets.fromLTRB(56, 72, 150, 56)});
+/// [roadPath], when given, swaps the straight stop-to-stop line for the road geometry.
+class RouteMap extends StatefulWidget {
+  const RouteMap({super.key, required this.stops, this.interactive = true, this.padding = const EdgeInsets.fromLTRB(56, 72, 150, 56), this.roadPath});
   final List<RouteStop> stops;
   final bool interactive;
   final EdgeInsets padding;
+  final Future<List<LatLng>?> Function(List<LatLng> stops)? roadPath;
+
+  @override
+  State<RouteMap> createState() => _RouteMapState();
+}
+
+class _RouteMapState extends State<RouteMap> {
+  List<LatLng>? _road;
+
+  @override
+  void initState() {
+    super.initState();
+    final stops = [for (final s in widget.stops) LatLng(s.lat, s.lng)];
+    if (MapTiles.enabled && widget.roadPath != null && stops.length > 1) {
+      widget.roadPath!(stops).then((road) {
+        if (mounted && road != null && road.length > 1) setState(() => _road = road);
+      }).catchError((_) {});
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final stops = widget.stops;
+    final interactive = widget.interactive;
+    final padding = widget.padding;
     final points = [for (final s in stops) LatLng(s.lat, s.lng)];
     final last = points.length - 1;
     return Semantics(
@@ -43,7 +66,7 @@ class RouteMap extends StatelessWidget {
               userAgentPackageName: 'com.taparide.app',
             ),
           PolylineLayer(polylines: [
-            Polyline(points: points, strokeWidth: 6, color: AppColors.forest, borderStrokeWidth: 2.5, borderColor: Colors.white),
+            Polyline(points: _road ?? points, strokeWidth: 6, color: AppColors.forest, borderStrokeWidth: 2.5, borderColor: Colors.white),
           ]),
           // Stop names sit to the right of each stop so the route reads even without tiles.
           MarkerLayer(markers: [

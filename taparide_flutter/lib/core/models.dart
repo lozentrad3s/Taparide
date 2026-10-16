@@ -118,7 +118,7 @@ class AppUser {
 
 // ---------------------------------------------------------------- providers
 
-enum ProviderKind { busOperator, fleetOwner, rail, electric, shuttle, tricycle }
+enum ProviderKind { busOperator, fleetOwner, rail, electric, shuttle, tricycle, privateDriver }
 
 extension ProviderKindX on ProviderKind {
   String get label => switch (this) {
@@ -128,6 +128,7 @@ extension ProviderKindX on ProviderKind {
         ProviderKind.electric => 'Electric vehicles',
         ProviderKind.shuttle => 'Shuttle service',
         ProviderKind.tricycle => 'Tricycle (keke) co-op',
+        ProviderKind.privateDriver => 'Private driver',
       };
 
   IconData get icon => switch (this) {
@@ -137,6 +138,7 @@ extension ProviderKindX on ProviderKind {
         ProviderKind.electric => Icons.electric_car_rounded,
         ProviderKind.shuttle => Icons.airport_shuttle_rounded,
         ProviderKind.tricycle => Icons.electric_rickshaw_rounded,
+        ProviderKind.privateDriver => Icons.drive_eta_rounded,
       };
 }
 
@@ -340,7 +342,7 @@ class TransitRoute {
 
 // ---------------------------------------------------------------- vehicles
 
-enum VehicleKind { bus, minibus, train, evCar, evShuttle, evKeke }
+enum VehicleKind { bus, minibus, train, evCar, evShuttle, evKeke, car }
 
 extension VehicleKindX on VehicleKind {
   String get label => switch (this) {
@@ -350,6 +352,7 @@ extension VehicleKindX on VehicleKind {
         VehicleKind.evCar => 'Electric car',
         VehicleKind.evShuttle => 'Electric shuttle',
         VehicleKind.evKeke => 'Electric keke',
+        VehicleKind.car => 'Car',
       };
 
   IconData get icon => switch (this) {
@@ -359,9 +362,13 @@ extension VehicleKindX on VehicleKind {
         VehicleKind.evCar => Icons.electric_car_rounded,
         VehicleKind.evShuttle => Icons.airport_shuttle_rounded,
         VehicleKind.evKeke => Icons.electric_rickshaw_rounded,
+        VehicleKind.car => Icons.directions_car_rounded,
       };
 
   bool get isElectric => this == VehicleKind.evCar || this == VehicleKind.evShuttle || this == VehicleKind.evKeke || this == VehicleKind.train;
+
+  /// Cars riders can book door to door (electric cars and verified private drivers).
+  bool get isBookableCar => this == VehicleKind.evCar || this == VehicleKind.car;
 }
 
 enum VehicleStatus { active, onTrip, charging, maintenance, inactive }

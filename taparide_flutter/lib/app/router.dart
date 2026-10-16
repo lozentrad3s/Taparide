@@ -7,6 +7,9 @@ import '../features/auth/login_page.dart';
 import '../features/common/credits_page.dart';
 import '../features/ev/ev_page.dart';
 import '../features/landing/landing_page.dart';
+import '../features/nearby/nearby_page.dart';
+import '../features/partner/partner_apply_page.dart';
+import '../features/partner/partner_status_page.dart';
 import '../features/passenger/home_page.dart';
 import '../features/passenger/payment_page.dart';
 import '../features/passenger/profile_page.dart';
@@ -72,6 +75,10 @@ GoRouter buildRouter(AppState state) {
       ),
       GoRoute(path: '/register', builder: (context, s) => LoginPage(portal: Portal.passenger, startInRegister: true, from: s.uri.queryParameters['from'])),
       GoRoute(path: '/credits', builder: (context, s) => const CreditsPage()),
+      // Partner onboarding is open to everyone (the apply flow creates an account if needed).
+      GoRoute(path: '/partner/apply', parentNavigatorKey: _rootKey, builder: (context, s) => PartnerApplyPage(initialType: s.uri.queryParameters['type'])),
+      GoRoute(path: '/partner/status', parentNavigatorKey: _rootKey, builder: (context, s) => const PartnerStatusPage()),
+      GoRoute(path: '/nearby', parentNavigatorKey: _rootKey, builder: (context, s) => NearbyPage(category: s.uri.queryParameters['c'])),
 
       // Rider app: four tabs, with full-screen flows pushed above them.
       StatefulShellRoute.indexedStack(

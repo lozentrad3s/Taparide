@@ -15,3 +15,8 @@ build/
 test/screens/out/
 test/screens/failures/
 *.iml
+
+# Local secrets
+.env.local
+.env*.local
+.vercel/

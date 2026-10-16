@@ -7,6 +7,7 @@ import '../../core/app_state.dart';
 import '../../core/models.dart';
 import '../../shared/brand.dart';
 import '../../shared/ui.dart';
+import '../assistant/assistant_sheet.dart';
 
 /// One area of the partner portal and the roles allowed into it.
 /// The backend enforces the same rules; this only decides what to show.
@@ -36,16 +37,19 @@ class PortalSection {
   static const users = PortalSection('/portal/users', 'Users & roles', Icons.manage_accounts_rounded, {UserRole.admin}, short: 'Users');
   static const audit = PortalSection('/portal/audit', 'Audit log', Icons.history_rounded, {UserRole.government, UserRole.admin});
 
-  static const all = [overview, fcta, operator, fleet, providers, evs, routes, vehicles, bookings, verification, users, audit];
+  static const insights = PortalSection('/portal/insights', 'AI insights', Icons.insights_rounded, _partners, short: 'Insights');
+  static const applications = PortalSection('/portal/applications', 'Partner applications', Icons.how_to_reg_rounded, {UserRole.government, UserRole.admin}, short: 'Applications');
+
+  static const all = [overview, insights, fcta, operator, fleet, applications, providers, evs, routes, vehicles, bookings, verification, users, audit];
 
   static PortalSection? byPath(String path) => all.where((s) => s.path == path).firstOrNull;
 
   /// Sections in the order each role uses them most.
   static List<PortalSection> forRole(UserRole role) => switch (role) {
         UserRole.admin => all,
-        UserRole.government => [fcta, providers, verification, vehicles, routes, evs, operator, bookings, audit],
-        UserRole.operator => [operator, routes, vehicles, bookings, evs],
-        UserRole.fleetOwner => [fleet, vehicles, bookings],
+        UserRole.government => [fcta, insights, applications, providers, verification, vehicles, routes, evs, operator, bookings, audit],
+        UserRole.operator => [operator, insights, routes, vehicles, bookings, evs],
+        UserRole.fleetOwner => [fleet, insights, vehicles, bookings],
         UserRole.passenger => const [],
       };
 }
@@ -70,6 +74,7 @@ class PortalShell extends StatelessWidget {
           _Sidebar(user: user, sections: sections, current: current),
           Expanded(child: child),
         ]),
+        floatingActionButton: const AssistantButton(),
       );
     }
 
@@ -86,6 +91,7 @@ class PortalShell extends StatelessWidget {
           const SizedBox(width: 4),
         ],
       ),
+      floatingActionButton: const AssistantButton(),
       drawer: Drawer(
         backgroundColor: AppColors.forestDeep,
         child: _SidebarContent(user: user, sections: sections, current: current, onNavigate: () => Navigator.of(context).pop()),

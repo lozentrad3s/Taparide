@@ -8,6 +8,7 @@ import '../../core/app_state.dart';
 import '../../core/backend/demo_backend.dart';
 import '../../core/format.dart';
 import '../../core/models.dart';
+import '../../core/partner_models.dart';
 import '../../shared/ui.dart';
 import 'rider_widgets.dart';
 
@@ -108,7 +109,29 @@ class ProfilePage extends StatelessWidget {
                       title: Text('Share every trip'),
                       subtitle: Text('Open a ticket and tap "Share trip" to send the details to someone you trust.'),
                     ),
+                    const Divider(indent: 16, endIndent: 16),
+                    ListTile(
+                      leading: const Icon(Icons.radar_rounded, color: AppColors.blue),
+                      title: const Text('Nearby & safety map'),
+                      subtitle: const Text('Live traffic, incidents and SOS with FindMe AI'),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: () => context.push('/nearby'),
+                    ),
                   ]),
+                ),
+                const SizedBox(height: 26),
+                const SectionHeader(title: 'Earn with Tap A Ride'),
+                Panel(
+                  padding: EdgeInsets.zero,
+                  child: ListTile(
+                    leading: const IconBadge(Icons.handshake_rounded, size: 40),
+                    title: Text(state.myApplications.isEmpty ? 'Become a partner' : 'My partner application'),
+                    subtitle: Text(state.myApplications.isEmpty
+                        ? 'Drive your own car, or register your company or agency'
+                        : '${state.myApplications.first.displayName} · ${state.myApplications.first.status.label}'),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => context.push(state.myApplications.isEmpty ? '/partner/apply' : '/partner/status'),
+                  ),
                 ),
                 const SizedBox(height: 26),
                 const SectionHeader(title: 'About'),

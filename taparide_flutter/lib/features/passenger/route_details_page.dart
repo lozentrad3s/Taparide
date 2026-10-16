@@ -61,7 +61,7 @@ class _RouteDetailsPageState extends State<RouteDetailsPage> {
       return Scaffold(
         appBar: AppBar(leading: const AppBackButton(fallback: '/app/routes'), title: const Text('Route Details')),
         body: Row(children: [
-          Expanded(child: Padding(padding: const EdgeInsets.fromLTRB(20, 0, 0, 20), child: ClipRRect(borderRadius: BorderRadius.circular(AppRadius.xl), child: RouteMap(stops: route.stops)))),
+          Expanded(child: Padding(padding: const EdgeInsets.fromLTRB(20, 0, 0, 20), child: ClipRRect(borderRadius: BorderRadius.circular(AppRadius.xl), child: RouteMap(stops: route.stops, roadPath: context.read<AppState>().api.roadPath)))),
           SizedBox(
             width: 440,
             child: Column(children: [
@@ -79,7 +79,7 @@ class _RouteDetailsPageState extends State<RouteDetailsPage> {
         Expanded(
           child: SingleChildScrollView(
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              SizedBox(height: 280, child: RouteMap(stops: route.stops, padding: const EdgeInsets.fromLTRB(40, 72, 120, 56))),
+              SizedBox(height: 280, child: RouteMap(stops: route.stops, padding: const EdgeInsets.fromLTRB(40, 72, 120, 56), roadPath: context.read<AppState>().api.roadPath)),
               Transform.translate(
                 offset: const Offset(0, -18),
                 child: Container(

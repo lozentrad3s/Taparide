@@ -10,6 +10,7 @@ import '../../core/photos.dart';
 import '../../shared/brand.dart';
 import '../../shared/ui.dart';
 import 'rider_widgets.dart';
+import 'smart_cards.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -62,6 +63,7 @@ class HomePage extends StatelessWidget {
           ),
         ]),
       SizedBox(height: wide ? 12 : 18),
+      const ReminderBanner(),
       Text('${Fmt.greeting(state.now)}, ${user.firstName}', style: wide ? text.displaySmall : text.headlineLarge),
       const SizedBox(height: 4),
       Text('Where are you headed today?', style: text.bodyLarge),
@@ -76,9 +78,10 @@ class HomePage extends StatelessWidget {
       ),
       const SizedBox(height: 22),
       if (state.upcomingTrips.isNotEmpty) ...[
-        _UpcomingTrip(booking: state.upcomingTrips.first),
+        _UpcomingTrip(booking: state.upcomingTrips.first, leaveBy: leaveByLine(state, state.upcomingTrips.first)),
         const SizedBox(height: 22),
       ],
+      if (state.suggestions.isNotEmpty) ...[SmartSuggestions(suggestions: state.suggestions), const SizedBox(height: 12)],
       SectionHeader(title: 'Popular Routes', action: 'View all', onAction: () => context.go('/app/routes')),
       for (final r in routes)
         Padding(
@@ -94,10 +97,14 @@ class HomePage extends StatelessWidget {
   List<Widget> _secondary(BuildContext context, AppState state) {
     final evs = state.availableEvs.where((v) => v.status == VehicleStatus.active).take(3).toList();
     return [
+      const AskTapiCard(),
+      const SizedBox(height: 22),
       _EvSection(vehicles: evs),
       const SizedBox(height: 22),
       _TagAlongBanner(onOpen: () => context.push('/tag-along')),
       const SizedBox(height: 22),
+      const NearbySafetyCard(),
+      const SizedBox(height: 14),
       const _SafetyStrip(),
     ];
   }
@@ -112,6 +119,8 @@ class HomePage extends StatelessWidget {
             for (final item in [
               (Icons.electric_car_rounded, 'Book an electric vehicle', 'Zero-emission rides from verified EV operators', '/ev'),
               (Icons.groups_rounded, 'Tag Along', 'Share the ride home with colleagues nearby', '/tag-along'),
+              (Icons.radar_rounded, 'Nearby & safety', 'Live traffic, places near you and SOS (FindMe AI)', '/nearby'),
+              (Icons.handshake_rounded, 'Become a partner', 'Drive with Tap A Ride or register your company', '/partner/apply'),
               (Icons.health_and_safety_outlined, 'Safety centre', 'Emergency numbers and trip sharing', '/app/profile'),
             ])
               ListTile(
@@ -203,7 +212,8 @@ class _QuickActions extends StatelessWidget {
 }
 
 class _UpcomingTrip extends StatelessWidget {
-  const _UpcomingTrip({required this.booking});
+  const _UpcomingTrip({required this.booking, required this.leaveBy});
+  final String leaveBy;
   final Booking booking;
 
   @override
@@ -231,6 +241,18 @@ class _UpcomingTrip extends StatelessWidget {
           Text('Show ticket', style: text.labelLarge?.copyWith(color: Colors.white)),
           const Icon(Icons.chevron_right_rounded, color: Colors.white),
         ]),
+        if (booking.kind == BookingKind.transit) ...[
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(AppRadius.sm)),
+            child: Row(children: [
+              const Icon(Icons.directions_walk_rounded, size: 16, color: AppColors.leaf),
+              const SizedBox(width: 6),
+              Expanded(child: Text(leaveBy, style: text.bodySmall?.copyWith(color: Colors.white))),
+            ]),
+          ),
+        ],
       ]),
     );
   }

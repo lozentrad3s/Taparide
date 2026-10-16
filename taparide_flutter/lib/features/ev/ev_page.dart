@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -11,43 +9,11 @@ import '../../core/backend/backend.dart';
 import '../../core/format.dart';
 import '../../core/models.dart';
 import '../../core/photos.dart';
+import '../../core/places.dart';
 import '../../shared/ui.dart';
 import '../passenger/rider_widgets.dart';
 
-/// Known pickup/drop-off points (real Abuja coordinates) for EV fare estimates.
-const _places = <String, (double, double)>{
-  'Wuse 2': (9.0790, 7.4801),
-  'Maitama': (9.0882, 7.4934),
-  'Central Area': (9.0556, 7.4914),
-  'Garki': (9.0310, 7.4890),
-  'Asokoro': (9.0420, 7.5250),
-  'Jabi': (9.0705, 7.4250),
-  'Utako': (9.0703, 7.4400),
-  'Gwarinpa': (9.1099, 7.4083),
-  'Life Camp': (9.0814, 7.4055),
-  'Lugbe': (8.9800, 7.3750),
-  'Kubwa': (9.1548, 7.3227),
-  'Nnamdi Azikiwe Airport': (9.0068, 7.2632),
-};
 
-double _km(String a, String b) {
-  final p = _places[a]!, q = _places[b]!;
-  const r = 6371.0;
-  double rad(double d) => d * pi / 180;
-  final dLat = rad(q.$1 - p.$1), dLng = rad(q.$2 - p.$2);
-  final h = sin(dLat / 2) * sin(dLat / 2) + cos(rad(p.$1)) * cos(rad(q.$1)) * sin(dLng / 2) * sin(dLng / 2);
-  // Roads are longer than the straight line; 1.3 is a typical urban detour factor.
-  return 2 * r * asin(sqrt(h)) * 1.3;
-}
-
-/// Base fare plus distance, rounded to the nearest ₦50.
-int _fare(Vehicle v, double km) => (((v.baseFare ?? 1200) + (v.perKmFare ?? 180) * km) / 50).round() * 50;
-
-/// Minutes until pickup, estimated from the vehicle's area to the pickup point.
-int _eta(Vehicle v, String pickup) {
-  final from = _places.keys.firstWhere((k) => v.area.toLowerCase().contains(k.toLowerCase().split(' ').first), orElse: () => 'Central Area');
-  return max(3, (_km(from, pickup) * 2.2).round());
-}
 
 class EvPage extends StatelessWidget {
   const EvPage({super.key});
@@ -254,15 +220,15 @@ class _EvBookingSheetState extends State<_EvBookingSheet> {
     final text = Theme.of(context).textTheme;
     final state = context.watch<AppState>();
     final same = _pickup == _dropoff;
-    final km = same ? 0.0 : _km(_pickup, _dropoff);
-    final fare = _fare(widget.vehicle, km);
-    final eta = _eta(widget.vehicle, _pickup);
+    final km = same ? 0.0 : roadKm(_pickup, _dropoff);
+    final fare = carFare(widget.vehicle, km);
+    final eta = carEta(widget.vehicle, _pickup);
     final short = (state.wallet?.balance ?? 0) < fare;
     DropdownButtonFormField<String> place(String label, String value, ValueChanged<String> onChanged, IconData icon) => DropdownButtonFormField<String>(
           initialValue: value,
           isExpanded: true,
           decoration: InputDecoration(labelText: label, prefixIcon: Icon(icon)),
-          items: [for (final p in _places.keys) DropdownMenuItem(value: p, child: Text(p))],
+          items: [for (final p in evPlaceNames) DropdownMenuItem(value: p, child: Text(p))],
           onChanged: (v) => v == null ? null : onChanged(v),
         );
 

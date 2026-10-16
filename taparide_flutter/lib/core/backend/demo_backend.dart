@@ -5,6 +5,7 @@ import 'package:crypto/crypto.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models.dart';
+import '../partner_models.dart';
 import 'backend.dart';
 import 'demo_seed.dart';
 
@@ -15,7 +16,7 @@ import 'demo_seed.dart';
 class DemoBackend implements Backend {
   DemoBackend._(this._prefs, this._latency, this._clock);
 
-  static const _storageKey = 'taparide_demo_state_v1';
+  static const _storageKey = 'taparide_demo_state_v2';
 
   static Future<DemoBackend> create({Duration latency = const Duration(milliseconds: 260), DateTime Function()? clock}) async {
     final prefs = await SharedPreferences.getInstance();
@@ -37,6 +38,10 @@ class DemoBackend implements Backend {
   late List<Booking> _bookings;
   late Map<String, Wallet> _wallets;
   late List<AuditEntry> _audit;
+  List<PartnerApplication> _applications = [];
+
+  /// Uploaded document bytes stay in memory in demo mode (too large for local storage).
+  final Map<String, DocumentFile> _documents = {};
   String? _sessionUserId;
 
   @override
@@ -68,6 +73,7 @@ class DemoBackend implements Backend {
         for (final e in (json['wallets'] as Map).entries) e.key as String: Wallet.fromJson(Map<String, dynamic>.from(e.value as Map)),
       };
       _sessionUserId = json['session'] as String?;
+      _applications = json['applications'] is List ? list('applications', PartnerApplication.fromJson) : [];
       _refreshSeedRides();
     } catch (_) {
       _seed();
@@ -84,6 +90,7 @@ class DemoBackend implements Backend {
     _bookings = DemoSeed.bookings(now);
     _audit = DemoSeed.audit(now);
     _wallets = {DemoSeed.uAisha: const Wallet(cardNumber: '5061004219872500', balance: 2500)};
+    _applications = DemoSeed.applications(now);
     _sessionUserId = null;
     _save();
   }
@@ -111,6 +118,7 @@ class DemoBackend implements Backend {
         'audit': [for (final a in _audit) a.toJson()],
         'wallets': {for (final e in _wallets.entries) e.key: {'card_number': e.value.cardNumber, 'balance': e.value.balance}},
         'session': _sessionUserId,
+        'applications': [for (final a in _applications) a.toJson()],
       }),
     );
   }
@@ -395,8 +403,8 @@ class DemoBackend implements Backend {
     final index = _vehicles.indexWhere((v) => v.id == vehicle.id);
     if (index < 0) throw const BackendException(BackendErrorKind.notFound, 'That vehicle is no longer listed.');
     final current = _vehicles[index];
-    if (!current.electric || current.verification != Verification.verified || !_verifiedProviderIds.contains(current.operatorId)) {
-      throw const BackendException(BackendErrorKind.validation, 'Only verified electric vehicles can be booked.');
+    if (!current.kind.isBookableCar || current.verification != Verification.verified || !_verifiedProviderIds.contains(current.operatorId)) {
+      throw const BackendException(BackendErrorKind.validation, 'Only verified cars can be booked.');
     }
     if (current.status != VehicleStatus.active) {
       throw const BackendException(BackendErrorKind.validation, 'This vehicle was just taken. Choose another one.');
@@ -662,6 +670,152 @@ class DemoBackend implements Backend {
     _log('Changed role to ${role.label}', updated.fullName);
     _save();
     return updated;
+  }
+
+  // ------------------------------------------------------------ partner registration
+
+  @override
+  Future<String?> accessToken() async => null;
+
+  @override
+  Future<PartnerApplication> submitPartnerApplication(PartnerApplication draft, List<DocumentFile> documents) async {
+    await _wait();
+    final me = _me;
+    final org = draft.type.isOrganisation;
+    final problem = org
+        ? (OrgRules.rcNumber(draft.rcNumber) ?? OrgRules.tin(draft.tin) ?? ((draft.fleetSize ?? 0) < 1 ? 'Enter how many vehicles you run.' : null))
+        : (PartnerRules.chassis(draft.chassisNumber) ?? PartnerRules.plate(draft.plateNumber) ?? PartnerRules.licence(draft.licenceNumber));
+    if (problem != null) throw BackendException(BackendErrorKind.validation, problem);
+    if (!org && !draft.licenceExpiry.isAfter(_clock())) throw const BackendException(BackendErrorKind.validation, "Your driver's licence has expired. Renew it before applying.");
+    for (final slot in draft.type.requiredDocs) {
+      if (!documents.any((d) => d.slot == slot)) throw BackendException(BackendErrorKind.validation, 'Upload your ${slot.label.toLowerCase()}.');
+    }
+    final chassis = PartnerRules.normalise(draft.chassisNumber);
+    final plate = PartnerRules.normalise(draft.plateNumber);
+    final taken = !org &&
+        (_applications.any((a) => a.status != ApplicationStatus.rejected && a.userId != me.id && (PartnerRules.normalise(a.chassisNumber) == chassis || PartnerRules.normalise(a.plateNumber) == plate)) ||
+            _vehicles.any((v) => PartnerRules.normalise(v.plate) == plate));
+    if (taken) throw const BackendException(BackendErrorKind.validation, 'This plate or chassis number is already registered on Tap A Ride.');
+    if (_applications.any((a) => a.userId == me.id && a.status.isOpen)) {
+      throw const BackendException(BackendErrorKind.validation, 'You already have an application under review.');
+    }
+
+    final id = _id('app');
+    final stored = <DocumentFile>[];
+    for (final d in documents) {
+      final path = '$id/${d.slot.wire}';
+      _documents[path] = d.copyWith(path: path);
+      stored.add(d.copyWith(path: path));
+    }
+    final application = PartnerApplication.fromJson({
+      ...draft.toJson(),
+      'id': id,
+      'user_id': me.id,
+      'status': ApplicationStatus.submitted.wire,
+      'chassis_number': org ? draft.chassisNumber : chassis,
+      'plate_number': draft.plateNumber.trim().toUpperCase(),
+      'rc_number': draft.rcNumber?.replaceAll(RegExp(r'\s'), '').toUpperCase(),
+      'created_at': _clock().toUtc().toIso8601String(),
+    }).copyWith(documents: stored, aiCheck: draft.aiCheck);
+    _applications.insert(0, application);
+    _save();
+    return application;
+  }
+
+  @override
+  Future<List<PartnerApplication>> fetchMyApplications() async {
+    await _wait();
+    final me = _me;
+    return [for (final a in _applications) if (a.userId == me.id) a];
+  }
+
+  @override
+  Future<List<PartnerApplication>> fetchPartnerApplications() async {
+    await _wait();
+    _require(_me.role.canVerify, 'review partner applications');
+    return List.of(_applications);
+  }
+
+  @override
+  Future<PartnerApplication> reviewPartnerApplication(String applicationId, ApplicationStatus decision, String note) async {
+    await _wait();
+    final me = _me;
+    _require(me.role.canVerify, 'review partner applications');
+    final index = _applications.indexWhere((a) => a.id == applicationId);
+    if (index < 0) throw const BackendException(BackendErrorKind.notFound, 'Application not found.');
+    final app = _applications[index];
+    if (app.status == ApplicationStatus.approved) throw const BackendException(BackendErrorKind.validation, 'This application is already approved.');
+    if (decision != ApplicationStatus.approved && note.trim().isEmpty) {
+      throw const BackendException(BackendErrorKind.validation, 'Tell the applicant what to fix or why it was not approved.');
+    }
+
+    String? providerId;
+    String? vehicleId;
+    if (decision == ApplicationStatus.approved) {
+      providerId = _id('p');
+      _providers.add(TransportProvider(
+        id: providerId,
+        name: app.companyName?.trim().isNotEmpty == true ? app.companyName!.trim() : app.fullName,
+        kind: app.type.providerKind,
+        status: Verification.verified,
+        area: app.area,
+        contactName: app.fullName,
+        contactEmail: app.email,
+        joinedAt: _clock(),
+        description: '${app.type.label} approved through partner registration.',
+      ));
+      // Private drivers bring one vehicle; organisations register their fleet from the portal afterwards.
+      if (!app.type.isOrganisation) vehicleId = _id('v');
+      if (vehicleId != null) _vehicles.add(Vehicle(
+        id: vehicleId,
+        operatorId: providerId,
+        plate: app.plateNumber,
+        kind: _vehicleKindFor(app),
+        model: '${app.vehicleMake} ${app.vehicleModel}',
+        capacity: app.seats,
+        status: VehicleStatus.active,
+        verification: Verification.verified,
+        area: app.area,
+        monthEarnings: 0,
+        driverName: app.fullName,
+        baseFare: 1000,
+        perKmFare: 150,
+        batteryPct: app.type == PartnerType.evOperator ? 100 : null,
+        rangeKm: app.type == PartnerType.evOperator ? 300 : null,
+      ));
+      final accountIndex = _accounts.indexWhere((a) => a.user.id == app.userId);
+      if (accountIndex >= 0) {
+        final role = app.type == PartnerType.fleetOwner ? UserRole.fleetOwner : UserRole.operator;
+        _accounts[accountIndex] = _accounts[accountIndex].withUser(_accounts[accountIndex].user.copyWith(role: role, providerId: providerId));
+      }
+    }
+    final updated = app.copyWith(status: decision, reviewerNote: note.trim(), reviewedBy: me.fullName, reviewedAt: _clock(), providerId: providerId, vehicleId: vehicleId);
+    _applications[index] = updated;
+    _log(
+      switch (decision) {
+        ApplicationStatus.approved => 'Approved partner application',
+        ApplicationStatus.rejected => 'Rejected partner application',
+        ApplicationStatus.needsChanges => 'Requested changes to partner application',
+        _ => 'Updated partner application',
+      },
+      app.type.isOrganisation ? '${app.displayName} · ${app.rcNumber ?? ''}' : '${app.fullName} · ${app.plateNumber}',
+    );
+    _save();
+    return updated;
+  }
+
+  static VehicleKind _vehicleKindFor(PartnerApplication app) => switch (app.type) {
+        PartnerType.evOperator => VehicleKind.evCar,
+        PartnerType.privateDriver => app.seats > 8 ? VehicleKind.minibus : VehicleKind.car,
+        _ => app.seats > 18 ? VehicleKind.bus : (app.seats > 8 ? VehicleKind.minibus : VehicleKind.car),
+      };
+
+  @override
+  Future<DocumentFile> openDocument(DocumentFile document) async {
+    final me = _me;
+    final app = _applications.where((a) => a.documents.any((d) => d.path == document.path)).firstOrNull;
+    _require(app != null && (app.userId == me.id || me.role.canVerify), 'view this document');
+    return _documents[document.path] ?? document;
   }
 }
 

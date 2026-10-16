@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models.dart';
+import '../partner_models.dart';
 import 'backend.dart';
 
 /// Supabase implementation. Reads go through tables guarded by row-level security;
@@ -259,4 +260,53 @@ class SupabaseBackend implements Backend {
   @override
   Future<AppUser> setUserRole(String userId, UserRole role, {String? providerId}) => _guard(() async =>
       AppUser.fromJson(_row(await _client.rpc('set_user_role', params: {'p_user_id': userId, 'p_role': role.wire, 'p_provider_id': providerId}))));
+
+  // ------------------------------------------------------------ partner registration
+
+  static const _bucket = 'partner-docs';
+
+  @override
+  Future<String?> accessToken() async => _client.auth.currentSession?.accessToken;
+
+  @override
+  Future<PartnerApplication> submitPartnerApplication(PartnerApplication draft, List<DocumentFile> documents) => _guard(() async {
+        final stamp = DateTime.now().millisecondsSinceEpoch;
+        final uploaded = <DocumentFile>[];
+        for (final d in documents) {
+          final bytes = d.bytes;
+          if (bytes == null) continue;
+          final ext = d.mimeType == 'application/pdf' ? 'pdf' : (d.mimeType == 'image/png' ? 'png' : 'jpg');
+          // Private bucket; the first folder is the owner's id so storage policies can check it.
+          final path = '$_uid/$stamp/${d.slot.wire}.$ext';
+          await _client.storage.from(_bucket).uploadBinary(path, bytes, fileOptions: FileOptions(contentType: d.mimeType, upsert: true));
+          uploaded.add(d.copyWith(path: path));
+        }
+        final payload = draft.copyWith(documents: uploaded).toJson()
+          ..remove('id')
+          ..remove('user_id')
+          ..remove('status');
+        return PartnerApplication.fromJson(_row(await _client.rpc('submit_partner_application', params: {'p_application': payload})));
+      });
+
+  @override
+  Future<List<PartnerApplication>> fetchMyApplications() => _guard(() async => [
+        for (final r in _rows(await _client.from('partner_applications').select().eq('user_id', _uid).order('created_at', ascending: false))) PartnerApplication.fromJson(r),
+      ]);
+
+  @override
+  Future<List<PartnerApplication>> fetchPartnerApplications() => _guard(() async => [
+        for (final r in _rows(await _client.from('partner_applications').select().order('created_at', ascending: false).limit(200))) PartnerApplication.fromJson(r),
+      ]);
+
+  @override
+  Future<PartnerApplication> reviewPartnerApplication(String applicationId, ApplicationStatus decision, String note) => _guard(() async =>
+      PartnerApplication.fromJson(_row(await _client.rpc('review_partner_application', params: {'p_id': applicationId, 'p_decision': decision.wire, 'p_note': note}))));
+
+  @override
+  Future<DocumentFile> openDocument(DocumentFile document) => _guard(() async {
+        final path = document.path;
+        if (path == null) return document;
+        final url = await _client.storage.from(_bucket).createSignedUrl(path, 600);
+        return document.copyWith(url: url);
+      });
 }

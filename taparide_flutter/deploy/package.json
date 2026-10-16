@@ -1,0 +1,9 @@
+{
+  "name": "taparide-web",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "@anthropic-ai/sdk": "latest"
+  }
+}

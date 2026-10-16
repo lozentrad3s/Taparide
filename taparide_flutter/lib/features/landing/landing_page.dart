@@ -798,9 +798,9 @@ class _ForPartners extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final columns = [
-      (Icons.directions_bus_rounded, 'Transport operators', ['Routes, fares and timetables', 'Trips and revenue by route', 'Drivers and vehicle status']),
-      (Icons.local_shipping_rounded, 'Fleet owners & investors', ['What every vehicle earns', 'Active, maintenance, inactive', 'An end to under-remittance']),
-      (Icons.account_balance_rounded, 'Government / FCTA', ['Ridership trends across the FCT', 'Verified-vehicle register', 'Provider approvals and audit trail']),
+      (Icons.directions_bus_rounded, 'Transport operators', ['Routes, fares and timetables', 'AI income and demand analysis', 'Live traffic vs timetable']),
+      (Icons.local_shipping_rounded, 'Fleet owners & private drivers', ['What every vehicle earns', 'Idle-vehicle cost, worked out for you', 'Register with licence, plate and chassis']),
+      (Icons.account_balance_rounded, 'Government / FCTA', ['Ridership and demand hot-spots across the FCT', 'AI-checked partner applications', 'Verified-vehicle register and audit trail']),
     ];
     return MaxWidth(
       width: 1240,
@@ -848,7 +848,10 @@ class _ForPartners extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 28),
-          FilledButton(onPressed: () => context.go('/login?portal=partner'), child: const Text('Open the partner portal')),
+          Wrap(spacing: 12, runSpacing: 12, children: [
+            FilledButton.icon(onPressed: () => context.go('/partner/apply'), icon: const Icon(Icons.handshake_rounded, size: 18), label: const Text('Become a partner')),
+            OutlinedButton(onPressed: () => context.go('/login?portal=partner'), child: const Text('Partner sign-in')),
+          ]),
         ],
       ),
     );

@@ -2,19 +2,49 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import 'package:latlong2/latlong.dart';
+
+import 'analytics.dart';
+import 'api_client.dart';
 import 'backend/backend.dart';
 import 'dashboards.dart';
+import 'format.dart';
+import 'insights.dart';
+import 'location.dart';
 import 'models.dart';
+import 'partner_models.dart';
+import 'reminders.dart';
 
 enum LoadState { idle, loading, ready, error }
+
+/// When to leave for a booked trip, from real road travel time to the first stop.
+class LeavePlan {
+  const LeavePlan({required this.leaveAt, required this.travelMinutes, required this.fromLocation});
+  final DateTime leaveAt;
+  final int travelMinutes;
+
+  /// True when computed from the rider's actual location (otherwise an estimate).
+  final bool fromLocation;
+}
 
 /// Session, cached data and every user action. Screens read from here and call its
 /// methods; the [Backend] behind it decides what each role may see and do.
 class AppState extends ChangeNotifier {
-  AppState(this.backend, {DateTime Function()? clock}) : _clock = clock ?? DateTime.now;
+  AppState(this.backend, {DateTime Function()? clock, ReminderService? reminders, ApiClient? api})
+      : _clock = clock ?? DateTime.now,
+        reminders = reminders ?? ReminderService(null),
+        api = api ?? ApiClient(backend);
 
   final Backend backend;
   final DateTime Function() _clock;
+
+  /// Server API: AI assistant, document checks, road routing.
+  final ApiClient api;
+  final ReminderService reminders;
+
+  List<PartnerApplication> myApplications = const [];
+  List<PartnerApplication> partnerApplications = const [];
+  final Map<String, LeavePlan> leavePlans = {};
 
   AppUser? user;
   bool restoring = true;
@@ -90,6 +120,13 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  /// Re-reads the account (e.g. after a partner application is approved and the role changes).
+  Future<void> reloadUser() async {
+    user = await backend.restoreSession();
+    _notify();
+    await refresh();
+  }
+
   Future<void> sendPasswordReset(String email) => backend.sendPasswordReset(email);
 
   Future<void> signOut() async {
@@ -106,6 +143,9 @@ class AppState extends ChangeNotifier {
     partnerBookings = const [];
     audit = const [];
     users = const [];
+    myApplications = const [];
+    partnerApplications = const [];
+    leavePlans.clear();
     wallet = null;
     _notify();
   }
@@ -138,11 +178,13 @@ class AppState extends ChangeNotifier {
         partnerBookings = await backend.fetchPartnerBookings();
         audit = me.role.canVerify ? await backend.fetchAuditLog() : const [];
         users = me.role == UserRole.admin ? await backend.fetchUsers() : const [];
+        partnerApplications = me.role.canVerify ? await backend.fetchPartnerApplications() : const [];
       } else {
         final rider = await Future.wait<Object>([backend.fetchWallet(), backend.fetchMyBookings()]);
         wallet = rider[0] as Wallet;
         myBookings = rider[1] as List<Booking>;
       }
+      myApplications = await backend.fetchMyApplications();
       dataState = LoadState.ready;
     } on BackendException catch (e) {
       dataError = e.message;
@@ -181,10 +223,17 @@ class AppState extends ChangeNotifier {
     return [for (final r in routes) if (r.active && verified.contains(r.providerId)) r]..sort((a, b) => b.monthlyTrips.compareTo(a.monthlyTrips));
   }
 
-  List<Vehicle> get availableEvs => [
-        for (final v in vehicles)
-          if (v.kind == VehicleKind.evCar && v.verification == Verification.verified) v,
-      ]..sort((a, b) => a.status.index.compareTo(b.status.index));
+  /// Electric cars and verified private-driver cars riders can book.
+  List<Vehicle> get availableEvs {
+    final verified = {for (final p in providers) if (p.status == Verification.verified) p.id};
+    return [
+      for (final v in vehicles)
+        if (v.kind.isBookableCar && v.verification == Verification.verified && verified.contains(v.operatorId)) v,
+    ]..sort((a, b) => a.status.index.compareTo(b.status.index));
+  }
+
+  /// "Book your usual ride" suggestions learned from the rider's history.
+  List<RideSuggestion> get suggestions => RideInsights.suggestions(bookings: myBookings, routes: bookableRoutes, now: now);
 
   List<Booking> get upcomingTrips => [for (final b in myBookings) if (b.isUpcoming) b]..sort((a, b) => a.departureAt.compareTo(b.departureAt));
   List<Booking> get pastTrips => [for (final b in myBookings) if (!b.isUpcoming) b];
@@ -199,7 +248,70 @@ class AppState extends ChangeNotifier {
     myBookings = [booking, ...myBookings];
     wallet = await backend.fetchWallet();
     _notify();
+    unawaited(scheduleLeaveReminders(booking));
     return booking;
+  }
+
+  /// Works out when to leave (road time from the rider to the first stop) and schedules
+  /// a heads-up 10 minutes before plus a "leave now" reminder.
+  Future<LeavePlan?> scheduleLeaveReminders(Booking booking, {int? minutesBefore}) async {
+    final route = routeById(booking.routeId);
+    if (route == null || route.stops.isEmpty) return null;
+    final stop = route.stops.first;
+    final here = await currentLocation();
+    final from = (here != null && inFct(here)) ? here : null;
+    int minutes = 15; // a typical walk or keke ride to the stop when location is unknown
+    if (from != null) {
+      final plan = await api.roadRoute(from, LatLng(stop.lat, stop.lng), mode: 'driving');
+      if (plan != null) minutes = plan.minutes;
+    }
+    final leaveAt = booking.departureAt.subtract(Duration(minutes: minutes + 5));
+    final leave = LeavePlan(leaveAt: leaveAt, travelMinutes: minutes, fromLocation: from != null);
+    leavePlans[booking.id] = leave;
+
+    await reminders.requestPermission();
+    final what = '${Fmt.time(booking.departureAt)} ${route.name ?? '${route.origin} – ${route.destination}'}';
+    reminders.add(TripReminder(
+      id: '${booking.id}-heads-up',
+      bookingId: booking.id,
+      at: (minutesBefore != null ? booking.departureAt.subtract(Duration(minutes: minutesBefore)) : leaveAt.subtract(const Duration(minutes: 10))),
+      title: minutesBefore != null ? 'Your ride is in $minutesBefore min' : 'Leave in 10 minutes',
+      body: 'For your $what from ${stop.name}. About $minutes min to the stop.',
+    ));
+    reminders.add(TripReminder(
+      id: '${booking.id}-leave',
+      bookingId: booking.id,
+      at: leaveAt,
+      title: 'Time to leave for ${stop.name}',
+      body: 'Your $what departs at ${Fmt.time(booking.departureAt)}. Seat ${booking.seat ?? ''}'.trim(),
+    ));
+    _notify();
+    return leave;
+  }
+
+  // ------------------------------------------------------------ partner registration
+
+  Future<AiDocumentCheck> checkDocuments(PartnerApplication draft, List<DocumentFile> documents) => api.verifyDocuments(draft, documents);
+
+  Future<PartnerApplication> submitApplication(PartnerApplication draft, List<DocumentFile> documents) async {
+    final app = await backend.submitPartnerApplication(draft, documents);
+    myApplications = [app, ...myApplications.where((a) => a.id != app.id)];
+    _notify();
+    return app;
+  }
+
+  Future<void> reviewApplication(PartnerApplication app, ApplicationStatus decision, String note) async {
+    final updated = await backend.reviewPartnerApplication(app.id, decision, note);
+    partnerApplications = [for (final a in partnerApplications) a.id == updated.id ? updated : a];
+    if (decision == ApplicationStatus.approved) {
+      final results = await Future.wait<Object>([backend.fetchProviders(), backend.fetchVehicles(), backend.fetchAuditLog()]);
+      providers = results[0] as List<TransportProvider>;
+      vehicles = results[1] as List<Vehicle>;
+      audit = results[2] as List<AuditEntry>;
+    } else {
+      audit = await backend.fetchAuditLog();
+    }
+    _notify();
   }
 
   Future<Booking> bookElectric(Vehicle vehicle, {required String pickup, required String dropoff, required int fare, required PaymentMethod method}) async {
@@ -231,6 +343,8 @@ class AppState extends ChangeNotifier {
 
   Future<void> cancelBooking(Booking booking) async {
     final updated = await backend.cancelBooking(booking.id);
+    reminders.cancelFor(booking.id);
+    leavePlans.remove(booking.id);
     myBookings = [for (final b in myBookings) b.id == updated.id ? updated : b];
     wallet = await backend.fetchWallet();
     if (booking.kind == BookingKind.electric) vehicles = await backend.fetchVehicles();
@@ -302,6 +416,16 @@ class AppState extends ChangeNotifier {
     if (provider == null || base == null) return null;
     return Dashboards.fleet(provider: provider, vehicles: vehicles, bookings: partnerBookings, baselines: base, now: now);
   }
+
+  /// AI Insights figures for one provider, or the whole platform when [providerId] is null.
+  InsightsReport insightsFor(String? providerId) => Analytics.build(
+        providerId: providerId,
+        scopeName: providerById(providerId)?.name ?? 'All Abuja transport (FCTA view)',
+        routes: routes,
+        vehicles: vehicles,
+        bookings: partnerBookings,
+        now: now,
+      );
 
   FctaDashboard? fctaDashboard() {
     final base = baselines;

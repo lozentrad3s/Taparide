@@ -281,8 +281,16 @@ class _LoginPageState extends State<LoginPage> {
                 }),
                 child: Text(_register ? 'Already have an account? Sign in' : 'New to Tap A Ride? Create an account'),
               )
-            else
-              Text('Partner accounts are created by the platform team after your organisation is verified.', style: text.bodySmall, textAlign: TextAlign.center),
+            else ...[
+              OutlinedButton.icon(
+                onPressed: () => context.go('/partner/apply'),
+                icon: const Icon(Icons.handshake_rounded, size: 18),
+                label: const Text('Become a partner'),
+                style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+              ),
+              const SizedBox(height: 8),
+              Text('Private drivers, transport companies and government agencies apply here. Your dashboard opens once the FCTA approves you.', style: text.bodySmall, textAlign: TextAlign.center),
+            ],
             if (backend.isDemo) ...[
               const SizedBox(height: 24),
               _DemoAccounts(partner: partner, onPick: _fillDemo),

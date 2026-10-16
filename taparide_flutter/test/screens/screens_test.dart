@@ -120,7 +120,7 @@ void main() {
   testWidgets('admin portal', (t) async {
     await _app(t, desktop, email: 'admin@taparide.demo', portal: Portal.partner);
     await _shot(t, 'admin_overview_desktop');
-    for (final page in ['fcta', 'operator', 'fleet', 'providers', 'evs', 'routes', 'vehicles', 'verification', 'users']) {
+    for (final page in ['insights', 'applications', 'fcta', 'operator', 'fleet', 'providers', 'evs', 'routes', 'vehicles', 'verification', 'users']) {
       await _go(t, '/portal/$page');
       await _shot(t, 'admin_${page}_desktop');
     }
@@ -134,5 +134,29 @@ void main() {
   testWidgets('fcta phone', (t) async {
     await _app(t, phone, email: 'transport@fcta.demo', portal: Portal.partner);
     await _shot(t, 'fcta_phone');
+  });
+
+  testWidgets('partner apply', (t) async {
+    await _app(t, phone);
+    await _go(t, '/partner/apply');
+    await _shot(t, 'partner_apply_phone');
+  });
+
+  testWidgets('partner status', (t) async {
+    await _app(t, phone, email: 'musa@taparide.demo');
+    await _go(t, '/partner/status');
+    await _shot(t, 'partner_status_phone');
+  });
+
+  testWidgets('insights as admin', (t) async {
+    await _app(t, desktop, email: 'admin@taparide.demo', portal: Portal.partner);
+    await _go(t, '/portal/insights?provider=${DemoSeed.pMetro}');
+    await _shot(t, 'insights_metro_desktop');
+  });
+
+  testWidgets('insights as fleet owner', (t) async {
+    await _app(t, phone, email: 'fleet@greenfleet.demo', portal: Portal.partner);
+    await _go(t, '/portal/insights');
+    await _shot(t, 'insights_fleet_phone');
   });
 }

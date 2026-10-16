@@ -1,4 +1,5 @@
 import '../models.dart';
+import '../partner_models.dart';
 
 /// Illustrative demo data for Abuja. Organisations, people and figures are fictional
 /// (labelled "Demo data" in the UI); places and coordinates are real.
@@ -24,6 +25,8 @@ abstract final class DemoSeed {
     ('Tunde Bello · NaviRide Electric', 'ev@naviride.demo', UserRole.operator),
     ('Fatima Lawal · FCTA Transport', 'transport@fcta.demo', UserRole.government),
     ('Daniel Adeyemi · Platform admin', 'admin@taparide.demo', UserRole.admin),
+    ('Musa Abdullahi · driver applicant', 'musa@taparide.demo', UserRole.passenger),
+    ('Ngozi Eze · company applicant', 'ngozi@capitalcabs.demo', UserRole.passenger),
   ];
 
   static List<AppUser> users() => [
@@ -35,6 +38,8 @@ abstract final class DemoSeed {
         AppUser(id: 'u_admin', fullName: 'Daniel Adeyemi', email: 'admin@taparide.demo', phone: '+234 701 000 1212', role: UserRole.admin, createdAt: DateTime(2026, 6, 1)),
         AppUser(id: 'u_emeka', fullName: 'Emeka Nwosu', email: 'emeka@taparide.demo', role: UserRole.passenger, organisation: 'Banex Plaza offices', createdAt: DateTime(2026, 9, 2)),
         AppUser(id: 'u_zainab', fullName: 'Zainab Yusuf', email: 'zainab@taparide.demo', role: UserRole.passenger, organisation: 'Jabi tech hub', createdAt: DateTime(2026, 9, 11)),
+        AppUser(id: 'u_musa', fullName: 'Musa Abdullahi', email: 'musa@taparide.demo', phone: '+234 803 555 0101', role: UserRole.passenger, createdAt: DateTime(2026, 10, 10)),
+        AppUser(id: 'u_ngozi', fullName: 'Ngozi Eze', email: 'ngozi@capitalcabs.demo', phone: '+234 802 555 0202', role: UserRole.passenger, organisation: 'Capital City Cabs Ltd', createdAt: DateTime(2026, 10, 11)),
       ];
 
   static List<TransportProvider> providers() => [
@@ -197,10 +202,105 @@ abstract final class DemoSeed {
       b('bk_seed01', uAisha, 'Aisha Bello', 'r01', 'Wuse', 'Maitama', daysAgo(1, 8, 0), 500, 'v_abj021', BookingStatus.completed, seat: 'S08'),
       b('bk_seed02', uAisha, 'Aisha Bello', 'r02', 'Central Area', 'Gwarinpa', daysAgo(3, 17, 45), 700, 'v_abj015', BookingStatus.completed, seat: 'S21'),
       b('bk_seed03', uAisha, 'Aisha Bello', 'r03', 'Central Station', 'Idu', daysAgo(6, 9, 20), 600, 'v_amr1', BookingStatus.completed, seat: 'C3'),
+      // Aisha's weekday habit (Wuse to Maitama at 08:00) so the home screen can suggest booking early.
+      b('bk_seed08', uAisha, 'Aisha Bello', 'r01', 'Wuse', 'Maitama', daysAgo(2, 8, 0), 500, 'v_abj021', BookingStatus.completed, seat: 'S05'),
+      b('bk_seed09', uAisha, 'Aisha Bello', 'r01', 'Wuse', 'Maitama', daysAgo(4, 8, 0), 500, 'v_abj021', BookingStatus.completed, seat: 'S11'),
+      b('bk_seed10', uAisha, 'Aisha Bello', 'r02', 'Central Area', 'Gwarinpa', daysAgo(8, 17, 45), 700, 'v_abj015', BookingStatus.completed, seat: 'S02'),
       b('bk_seed04', 'u_emeka', 'Emeka Nwosu', 'r01', 'Wuse', 'Maitama', today.add(const Duration(hours: 8)), 500, 'v_abj021', BookingStatus.confirmed, seat: 'S14'),
       b('bk_seed05', 'u_zainab', 'Zainab Yusuf', 'r02', 'Central Area', 'Gwarinpa', today.add(const Duration(hours: 7, minutes: 45)), 700, 'v_abj015', BookingStatus.confirmed, seat: 'S03'),
       b('bk_seed06', 'u_emeka', 'Emeka Nwosu', 'r05', 'Nyanya', 'Central Area', today.add(const Duration(hours: 6, minutes: 40)), 600, 'v_abj010', BookingStatus.confirmed, seat: 'S30'),
       b('bk_seed07', 'u_zainab', 'Zainab Yusuf', 'r04', 'Kubwa', 'Central Area', today.add(const Duration(hours: 7)), 800, 'v_abj007', BookingStatus.confirmed, seat: 'S17'),
+    ];
+  }
+
+  /// Two applications waiting for FCTA review: a private driver and a taxi company.
+  static List<PartnerApplication> applications(DateTime now) {
+    DocumentFile doc(DocSlot slot) => DocumentFile(slot: slot, fileName: '${slot.wire}.jpg', mimeType: 'image/jpeg', path: 'seed/${slot.wire}.jpg');
+    AiFieldCheck check(String field, String result, String note, [String? entered, String? found]) => AiFieldCheck(field: field, result: result, note: note, entered: entered, found: found);
+    return [
+      PartnerApplication(
+        id: 'app_seed_driver',
+        userId: 'u_musa',
+        type: PartnerType.privateDriver,
+        status: ApplicationStatus.submitted,
+        fullName: 'Musa Abdullahi',
+        email: 'musa@taparide.demo',
+        phone: '+234 803 555 0101',
+        dateOfBirth: DateTime(1988, 4, 12),
+        address: '14 Ahmadu Bello Way',
+        area: 'Gwarinpa',
+        nin: '12345678901',
+        nextOfKinName: 'Hauwa Abdullahi',
+        nextOfKinPhone: '+234 806 555 0303',
+        licenceNumber: 'ABJ58213AA49',
+        licenceClass: 'B',
+        licenceExpiry: DateTime(2029, 3, 31),
+        vehicleMake: 'Toyota',
+        vehicleModel: 'Corolla',
+        vehicleYear: 2019,
+        vehicleColour: 'Silver',
+        plateNumber: 'GWA 482 KD',
+        chassisNumber: '2T1BURHE5KC214587',
+        engineNumber: '2ZR4471029',
+        seats: 4,
+        documents: [doc(DocSlot.licenceFront), doc(DocSlot.proofOfOwnership), doc(DocSlot.vehiclePhoto), doc(DocSlot.insurance)],
+        aiCheck: AiDocumentCheck(
+          overall: 'pass',
+          summary: 'Licence and vehicle papers match the details entered. Licence is valid until March 2029.',
+          checks: [
+            check('full_name', 'match', 'Name on licence matches.', 'Musa Abdullahi', 'MUSA ABDULLAHI'),
+            check('licence_number', 'match', 'Licence number matches.', 'ABJ58213AA49', 'ABJ58213AA49'),
+            check('licence_expiry', 'match', 'Valid for more than two years.', '2029-03-31', '31-03-2029'),
+            check('plate_number', 'match', 'Plate on proof of ownership and photo match.', 'GWA 482 KD', 'GWA-482-KD'),
+            check('chassis_number', 'match', 'VIN on proof of ownership matches.', '2T1BURHE5KC214587', '2T1BURHE5KC214587'),
+          ],
+          raw: const {},
+          checkedAt: now.subtract(const Duration(hours: 5)),
+          model: 'gemini (seed)',
+        ),
+        createdAt: now.subtract(const Duration(hours: 5)),
+      ),
+      PartnerApplication(
+        id: 'app_seed_company',
+        userId: 'u_ngozi',
+        type: PartnerType.fleetOwner,
+        status: ApplicationStatus.submitted,
+        fullName: 'Ngozi Eze',
+        email: 'ngozi@capitalcabs.demo',
+        phone: '+234 802 555 0202',
+        dateOfBirth: DateTime(1990),
+        address: 'Plot 22, Aminu Kano Crescent',
+        area: 'Wuse 2',
+        companyName: 'Capital City Cabs Ltd',
+        rcNumber: 'RC 1842207',
+        tin: '20481937-0001',
+        fleetSize: 38,
+        contactRole: 'Operations director',
+        licenceNumber: '',
+        licenceClass: '',
+        licenceExpiry: DateTime(2000),
+        vehicleMake: '',
+        vehicleModel: '',
+        vehicleYear: 0,
+        vehicleColour: '',
+        plateNumber: '',
+        chassisNumber: '',
+        seats: 0,
+        documents: [doc(DocSlot.cacCertificate), doc(DocSlot.operatingPermit), doc(DocSlot.insurance), doc(DocSlot.fleetList)],
+        aiCheck: AiDocumentCheck(
+          overall: 'review',
+          summary: 'CAC certificate matches the company name and RC number. The operating permit expires in 6 weeks; ask for the renewal.',
+          checks: [
+            check('company_name', 'match', 'Name on CAC certificate matches.', 'Capital City Cabs Ltd', 'CAPITAL CITY CABS LIMITED'),
+            check('rc_number', 'match', 'RC number matches.', 'RC 1842207', 'RC1842207'),
+            check('permit_expiry', 'expired', 'Operating permit expires soon (end of November 2026).'),
+          ],
+          raw: const {},
+          checkedAt: now.subtract(const Duration(days: 1, hours: 2)),
+          model: 'gemini (seed)',
+        ),
+        createdAt: now.subtract(const Duration(days: 1, hours: 2)),
+      ),
     ];
   }
 

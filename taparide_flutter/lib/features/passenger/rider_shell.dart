@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../shared/brand.dart';
 import '../../shared/ui.dart';
+import '../assistant/assistant_sheet.dart';
 
 /// Rider navigation: bottom bar on phones, a side rail on wide screens.
 class RiderShell extends StatelessWidget {
@@ -47,9 +48,11 @@ class RiderShell extends StatelessWidget {
           ),
           Expanded(child: shell),
         ]),
+        floatingActionButton: const AssistantButton(),
       );
     }
     return Scaffold(
+      floatingActionButton: const AssistantButton(),
       body: shell,
       bottomNavigationBar: NavigationBar(
         selectedIndex: shell.currentIndex,
