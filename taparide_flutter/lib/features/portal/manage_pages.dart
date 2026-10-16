@@ -144,20 +144,38 @@ class EvFleetPage extends StatelessWidget {
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(AppRadius.xl),
-          child: SizedBox(
-            height: 170,
-            child: Stack(fit: StackFit.expand, children: [
-              const PhotoView(AppPhoto.evCharging, alignment: Alignment(0, 0.1), overlay: LinearGradient(colors: [Color(0xEE06331F), Color(0x2206331F)])),
-              Padding(
+          child: Container(
+            color: AppColors.forestDeep,
+            child: LayoutBuilder(builder: (context, c) {
+              final figures = [
+                Figure(label: 'Electric vehicles', value: '${evs.length}', onDark: true, large: true),
+                Figure(label: 'Available now', value: '$available', onDark: true, large: true),
+                Figure(label: 'Charging', value: '$charging', onDark: true, large: true),
+                Figure(label: 'Avg battery', value: '$avg%', onDark: true, large: true),
+              ];
+              final grid = Padding(
                 padding: const EdgeInsets.all(22),
-                child: Row(children: [
-                  Expanded(child: Figure(label: 'Electric vehicles', value: '${evs.length}', onDark: true, large: true)),
-                  Expanded(child: Figure(label: 'Available now', value: '$available', onDark: true, large: true)),
-                  Expanded(child: Figure(label: 'Charging', value: '$charging', onDark: true, large: true)),
-                  Expanded(child: Figure(label: 'Avg battery', value: '$avg%', onDark: true, large: true)),
+                child: c.maxWidth >= 700
+                    ? Row(children: [for (final f in figures) Expanded(child: f)])
+                    : Wrap(runSpacing: 18, children: [for (final f in figures) SizedBox(width: (c.maxWidth - 44) / 2, child: f)]),
+              );
+              if (c.maxWidth < 700) return grid;
+              // Figures sit on solid green; the photo only fills the right-hand third.
+              return SizedBox(
+                height: 170,
+                child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  Expanded(flex: 65, child: Center(child: grid)),
+                  const Expanded(
+                    flex: 35,
+                    child: PhotoView(
+                      AppPhoto.evPlug,
+                      alignment: Alignment(0.2, 0),
+                      overlay: LinearGradient(colors: [AppColors.forestDeep, Color(0x0006331F)], stops: [0, 0.35]),
+                    ),
+                  ),
                 ]),
-              ),
-            ]),
+              );
+            }),
           ),
         ),
         const SizedBox(height: 18),
@@ -291,7 +309,7 @@ class PortalRoutesPage extends StatelessWidget {
           items: routes,
           columns: [
             Col('Route', flex: 5, (r) => Row(children: [
-                  StatusPill(r.code, tone: Tone.neutral),
+                  StatusPill(r.code, tone: Tone.brand),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

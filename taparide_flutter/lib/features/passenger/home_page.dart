@@ -247,7 +247,7 @@ class _TravelSmart extends StatelessWidget {
       borderRadius: BorderRadius.circular(AppRadius.xl),
       child: SizedBox(
         height: 168,
-        child: Row(children: [
+        child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Expanded(
             flex: 6,
             child: Container(
@@ -331,16 +331,14 @@ class _TagAlongBanner extends StatelessWidget {
       onTap: onOpen,
       semanticLabel: 'Tag Along. Share rides, save more.',
       child: Row(children: [
-        const SizedBox(width: 128, height: 156, child: PhotoView(AppPhoto.brtLifeCamp, alignment: Alignment(-0.2, -0.1))),
+        const SizedBox(width: 128, height: 156, child: PhotoView(AppPhoto.taxis, alignment: Alignment(-0.3, 0.1))),
         Expanded(
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Tag Along', style: text.labelMedium?.copyWith(color: AppColors.forest)),
-              const SizedBox(height: 4),
-              Text('Share Rides. Save More.', style: text.titleLarge),
+              Text('Tag Along', style: text.titleLarge),
               const SizedBox(height: 6),
-              Text('Ride home with verified colleagues who live near you.', style: text.bodySmall),
+              Text('Share rides, save more: ride home with verified colleagues who live near you.', style: text.bodySmall),
               const SizedBox(height: 10),
               Row(children: [
                 Text('Find a Ride', style: text.labelLarge?.copyWith(color: AppColors.forest)),

@@ -1,11 +1,11 @@
 {
-    "name": "taparide_flutter",
-    "short_name": "taparide_flutter",
+    "name": "Tap A Ride · Abuja Smart Mobility",
+    "short_name": "Tap A Ride",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#F2F6F3",
+    "theme_color": "#0B5A3A",
+    "description": "Book, pay and ride across Abuja with Tap A Ride.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

@@ -23,7 +23,7 @@ abstract final class AppColors {
   static const mint = Color(0xFFE6F2EA);
   static const mintStrong = Color(0xFFCDE6D5);
 
-  static const amber = Color(0xFFB7780A);
+  static const amber = Color(0xFF8A5A00);
   static const amberSoft = Color(0xFFFBF0D9);
   static const red = Color(0xFFC0392B);
   static const redSoft = Color(0xFFFBE5E2);
@@ -97,6 +97,10 @@ ThemeData buildAppTheme() {
     labelSmall: _t(12, FontWeight.w600, height: 1.2, spacing: 0.2, color: AppColors.muted),
   );
 
+  // Component themes use the fully resolved (Material-merged) styles so they match what
+  // widgets read from Theme.of(context); mixing the two breaks button text-style animations.
+  final resolved = ThemeData(useMaterial3: true, fontFamily: 'Barlow', fontFamilyFallback: _fallback, textTheme: textTheme).textTheme;
+
   final shape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md));
   final scheme = ColorScheme.fromSeed(
     seedColor: AppColors.forest,
@@ -140,7 +144,7 @@ ThemeData buildAppTheme() {
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: false,
-      titleTextStyle: textTheme.titleLarge,
+      titleTextStyle: resolved.titleLarge,
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: ButtonStyle(
@@ -154,7 +158,7 @@ ThemeData buildAppTheme() {
         ),
         minimumSize: WidgetStateProperty.all(const Size(48, 50)),
         padding: WidgetStateProperty.all(const EdgeInsets.symmetric(horizontal: 22, vertical: 14)),
-        textStyle: WidgetStateProperty.all(textTheme.labelLarge),
+        textStyle: WidgetStateProperty.all(resolved.labelLarge),
         shape: WidgetStateProperty.all(shape),
         elevation: WidgetStateProperty.all(0),
       ),
@@ -165,7 +169,7 @@ ThemeData buildAppTheme() {
         minimumSize: const Size(48, 50),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         side: const BorderSide(color: AppColors.lineStrong),
-        textStyle: textTheme.labelLarge,
+        textStyle: resolved.labelLarge,
         shape: shape,
       ),
     ),
@@ -173,7 +177,7 @@ ThemeData buildAppTheme() {
       style: TextButton.styleFrom(
         foregroundColor: AppColors.forest,
         minimumSize: const Size(48, 44),
-        textStyle: textTheme.labelLarge,
+        textStyle: resolved.labelLarge,
         shape: shape,
       ),
     ),
@@ -184,9 +188,9 @@ ThemeData buildAppTheme() {
       filled: true,
       fillColor: AppColors.surface,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      hintStyle: textTheme.bodyMedium?.copyWith(color: AppColors.faint),
-      labelStyle: textTheme.bodyMedium?.copyWith(color: AppColors.muted),
-      floatingLabelStyle: textTheme.labelMedium?.copyWith(color: AppColors.forest),
+      hintStyle: resolved.bodyMedium?.copyWith(color: AppColors.muted),
+      labelStyle: resolved.bodyMedium?.copyWith(color: AppColors.muted),
+      floatingLabelStyle: resolved.labelMedium?.copyWith(color: AppColors.forest),
       prefixIconColor: AppColors.muted,
       suffixIconColor: AppColors.muted,
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.md), borderSide: const BorderSide(color: AppColors.lineStrong)),
@@ -194,15 +198,15 @@ ThemeData buildAppTheme() {
       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.md), borderSide: const BorderSide(color: AppColors.forest, width: 1.8)),
       errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.md), borderSide: const BorderSide(color: AppColors.red)),
       focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.md), borderSide: const BorderSide(color: AppColors.red, width: 1.8)),
-      errorStyle: textTheme.bodySmall?.copyWith(color: AppColors.red),
+      errorStyle: resolved.bodySmall?.copyWith(color: AppColors.red),
     ),
     chipTheme: ChipThemeData(
       backgroundColor: AppColors.surface,
       selectedColor: AppColors.forest,
       disabledColor: AppColors.surfaceSunk,
       side: const BorderSide(color: AppColors.lineStrong),
-      labelStyle: textTheme.labelMedium,
-      secondaryLabelStyle: textTheme.labelMedium?.copyWith(color: Colors.white),
+      labelStyle: resolved.labelMedium,
+      secondaryLabelStyle: resolved.labelMedium?.copyWith(color: Colors.white),
       checkmarkColor: Colors.white,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
@@ -213,7 +217,7 @@ ThemeData buildAppTheme() {
       indicatorColor: AppColors.mint,
       height: 68,
       labelTextStyle: WidgetStateProperty.resolveWith(
-        (states) => textTheme.labelSmall?.copyWith(
+        (states) => resolved.labelSmall?.copyWith(
           color: states.contains(WidgetState.selected) ? AppColors.forest : AppColors.muted,
           fontWeight: states.contains(WidgetState.selected) ? FontWeight.w700 : FontWeight.w600,
         ),
@@ -227,8 +231,8 @@ ThemeData buildAppTheme() {
       indicatorColor: AppColors.mint,
       selectedIconTheme: const IconThemeData(color: AppColors.forest),
       unselectedIconTheme: const IconThemeData(color: AppColors.muted),
-      selectedLabelTextStyle: textTheme.labelMedium?.copyWith(color: AppColors.forest),
-      unselectedLabelTextStyle: textTheme.labelMedium?.copyWith(color: AppColors.muted),
+      selectedLabelTextStyle: resolved.labelMedium?.copyWith(color: AppColors.forest),
+      unselectedLabelTextStyle: resolved.labelMedium?.copyWith(color: AppColors.muted),
     ),
     segmentedButtonTheme: SegmentedButtonThemeData(
       style: ButtonStyle(
@@ -239,14 +243,14 @@ ThemeData buildAppTheme() {
           (states) => states.contains(WidgetState.selected) ? Colors.white : AppColors.inkSoft,
         ),
         side: WidgetStateProperty.all(const BorderSide(color: AppColors.lineStrong)),
-        textStyle: WidgetStateProperty.all(textTheme.labelMedium),
+        textStyle: WidgetStateProperty.all(resolved.labelMedium),
         minimumSize: WidgetStateProperty.all(const Size(48, 46)),
       ),
     ),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
       backgroundColor: AppColors.ink,
-      contentTextStyle: textTheme.bodyMedium?.copyWith(color: Colors.white),
+      contentTextStyle: resolved.bodyMedium?.copyWith(color: Colors.white),
       actionTextColor: AppColors.leaf,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
     ),
@@ -254,8 +258,8 @@ ThemeData buildAppTheme() {
       backgroundColor: AppColors.surface,
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.xl)),
-      titleTextStyle: textTheme.headlineSmall,
-      contentTextStyle: textTheme.bodyMedium,
+      titleTextStyle: resolved.headlineSmall,
+      contentTextStyle: resolved.bodyMedium,
     ),
     bottomSheetTheme: const BottomSheetThemeData(
       backgroundColor: AppColors.surface,
@@ -265,13 +269,13 @@ ThemeData buildAppTheme() {
     ),
     listTileTheme: ListTileThemeData(
       iconColor: AppColors.muted,
-      titleTextStyle: textTheme.titleSmall,
-      subtitleTextStyle: textTheme.bodySmall,
+      titleTextStyle: resolved.titleSmall,
+      subtitleTextStyle: resolved.bodySmall,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
     ),
     tooltipTheme: TooltipThemeData(
       decoration: BoxDecoration(color: AppColors.ink, borderRadius: BorderRadius.circular(AppRadius.sm)),
-      textStyle: textTheme.labelSmall?.copyWith(color: Colors.white),
+      textStyle: resolved.labelSmall?.copyWith(color: Colors.white),
     ),
     progressIndicatorTheme: const ProgressIndicatorThemeData(color: AppColors.forest, linearTrackColor: AppColors.mint),
     switchTheme: SwitchThemeData(

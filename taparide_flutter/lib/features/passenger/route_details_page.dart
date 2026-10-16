@@ -79,7 +79,7 @@ class _RouteDetailsPageState extends State<RouteDetailsPage> {
         Expanded(
           child: SingleChildScrollView(
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              SizedBox(height: 280, child: RouteMap(stops: route.stops, padding: const EdgeInsets.all(40))),
+              SizedBox(height: 280, child: RouteMap(stops: route.stops, padding: const EdgeInsets.fromLTRB(40, 72, 120, 56))),
               Transform.translate(
                 offset: const Offset(0, -18),
                 child: Container(
@@ -124,7 +124,7 @@ class _Details extends StatelessWidget {
                 if (route.name != null) Text('${route.origin} – ${route.destination}', style: text.bodySmall),
               ]),
             ),
-            StatusPill(route.code, tone: Tone.neutral),
+            StatusPill(route.code, tone: Tone.brand),
           ]),
           const SizedBox(height: 14),
           Row(children: [

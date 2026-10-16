@@ -1,3 +1,4 @@
+import 'format.dart';
 import 'models.dart';
 
 enum TripStatus { onTime, delayed, boarding, scheduled }
@@ -82,6 +83,7 @@ class RouteVolume {
 class FctaDashboard {
   const FctaDashboard({
     required this.ridershipByDay,
+    required this.dayLabels,
     required this.todayIndex,
     required this.ridershipDelta,
     required this.verifiedVehicles,
@@ -95,7 +97,9 @@ class FctaDashboard {
     required this.bookingsToday,
   });
 
+  /// The last seven days, oldest first, ending today.
   final List<int> ridershipByDay;
+  final List<String> dayLabels;
   final int todayIndex;
   final int ridershipDelta;
   final int verifiedVehicles;
@@ -216,9 +220,9 @@ abstract final class Dashboards {
   }) {
     final verifiedProviders = {for (final p in providers) if (p.status == Verification.verified) p.id};
     final live = _liveToday(bookings, now).toList();
-    final todayIndex = now.weekday - 1;
-    final byDay = [...baselines.ridershipByDay];
-    byDay[todayIndex] += live.length;
+    final byWeekday = [...baselines.ridershipByDay];
+    byWeekday[now.weekday - 1] += live.length;
+    final days = [for (var back = 6; back >= 0; back--) now.subtract(Duration(days: back))];
 
     final liveByRoute = <String, int>{};
     for (final b in live) {
@@ -233,8 +237,9 @@ abstract final class Dashboards {
     final platformRoutes = routes.where((r) => r.active && verifiedProviders.contains(r.providerId)).length;
 
     return FctaDashboard(
-      ridershipByDay: byDay,
-      todayIndex: todayIndex,
+      ridershipByDay: [for (final d in days) byWeekday[d.weekday - 1]],
+      dayLabels: [for (final d in days) Fmt.weekday(d)],
+      todayIndex: days.length - 1,
       ridershipDelta: baselines.ridershipDelta,
       verifiedVehicles: baselines.verifiedOffPlatform + platformVerified,
       verifiedDelta: baselines.verifiedDelta,

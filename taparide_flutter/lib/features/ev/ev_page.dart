@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
@@ -69,10 +70,11 @@ class EvPage extends StatelessWidget {
             backgroundColor: AppColors.forestDeep,
             foregroundColor: Colors.white,
             leading: const AppBackButton(color: Colors.white),
+            systemOverlayStyle: SystemUiOverlayStyle.light,
             title: Text('Electric vehicles', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white)),
             flexibleSpace: const FlexibleSpaceBar(
               background: PhotoView(
-                AppPhoto.evCharging,
+                AppPhoto.evPlug,
                 semanticLabel: 'An electric car plugged into a charging station',
                 overlay: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0x9906331F), Color(0x2206331F), Color(0xCC06331F)]),
               ),

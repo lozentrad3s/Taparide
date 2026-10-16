@@ -90,8 +90,22 @@ class Cols extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(builder: (context, c) {
         final count = ((c.maxWidth + gap) / (min + gap)).floor().clamp(1, max);
-        final width = (c.maxWidth - gap * (count - 1)) / count;
-        return Wrap(spacing: gap, runSpacing: gap, children: [for (final child in children) SizedBox(width: width, child: child)]);
+        // Rows of equal-height cells so figures and panels line up.
+        final rows = <Widget>[];
+        for (var start = 0; start < children.length; start += count) {
+          final cells = children.sublist(start, (start + count).clamp(0, children.length));
+          rows.add(IntrinsicHeight(
+            child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              for (var i = 0; i < count; i++) ...[
+                if (i > 0) SizedBox(width: gap),
+                Expanded(child: i < cells.length ? cells[i] : const SizedBox.shrink()),
+              ],
+            ]),
+          ));
+        }
+        return Column(children: [
+          for (var i = 0; i < rows.length; i++) ...[if (i > 0) SizedBox(height: gap), rows[i]],
+        ]);
       });
 }
 
@@ -182,7 +196,8 @@ class DataList<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (items.isEmpty) return empty ?? const EmptyState(icon: Icons.inbox_rounded, title: 'Nothing here yet', message: 'Records will appear here as they are created.');
+    if (items.isEmpty)
+      return empty ?? const EmptyState(icon: Icons.inbox_rounded, title: 'Nothing here yet', message: 'Records will appear here as they are created.');
     final text = Theme.of(context).textTheme;
     return LayoutBuilder(builder: (context, c) {
       if (c.maxWidth >= 760) {
@@ -198,7 +213,8 @@ class DataList<T> extends StatelessWidget {
                     flex: col.flex,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Text(col.label.toUpperCase(), style: text.labelSmall?.copyWith(letterSpacing: 0.6), textAlign: col.numeric ? TextAlign.right : TextAlign.left),
+                      child: Text(col.label.toUpperCase(),
+                          style: text.labelSmall?.copyWith(letterSpacing: 0.6), textAlign: col.numeric ? TextAlign.right : TextAlign.left),
                     ),
                   ),
                 if (trailing != null) const SizedBox(width: 160),

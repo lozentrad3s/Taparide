@@ -11,25 +11,29 @@ import '../../shared/ui.dart';
 /// One area of the partner portal and the roles allowed into it.
 /// The backend enforces the same rules; this only decides what to show.
 class PortalSection {
-  const PortalSection(this.path, this.label, this.icon, this.roles);
+  const PortalSection(this.path, this.label, this.icon, this.roles, {String? short}) : _short = short;
   final String path;
   final String label;
+  final String? _short;
+
+  /// Label for the phone navigation bar.
+  String get shortLabel => _short ?? label;
   final IconData icon;
   final Set<UserRole> roles;
 
   static const _partners = {UserRole.operator, UserRole.fleetOwner, UserRole.government, UserRole.admin};
 
   static const overview = PortalSection('/portal/overview', 'Overview', Icons.space_dashboard_rounded, {UserRole.admin});
-  static const fcta = PortalSection('/portal/fcta', 'FCTA dashboard', Icons.account_balance_rounded, {UserRole.government, UserRole.admin});
-  static const operator = PortalSection('/portal/operator', 'Operator dashboard', Icons.directions_bus_rounded, {UserRole.operator, UserRole.government, UserRole.admin});
-  static const fleet = PortalSection('/portal/fleet', 'Fleet owner dashboard', Icons.local_shipping_rounded, {UserRole.fleetOwner, UserRole.admin});
-  static const providers = PortalSection('/portal/providers', 'Transport providers', Icons.apartment_rounded, {UserRole.government, UserRole.admin});
-  static const evs = PortalSection('/portal/evs', 'Electric vehicles', Icons.electric_car_rounded, {UserRole.operator, UserRole.government, UserRole.admin});
-  static const routes = PortalSection('/portal/routes', 'Routes & fares', Icons.alt_route_rounded, {UserRole.operator, UserRole.government, UserRole.admin});
+  static const fcta = PortalSection('/portal/fcta', 'FCTA dashboard', Icons.account_balance_rounded, {UserRole.government, UserRole.admin}, short: 'FCTA');
+  static const operator = PortalSection('/portal/operator', 'Operator dashboard', Icons.directions_bus_rounded, {UserRole.operator, UserRole.government, UserRole.admin}, short: 'Dashboard');
+  static const fleet = PortalSection('/portal/fleet', 'Fleet owner dashboard', Icons.local_shipping_rounded, {UserRole.fleetOwner, UserRole.admin}, short: 'Fleet');
+  static const providers = PortalSection('/portal/providers', 'Transport providers', Icons.apartment_rounded, {UserRole.government, UserRole.admin}, short: 'Providers');
+  static const evs = PortalSection('/portal/evs', 'Electric vehicles', Icons.electric_car_rounded, {UserRole.operator, UserRole.government, UserRole.admin}, short: 'EVs');
+  static const routes = PortalSection('/portal/routes', 'Routes & fares', Icons.alt_route_rounded, {UserRole.operator, UserRole.government, UserRole.admin}, short: 'Routes');
   static const vehicles = PortalSection('/portal/vehicles', 'Vehicles', Icons.directions_car_filled_rounded, _partners);
-  static const bookings = PortalSection('/portal/bookings', 'Bookings & trips', Icons.confirmation_number_rounded, _partners);
+  static const bookings = PortalSection('/portal/bookings', 'Bookings & trips', Icons.confirmation_number_rounded, _partners, short: 'Bookings');
   static const verification = PortalSection('/portal/verification', 'Verification', Icons.verified_user_rounded, {UserRole.government, UserRole.admin});
-  static const users = PortalSection('/portal/users', 'Users & roles', Icons.manage_accounts_rounded, {UserRole.admin});
+  static const users = PortalSection('/portal/users', 'Users & roles', Icons.manage_accounts_rounded, {UserRole.admin}, short: 'Users');
   static const audit = PortalSection('/portal/audit', 'Audit log', Icons.history_rounded, {UserRole.government, UserRole.admin});
 
   static const all = [overview, fcta, operator, fleet, providers, evs, routes, vehicles, bookings, verification, users, audit];
@@ -98,14 +102,12 @@ class PortalShell extends StatelessWidget {
           }
         },
         destinations: [
-          for (final s in primary) NavigationDestination(icon: Icon(s.icon), label: _short(s.label)),
+          for (final s in primary) NavigationDestination(icon: Icon(s.icon), label: s.shortLabel),
           const NavigationDestination(icon: Icon(Icons.more_horiz_rounded), label: 'More'),
         ],
       ),
     );
   }
-
-  static String _short(String label) => label.replaceAll(' dashboard', '').replaceAll('Transport ', '');
 
   void _openMore(BuildContext context, AppUser user, List<PortalSection> sections, PortalSection? current) {
     showModalBottomSheet<void>(

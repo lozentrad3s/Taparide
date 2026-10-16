@@ -44,7 +44,10 @@ class _RoutesPageState extends State<RoutesPage> {
     final text = Theme.of(context).textTheme;
     final wide = isWide(context, 900);
     final q = _query.text.trim();
-    final results = [for (final r in state.bookableRoutes) if ((_mode == null || r.mode == _mode) && _matches(r, q)) r];
+    final results = [
+      for (final r in state.bookableRoutes)
+        if ((_mode == null || r.mode == _mode) && _matches(r, q)) r
+    ];
 
     return Scaffold(
       body: SafeArea(
@@ -76,17 +79,20 @@ class _RoutesPageState extends State<RoutesPage> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Wrap(spacing: 8, runSpacing: 8, children: [
-                    for (final option in <TransitMode?>[null, ...TransitMode.values])
-                      ChoiceChip(
-                        label: Text(option?.label ?? 'All'),
-                        avatar: option == null ? null : Icon(option.icon, size: 16, color: _mode == option ? Colors.white : AppColors.forest),
-                        selected: _mode == option,
-                        showCheckmark: false,
-                        labelStyle: TextStyle(color: _mode == option ? Colors.white : AppColors.ink, fontWeight: FontWeight.w700),
-                        onSelected: (_) => setState(() => _mode = option),
-                      ),
-                  ]),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Wrap(spacing: 8, children: [
+                      for (final option in <TransitMode?>[null, ...TransitMode.values])
+                        ChoiceChip(
+                          label: Text(option?.label ?? 'All'),
+                          avatar: option == null ? null : Icon(option.icon, size: 16, color: _mode == option ? Colors.white : AppColors.forest),
+                          selected: _mode == option,
+                          showCheckmark: false,
+                          labelStyle: TextStyle(color: _mode == option ? Colors.white : AppColors.ink, fontWeight: FontWeight.w700),
+                          onSelected: (_) => setState(() => _mode = option),
+                        ),
+                    ]),
+                  ),
                   const SizedBox(height: 14),
                   Text('${results.length} ${results.length == 1 ? 'route' : 'routes'}', style: text.labelMedium?.copyWith(color: AppColors.muted)),
                 ]),

@@ -62,6 +62,14 @@ void main() {
     return;
   }
 
+  testWidgets('landing full page', (t) async {
+    await _app(t, const Size(390, 6400));
+    await _shot(t, 'mobile_full');
+    t.view.physicalSize = const Size(1440, 4400);
+    await t.pumpAndSettle();
+    await _shot(t, 'landing_desktop_full');
+  });
+
   testWidgets('login', (t) async {
     await _app(t, desktop);
     await _go(t, '/login');
@@ -73,6 +81,12 @@ void main() {
   testWidgets('rider phone screens', (t) async {
     final state = await _app(t, phone, email: 'aisha@taparide.demo');
     await _shot(t, 'rider_home_phone');
+    await t.drag(find.byType(ListView).first, const Offset(0, -560));
+    await t.pumpAndSettle();
+    await _shot(t, 'rider_home_phone_scrolled');
+    await t.drag(find.byType(ListView).first, const Offset(0, -1200));
+    await t.pumpAndSettle();
+    await _shot(t, 'rider_home_phone_bottom');
     await _go(t, '/app/routes');
     await _shot(t, 'rider_routes_phone');
     await _go(t, '/ride/r01');

@@ -86,10 +86,17 @@ class _TagAlongPageState extends State<TagAlongPage> {
                     ? Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
                         Expanded(child: intro),
                         const SizedBox(width: 36),
-                        const Expanded(child: SizedBox(height: 400, child: PhotoView(AppPhoto.brtLifeCamp, radius: AppRadius.xl, alignment: Alignment(-0.1, -0.2), semanticLabel: 'Commuters boarding a green bus at Life Camp, Abuja'))),
+                        const Expanded(
+                            child: SizedBox(
+                                height: 400,
+                                child: PhotoView(AppPhoto.taxis,
+                                    radius: AppRadius.xl, alignment: Alignment(-0.2, 0), semanticLabel: 'Green and white Abuja taxis on the road'))),
                       ])
                     : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                        const SizedBox(height: 210, child: PhotoView(AppPhoto.brtLifeCamp, radius: AppRadius.xl, alignment: Alignment(-0.1, -0.35), semanticLabel: 'Commuters boarding a green bus at Life Camp, Abuja')),
+                        const SizedBox(
+                            height: 210,
+                            child: PhotoView(AppPhoto.taxis,
+                                radius: AppRadius.xl, alignment: Alignment(-0.2, 0.2), semanticLabel: 'Green and white Abuja taxis on the road')),
                         const SizedBox(height: 20),
                         intro,
                       ]),
@@ -102,13 +109,25 @@ class _TagAlongPageState extends State<TagAlongPage> {
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                   SectionHeader(title: 'Rides leaving soon', subtitle: '${rides.length} shared rides from verified colleagues'),
                   if (rides.isEmpty)
-                    const EmptyState(icon: Icons.groups_rounded, title: 'No rides yet today', message: 'Be the first: offer your empty seats to colleagues going your way.')
+                    const EmptyState(
+                        icon: Icons.groups_rounded, title: 'No rides yet today', message: 'Be the first: offer your empty seats to colleagues going your way.')
                   else
-                    Wrap(spacing: 14, runSpacing: 14, children: [
-                      for (final ride in rides)
-                        SizedBox(
-                          width: wide ? (1080 - 64 - 14) / 2 : double.infinity,
-                          child: _RideCard(ride: ride, mine: ride.hostId == me.id, request: state.bookingForRide(ride.id)),
+                    Column(children: [
+                      for (var i = 0; i < rides.length; i += wide ? 2 : 1)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 14),
+                          child: IntrinsicHeight(
+                            child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                              for (var j = i; j < i + (wide ? 2 : 1); j++) ...[
+                                if (j > i) const SizedBox(width: 14),
+                                Expanded(
+                                  child: j < rides.length
+                                      ? _RideCard(ride: rides[j], mine: rides[j].hostId == me.id, request: state.bookingForRide(rides[j].id))
+                                      : const SizedBox.shrink(),
+                                ),
+                              ],
+                            ]),
+                          ),
                         ),
                     ]),
                 ]),
@@ -158,7 +177,9 @@ class _RideCardState extends State<_RideCard> {
       action = FilledButton(
         onPressed: full || _busy ? null : _join,
         style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
-        child: _busy ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white)) : Text(full ? 'Full' : 'Request to join'),
+        child: _busy
+            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+            : Text(full ? 'Full' : 'Request to join'),
       );
     }
 
@@ -190,7 +211,8 @@ class _RideCardState extends State<_RideCard> {
         Row(children: [
           Icon(Icons.event_seat_rounded, size: 18, color: full ? AppColors.red : AppColors.leafText),
           const SizedBox(width: 6),
-          Text(full ? 'No seats left' : '${ride.seatsLeft} of ${ride.seatsTotal} seats left', style: text.labelMedium?.copyWith(color: full ? AppColors.red : AppColors.leafText)),
+          Text(full ? 'No seats left' : '${ride.seatsLeft} of ${ride.seatsTotal} seats left',
+              style: text.labelMedium?.copyWith(color: full ? AppColors.red : AppColors.leafText)),
           const Spacer(),
           action,
         ]),
@@ -274,9 +296,12 @@ class _OfferRideSheetState extends State<_OfferRideSheet> {
             Text('Share your empty seats with verified colleagues going your way.', style: text.bodySmall),
             const SizedBox(height: 18),
             Row(children: [
-              Expanded(child: TextFormField(controller: _origin, decoration: const InputDecoration(labelText: 'From', hintText: 'Wuse 2'), validator: required)),
+              Expanded(
+                  child: TextFormField(controller: _origin, decoration: const InputDecoration(labelText: 'From', hintText: 'Wuse 2'), validator: required)),
               const SizedBox(width: 10),
-              Expanded(child: TextFormField(controller: _destination, decoration: const InputDecoration(labelText: 'To', hintText: 'Gwarinpa'), validator: required)),
+              Expanded(
+                  child:
+                      TextFormField(controller: _destination, decoration: const InputDecoration(labelText: 'To', hintText: 'Gwarinpa'), validator: required)),
             ]),
             const SizedBox(height: 12),
             TextFormField(controller: _vehicle, decoration: const InputDecoration(labelText: 'Car', hintText: 'Toyota Corolla · silver'), validator: required),
@@ -313,13 +338,17 @@ class _OfferRideSheetState extends State<_OfferRideSheet> {
               label: Fmt.naira(_share),
               onChanged: (v) => setState(() => _share = v.round()),
             ),
-            TextFormField(controller: _note, decoration: const InputDecoration(labelText: 'Meeting point (optional)', hintText: 'Federal Secretariat car park')),
-            if (_error != null) Padding(padding: const EdgeInsets.only(top: 10), child: Text(_error!, style: const TextStyle(color: AppColors.red, fontWeight: FontWeight.w600))),
+            TextFormField(
+                controller: _note, decoration: const InputDecoration(labelText: 'Meeting point (optional)', hintText: 'Federal Secretariat car park')),
+            if (_error != null)
+              Padding(padding: const EdgeInsets.only(top: 10), child: Text(_error!, style: const TextStyle(color: AppColors.red, fontWeight: FontWeight.w600))),
             const SizedBox(height: 16),
             FilledButton(
               onPressed: _busy ? null : _submit,
               style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
-              child: _busy ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white)) : const Text('List my ride'),
+              child: _busy
+                  ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+                  : const Text('List my ride'),
             ),
           ]),
         ),

@@ -38,6 +38,16 @@ class _LoginPageState extends State<LoginPage> {
   BackendException? _error;
 
   @override
+  void didUpdateWidget(covariant LoginPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // The router reuses this page when only the query changes (e.g. ?portal=partner).
+    if (oldWidget.portal != widget.portal || oldWidget.startInRegister != widget.startInRegister) {
+      _setPortal(widget.portal);
+      _register = widget.startInRegister && widget.portal == Portal.passenger;
+    }
+  }
+
+  @override
   void dispose() {
     for (final c in [_email, _password, _name, _phone, _organisation]) {
       c.dispose();
@@ -410,10 +420,10 @@ class _SidePhoto extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     return Stack(fit: StackFit.expand, children: [
       PhotoView(
-        partner ? AppPhoto.expressway : AppPhoto.cityGateWelcome,
-        alignment: partner ? Alignment.center : const Alignment(0, -0.3),
-        semanticLabel: partner ? 'Abuja expressway with Aso Rock in the distance' : 'The "You are welcome" arch of Abuja City Gate',
-        overlay: const LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0x6606331F), Color(0x2206331F), Color(0xEE06331F)], stops: [0, 0.4, 1]),
+        partner ? AppPhoto.expressway : AppPhoto.cityGateAerial,
+        alignment: partner ? Alignment.center : const Alignment(0.3, 0),
+        semanticLabel: partner ? 'Abuja expressway with Aso Rock in the distance' : 'Abuja City Gate with green lawns and flags',
+        overlay: const LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xA606331F), Color(0x1106331F), Color(0x2206331F), Color(0xEE06331F)], stops: [0, 0.22, 0.5, 1]),
       ),
       Padding(
         padding: const EdgeInsets.all(40),
@@ -446,8 +456,8 @@ class _MobileHeader extends StatelessWidget {
       height: 190 + top,
       child: Stack(fit: StackFit.expand, children: [
         const PhotoView(
-          AppPhoto.cityGateWelcome,
-          alignment: Alignment(0, -0.4),
+          AppPhoto.cityGateAerial,
+          alignment: Alignment(0.3, 0),
           overlay: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0x8806331F), Color(0xCC06331F)]),
         ),
         Padding(

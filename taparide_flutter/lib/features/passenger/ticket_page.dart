@@ -34,7 +34,8 @@ class TicketPage extends StatelessWidget {
       ),
     );
     if (ok != true || !context.mounted) return;
-    await attemptOk(context, () => context.read<AppState>().cancelBooking(booking), success: refund ? 'Booking cancelled · ${Fmt.naira(booking.fare)} refunded' : 'Request withdrawn');
+    await attemptOk(context, () => context.read<AppState>().cancelBooking(booking),
+        success: refund ? 'Booking cancelled · ${Fmt.naira(booking.fare)} refunded' : 'Request withdrawn');
   }
 
   Future<void> _share(BuildContext context, Booking booking, Vehicle? vehicle) async {
@@ -56,7 +57,12 @@ class TicketPage extends StatelessWidget {
     if (booking == null) {
       return Scaffold(
         appBar: AppBar(leading: const AppBackButton(fallback: '/app/trips'), title: const Text('Ticket')),
-        body: EmptyState(icon: Icons.confirmation_number_outlined, title: 'Ticket not found', message: 'It may belong to another account.', action: 'My trips', onAction: () => context.go('/app/trips')),
+        body: EmptyState(
+            icon: Icons.confirmation_number_outlined,
+            title: 'Ticket not found',
+            message: 'It may belong to another account.',
+            action: 'My trips',
+            onAction: () => context.go('/app/trips')),
       );
     }
     final vehicle = state.vehicleById(booking.vehicleId);
@@ -68,101 +74,121 @@ class TicketPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(leading: const AppBackButton(fallback: '/app/trips'), title: Text(booking.kind == BookingKind.tagAlong ? 'Tag Along' : 'Your ticket')),
-      body: SingleChildScrollView(
-        child: MaxWidth(
-          width: 520,
-          padding: const EdgeInsets.fromLTRB(18, 4, 18, 32),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(AppRadius.xl),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                Container(
-                  color: open ? AppColors.forest : AppColors.inkSoft,
-                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Row(children: [
-                      Icon(booking.kind.icon, color: Colors.white, size: 20),
-                      const SizedBox(width: 8),
-                      Text(booking.title ?? booking.kind.label, style: text.labelLarge?.copyWith(color: Colors.white)),
-                      const Spacer(),
-                      StatusPill(booking.status.label, tone: open ? (booking.status == BookingStatus.requested ? Tone.warning : Tone.success) : BookingTile.toneFor(booking.status)),
+      body: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          child: MaxWidth(
+            width: 520,
+            padding: const EdgeInsets.fromLTRB(18, 4, 18, 32),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(AppRadius.xl),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  Container(
+                    color: open ? AppColors.forest : AppColors.inkSoft,
+                    padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Row(children: [
+                        Icon(booking.kind.icon, color: Colors.white, size: 20),
+                        const SizedBox(width: 8),
+                        Text(booking.title ?? booking.kind.label, style: text.labelLarge?.copyWith(color: Colors.white)),
+                        const Spacer(),
+                        StatusPill(booking.status.label,
+                            tone: open ? (booking.status == BookingStatus.requested ? Tone.warning : Tone.success) : BookingTile.toneFor(booking.status)),
+                      ]),
+                      const SizedBox(height: 16),
+                      RouteStrip(origin: booking.origin, destination: booking.destination, color: AppColors.leaf, textColor: Colors.white),
+                      const SizedBox(height: 16),
+                      Wrap(spacing: 28, runSpacing: 12, children: [
+                        _Fact(label: booking.kind == BookingKind.electric ? 'Pickup' : 'Departs', value: Fmt.dayTime(booking.departureAt)),
+                        if (booking.seat != null) _Fact(label: 'Seat', value: booking.seat!),
+                        _Fact(label: booking.kind == BookingKind.tagAlong ? 'Your share' : 'Fare paid', value: Fmt.naira(booking.fare)),
+                      ]),
                     ]),
-                    const SizedBox(height: 16),
-                    RouteStrip(origin: booking.origin, destination: booking.destination, color: AppColors.leaf, textColor: Colors.white),
-                    const SizedBox(height: 16),
-                    Wrap(spacing: 28, runSpacing: 12, children: [
-                      _Fact(label: booking.kind == BookingKind.electric ? 'Pickup' : 'Departs', value: Fmt.dayTime(booking.departureAt)),
-                      if (booking.seat != null) _Fact(label: 'Seat', value: booking.seat!),
-                      _Fact(label: booking.kind == BookingKind.tagAlong ? 'Your share' : 'Fare paid', value: Fmt.naira(booking.fare)),
+                  ),
+                  _Perforation(color: open ? AppColors.forest : AppColors.inkSoft),
+                  Container(
+                    color: AppColors.surface,
+                    padding: const EdgeInsets.all(20),
+                    child: Column(children: [
+                      if (showQr) ...[
+                        TicketQr(data: booking.qrPayload, size: 210),
+                        const SizedBox(height: 12),
+                        Text(booking.ticketCode, style: text.titleLarge?.copyWith(letterSpacing: 2, fontFeatures: tabular)),
+                        const SizedBox(height: 4),
+                        Text('Show this code to the conductor or tap your card at the terminal.', style: text.bodySmall, textAlign: TextAlign.center),
+                      ] else if (booking.kind == BookingKind.tagAlong) ...[
+                        Icon(booking.status == BookingStatus.accepted ? Icons.check_circle_rounded : Icons.hourglass_top_rounded,
+                            color: AppColors.forest, size: 40),
+                        const SizedBox(height: 10),
+                        Text(
+                          switch (booking.status) {
+                            BookingStatus.requested => 'Waiting for ${ride?.hostName ?? 'the host'} to accept. Hosts usually reply within minutes.',
+                            BookingStatus.accepted => '${ride?.hostName ?? 'The host'} accepted. Meet at ${booking.origin} a few minutes before departure.',
+                            _ => 'This request is ${booking.status.label.toLowerCase()}.',
+                          },
+                          style: text.bodyMedium,
+                          textAlign: TextAlign.center,
+                        ),
+                      ] else
+                        Text('This ticket is ${booking.status.label.toLowerCase()}.', style: text.bodyMedium),
                     ]),
-                  ]),
-                ),
-                _Perforation(color: open ? AppColors.forest : AppColors.inkSoft),
-                Container(
-                  color: AppColors.surface,
-                  padding: const EdgeInsets.all(20),
-                  child: Column(children: [
-                    if (showQr) ...[
-                      TicketQr(data: booking.qrPayload, size: 210),
-                      const SizedBox(height: 12),
-                      Text(booking.ticketCode, style: text.titleLarge?.copyWith(letterSpacing: 2, fontFeatures: tabular)),
-                      const SizedBox(height: 4),
-                      Text('Show this code to the conductor or tap your card at the terminal.', style: text.bodySmall, textAlign: TextAlign.center),
-                    ] else if (booking.kind == BookingKind.tagAlong) ...[
-                      Icon(booking.status == BookingStatus.accepted ? Icons.check_circle_rounded : Icons.hourglass_top_rounded, color: AppColors.forest, size: 40),
-                      const SizedBox(height: 10),
-                      Text(
-                        switch (booking.status) {
-                          BookingStatus.requested => 'Waiting for ${ride?.hostName ?? 'the host'} to accept. Hosts usually reply within minutes.',
-                          BookingStatus.accepted => '${ride?.hostName ?? 'The host'} accepted. Meet at ${booking.origin} a few minutes before departure.',
-                          _ => 'This request is ${booking.status.label.toLowerCase()}.',
-                        },
-                        style: text.bodyMedium,
-                        textAlign: TextAlign.center,
-                      ),
-                    ] else
-                      Text('This ticket is ${booking.status.label.toLowerCase()}.', style: text.bodyMedium),
-                  ]),
-                ),
-              ]),
-            ),
-            const SizedBox(height: 18),
-            Panel(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Trip details', style: text.titleMedium),
-                const SizedBox(height: 8),
-                if (provider != null) _DetailRow(icon: Icons.business_rounded, label: 'Operator', value: provider.name, trailing: provider.status == Verification.verified ? const StatusPill('Verified', tone: Tone.success, icon: Icons.verified_rounded) : null),
-                if (vehicle != null) _DetailRow(icon: vehicle.kind.icon, label: 'Vehicle', value: vehicle.displayName, trailing: vehicle.verification == Verification.verified ? const StatusPill('On FCTA register', tone: Tone.success) : null),
-                if (vehicle?.driverName != null) _DetailRow(icon: Icons.badge_outlined, label: 'Driver', value: vehicle!.driverName!),
-                if (ride != null) ...[
-                  _DetailRow(icon: Icons.person_rounded, label: 'Host', value: '${ride.hostName} · ${ride.hostOrg}'),
-                  _DetailRow(icon: Icons.directions_car_rounded, label: 'Car', value: ride.vehicleLabel),
-                ],
-                _DetailRow(icon: Icons.payments_outlined, label: 'Payment', value: booking.paymentMethod.label),
-              ]),
-            ),
-            const SizedBox(height: 18),
-            Row(children: [
-              Expanded(child: OutlinedButton.icon(onPressed: () => _share(context, booking, vehicle), icon: const Icon(Icons.ios_share_rounded, size: 18), label: const Text('Share trip'))),
-              const SizedBox(width: 10),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => launchUrl(Uri(scheme: 'tel', path: '112')),
-                  style: OutlinedButton.styleFrom(foregroundColor: AppColors.red, side: const BorderSide(color: AppColors.redSoft, width: 1.5)),
-                  icon: const Icon(Icons.sos_rounded, size: 18),
-                  label: const Text('Emergency 112'),
-                ),
+                  ),
+                ]),
               ),
+              const SizedBox(height: 18),
+              Panel(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Trip details', style: text.titleMedium),
+                  const SizedBox(height: 8),
+                  if (provider != null)
+                    _DetailRow(
+                        icon: Icons.business_rounded,
+                        label: 'Operator',
+                        value: provider.name,
+                        trailing:
+                            provider.status == Verification.verified ? const StatusPill('Verified', tone: Tone.success, icon: Icons.verified_rounded) : null),
+                  if (vehicle != null)
+                    _DetailRow(
+                        icon: vehicle.kind.icon,
+                        label: 'Vehicle',
+                        value: vehicle.displayName,
+                        trailing: vehicle.verification == Verification.verified ? const StatusPill('On FCTA register', tone: Tone.success) : null),
+                  if (vehicle?.driverName != null) _DetailRow(icon: Icons.badge_outlined, label: 'Driver', value: vehicle!.driverName!),
+                  if (ride != null) ...[
+                    _DetailRow(icon: Icons.person_rounded, label: 'Host', value: '${ride.hostName} · ${ride.hostOrg}'),
+                    _DetailRow(icon: Icons.directions_car_rounded, label: 'Car', value: ride.vehicleLabel),
+                  ],
+                  _DetailRow(icon: Icons.payments_outlined, label: 'Payment', value: booking.paymentMethod.label),
+                ]),
+              ),
+              const SizedBox(height: 18),
+              Row(children: [
+                Expanded(
+                    child: OutlinedButton.icon(
+                        onPressed: () => _share(context, booking, vehicle),
+                        icon: const Icon(Icons.ios_share_rounded, size: 18),
+                        label: const Text('Share trip'))),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => launchUrl(Uri(scheme: 'tel', path: '112')),
+                    style: OutlinedButton.styleFrom(foregroundColor: AppColors.red, side: const BorderSide(color: AppColors.redSoft, width: 1.5)),
+                    icon: const Icon(Icons.sos_rounded, size: 18),
+                    label: const Text('Emergency 112'),
+                  ),
+                ),
+              ]),
+              if (open) ...[
+                const SizedBox(height: 10),
+                TextButton(
+                  onPressed: () => _cancel(context, booking),
+                  style: TextButton.styleFrom(foregroundColor: AppColors.red),
+                  child: Text(booking.kind == BookingKind.tagAlong ? 'Withdraw request' : 'Cancel booking'),
+                ),
+              ],
             ]),
-            if (open) ...[
-              const SizedBox(height: 10),
-              TextButton(
-                onPressed: () => _cancel(context, booking),
-                style: TextButton.styleFrom(foregroundColor: AppColors.red),
-                child: Text(booking.kind == BookingKind.tagAlong ? 'Withdraw request' : 'Cancel booking'),
-              ),
-            ],
-          ]),
+          ),
         ),
       ),
     );

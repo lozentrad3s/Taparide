@@ -78,7 +78,7 @@ class _LandingPageState extends State<LandingPage> {
           controller: _scroll,
           slivers: [
             SliverToBoxAdapter(child: _TopBar(wide: wide, links: nav, onStart: _start)),
-            SliverToBoxAdapter(child: _Hero(wide: wide, routes: routes, onStart: _start, onRoute: _openRoute)),
+            SliverToBoxAdapter(child: _Hero(wide: wide, routes: routes, onStart: _start)),
             const SliverToBoxAdapter(child: _FeatureStrip()),
             SliverToBoxAdapter(child: KeyedSubtree(key: _routesKey, child: _HowItWorks(wide: wide, routes: routes, onRoute: _openRoute))),
             SliverToBoxAdapter(child: KeyedSubtree(key: _operatorsKey, child: _EveryoneConnected(wide: wide))),
@@ -136,6 +136,7 @@ class _TopBar extends StatelessWidget {
           if (wide) ...[
             for (final (label, action) in links.items)
               TextButton(
+                key: ValueKey('nav-$label'),
                 onPressed: action,
                 style: TextButton.styleFrom(foregroundColor: AppColors.inkSoft, textStyle: text.labelLarge?.copyWith(fontWeight: FontWeight.w600)),
                 child: Text(label),
@@ -145,7 +146,7 @@ class _TopBar extends StatelessWidget {
             const SizedBox(width: 6),
             FilledButton(onPressed: onStart, child: Text(user == null ? 'Get Started' : 'Open my dashboard')),
           ] else ...[
-            if (user == null) TextButton(onPressed: () => context.go('/login'), child: const Text('Log in')),
+            if (user == null) TextButton(key: const ValueKey('login-compact'), onPressed: () => context.go('/login'), child: const Text('Log in')),
             IconButton(
               tooltip: 'Menu',
               icon: const Icon(Icons.menu_rounded),
@@ -187,11 +188,10 @@ class _TopBar extends StatelessWidget {
 // ------------------------------------------------------------------ hero
 
 class _Hero extends StatefulWidget {
-  const _Hero({required this.wide, required this.routes, required this.onStart, required this.onRoute});
+  const _Hero({required this.wide, required this.routes, required this.onStart});
   final bool wide;
   final List<TransitRoute> routes;
   final VoidCallback onStart;
-  final ValueChanged<TransitRoute> onRoute;
 
   @override
   State<_Hero> createState() => _HeroState();
@@ -269,12 +269,11 @@ class _HeroState extends State<_Hero> with SingleTickerProviderStateMixin {
             ),
           ]),
         ),
-        const SizedBox(height: 30),
-        _rise(0.32, _QuickRoutes(routes: widget.routes, onRoute: widget.onRoute)),
       ],
     );
 
-    final visual = _rise(0.08, _HeroVisual(wide: wide, route: widget.routes.isEmpty ? null : widget.routes.first));
+    final featured = widget.routes.where((r) => r.mode == TransitMode.rail).firstOrNull ?? widget.routes.firstOrNull;
+    final visual = _rise(0.08, _HeroVisual(wide: wide, route: featured));
 
     return MaxWidth(
       width: 1240,
@@ -289,54 +288,6 @@ class _HeroState extends State<_Hero> with SingleTickerProviderStateMixin {
               ],
             )
           : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [copy, const SizedBox(height: 28), visual]),
-    );
-  }
-}
-
-/// The category's working action, in the hero: pick a popular route and book.
-class _QuickRoutes extends StatelessWidget {
-  const _QuickRoutes({required this.routes, required this.onRoute});
-  final List<TransitRoute> routes;
-  final ValueChanged<TransitRoute> onRoute;
-
-  @override
-  Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    final shown = routes.take(3).toList();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Popular right now', style: text.labelMedium?.copyWith(color: AppColors.muted)),
-        const SizedBox(height: 10),
-        if (shown.isEmpty)
-          const SizedBox(height: 48, child: Align(alignment: Alignment.centerLeft, child: SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5))))
-        else
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              for (final route in shown)
-                Material(
-                  color: AppColors.surfaceSunk,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md), side: const BorderSide(color: AppColors.line)),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                    onTap: () => onRoute(route),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        Icon(route.mode.icon, size: 18, color: AppColors.forest),
-                        const SizedBox(width: 8),
-                        Flexible(child: Text(route.name ?? '${route.origin} – ${route.destination}', style: text.labelLarge, overflow: TextOverflow.ellipsis)),
-                        const SizedBox(width: 10),
-                        Text(Fmt.naira(route.fare), style: text.labelLarge?.copyWith(color: AppColors.forest, fontWeight: FontWeight.w800)),
-                      ]),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-      ],
     );
   }
 }
@@ -360,10 +311,10 @@ class _HeroVisual extends StatelessWidget {
             top: 0,
             height: height,
             child: PhotoView(
-              AppPhoto.cityGateAerial,
+              AppPhoto.lightRail,
               radius: 28,
-              alignment: const Alignment(0.15, 0),
-              semanticLabel: 'Abuja City Gate on the airport road, with green lawns and Nigerian flags',
+              alignment: const Alignment(0.35, 0),
+              semanticLabel: 'An Abuja light-rail train waiting at a station platform',
               overlay: const LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
@@ -376,7 +327,7 @@ class _HeroVisual extends StatelessWidget {
             left: wide ? -36 : 14,
             right: wide ? null : 14,
             bottom: wide ? 36 : 0,
-            child: _DepartureCard(route: route, width: wide ? 330 : null),
+            child: _DepartureCard(route: route, width: wide ? 372 : null),
           ),
           Positioned(
             top: 18,
@@ -417,9 +368,9 @@ class _DepartureCard extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Row(children: [
-            const IconBadge(Icons.directions_bus_rounded, size: 36, radius: 10),
+            IconBadge(r?.mode.icon ?? Icons.directions_bus_rounded, size: 36, radius: 10),
             const SizedBox(width: 10),
-            Expanded(child: Text('Next departure', style: text.labelMedium?.copyWith(color: AppColors.muted))),
+            Expanded(child: Text(r?.name == null ? 'Next departure' : 'Next ${r!.name}', style: text.labelMedium?.copyWith(color: AppColors.muted))),
             Text(next == null ? '—' : Fmt.time(next), style: text.titleMedium?.copyWith(fontWeight: FontWeight.w800, fontFeatures: tabular)),
           ]),
           const SizedBox(height: 14),
@@ -739,9 +690,9 @@ class _EveryoneConnected extends StatelessWidget {
                 Expanded(
                   flex: 13,
                   child: Column(children: [
-                    Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(child: tiles[0]), const SizedBox(width: 14), Expanded(child: tiles[1])]),
+                    IntrinsicHeight(child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [Expanded(child: tiles[0]), const SizedBox(width: 14), Expanded(child: tiles[1])])),
                     const SizedBox(height: 14),
-                    Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(child: tiles[2]), const SizedBox(width: 14), Expanded(child: tiles[3])]),
+                    IntrinsicHeight(child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [Expanded(child: tiles[2]), const SizedBox(width: 14), Expanded(child: tiles[3])])),
                   ]),
                 ),
               ])
@@ -883,7 +834,11 @@ class _ForPartners extends StatelessWidget {
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 9),
                         child: Row(children: [
-                          const SizedBox(width: 18, height: 18, child: RouteLine(stops: 2, thickness: 2)),
+                          Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: AppColors.forest, width: 2.5)),
+                          ),
                           const SizedBox(width: 10),
                           Expanded(child: Text(line, style: text.bodyMedium?.copyWith(color: AppColors.ink))),
                         ]),
@@ -917,10 +872,10 @@ class _Closing extends StatelessWidget {
           width: double.infinity,
           child: Stack(fit: StackFit.expand, children: [
             const PhotoView(
-              AppPhoto.asoRockCity,
-              alignment: Alignment(0, -0.2),
-              semanticLabel: 'Aso Rock rising over Abuja',
-              overlay: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0x2206331F), Color(0xE606331F)]),
+              AppPhoto.cityGateAerial,
+              alignment: Alignment(0, 0.1),
+              semanticLabel: 'Abuja City Gate with green lawns and flags on the airport road',
+              overlay: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0x1106331F), Color(0xDD06331F)]),
             ),
             MaxWidth(
               width: 1240,

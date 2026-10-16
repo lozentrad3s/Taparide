@@ -23,7 +23,8 @@ class MaxWidth extends StatelessWidget {
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: width),
-          child: Padding(padding: padding, child: child),
+          // Fill the column so left-aligned content starts at the column edge.
+          child: SizedBox(width: double.infinity, child: Padding(padding: padding, child: child)),
         ),
       );
 }
@@ -73,8 +74,10 @@ class SectionHeader extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpace.sm),
+      // The action link shares the title's baseline.
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
         children: [
           Expanded(
             child: Column(
@@ -223,7 +226,7 @@ class RouteStrip extends StatelessWidget {
           children: [
             Flexible(child: Text(origin, style: style, maxLines: 1, overflow: TextOverflow.ellipsis)),
             SizedBox(width: dense ? 8 : 10),
-            SizedBox(width: dense ? 34 : 64, height: 18, child: RouteLine(stops: stops.clamp(2, 4), color: color)),
+            SizedBox(width: dense ? (14.0 * stops.clamp(2, 4)).clamp(40.0, 56.0) : 64, height: 18, child: RouteLine(stops: stops.clamp(2, 4), color: color)),
             SizedBox(width: dense ? 8 : 10),
             Flexible(child: Text(destination, style: style, maxLines: 1, overflow: TextOverflow.ellipsis)),
           ],
@@ -335,15 +338,18 @@ class Figure extends StatelessWidget {
 
 /// Seven-day bar chart (FCTA ridership trend). Today is the solid bar.
 class WeekBars extends StatelessWidget {
-  const WeekBars({super.key, required this.values, required this.highlightIndex, this.height = 170});
+  const WeekBars({super.key, required this.values, required this.highlightIndex, this.labels, this.height = 170});
   final List<int> values;
+
+  /// Day labels for each bar (defaults to Mon–Sun).
+  final List<String>? labels;
   final int highlightIndex;
   final double height;
 
   @override
   Widget build(BuildContext context) {
     final maxValue = values.fold<int>(1, (a, b) => a > b ? a : b);
-    final labels = Fmt.weekdays;
+    final labels = this.labels ?? Fmt.weekdays;
     final summary = [for (var i = 0; i < values.length; i++) '${labels[i]} ${Fmt.count(values[i])}'].join(', ');
     return Semantics(
       label: 'Ridership by day: $summary',
@@ -362,7 +368,7 @@ class WeekBars extends StatelessWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          Text(Fmt.compact(values[i]), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: i == highlightIndex ? AppColors.forest : AppColors.faint, fontFeatures: tabular)),
+                          Text(Fmt.compact(values[i]), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: i == highlightIndex ? AppColors.forest : AppColors.muted, fontFeatures: tabular)),
                           const SizedBox(height: 4),
                           TweenAnimationBuilder<double>(
                             tween: Tween(begin: 0, end: values[i] / maxValue),

@@ -197,7 +197,7 @@ class _QrOption extends StatelessWidget {
                   Text('Show this QR code to the conductor or at the terminal. The fare comes from your Tap Card balance.', style: text.bodySmall),
                 ]),
               ),
-              Icon(selected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded, color: selected ? AppColors.forest : AppColors.faint),
+              Icon(selected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded, color: selected ? AppColors.forest : AppColors.muted),
             ]),
           ),
         ),

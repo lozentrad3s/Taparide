@@ -43,7 +43,7 @@ class OverviewPage extends StatelessWidget {
         _TwoUp(
           left: Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             const PanelTitle('Ridership trend', subtitle: 'Last 7 days, all operators'),
-            WeekBars(values: fcta.ridershipByDay, highlightIndex: fcta.todayIndex),
+            WeekBars(values: fcta.ridershipByDay, labels: fcta.dayLabels, highlightIndex: fcta.todayIndex),
           ])),
           right: Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             PanelTitle('Needs attention', trailing: TextButton(onPressed: () => context.go('/portal/verification'), child: const Text('Open queue'))),
@@ -253,7 +253,7 @@ class FctaPage extends StatelessWidget {
         _TwoUp(
           left: Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             PanelTitle('Ridership Trend', trailing: StatusPill('Last 7 days · today ${Fmt.weekday(state.now)}', tone: Tone.neutral)),
-            WeekBars(values: d.ridershipByDay, highlightIndex: d.todayIndex, height: 220),
+            WeekBars(values: d.ridershipByDay, labels: d.dayLabels, highlightIndex: d.todayIndex, height: 220),
             const SizedBox(height: 8),
             Text('Today includes ${Fmt.count(d.bookingsToday)} live bookings from the rider app.', style: text.bodySmall),
           ])),
