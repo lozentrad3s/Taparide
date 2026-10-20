@@ -497,16 +497,7 @@ class _DemandPanel extends StatelessWidget {
                       borderStrokeWidth: 2,
                     ),
                 ]),
-                const Align(
-                  alignment: Alignment.bottomRight,
-                  child: Padding(
-                    padding: EdgeInsets.all(6),
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(color: Color(0xD9FFFFFF), borderRadius: BorderRadius.all(Radius.circular(4))),
-                      child: Padding(padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2), child: Text('© OpenStreetMap · © CARTO', style: TextStyle(fontSize: 10, color: AppColors.inkSoft))),
-                    ),
-                  ),
-                ),
+                const MapCredit(),
               ],
             ),
           ),

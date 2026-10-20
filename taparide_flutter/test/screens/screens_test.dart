@@ -159,4 +159,19 @@ void main() {
     await _go(t, '/portal/insights');
     await _shot(t, 'insights_fleet_phone');
   });
+
+  testWidgets('driver dashboard', (t) async {
+    await _app(t, desktop, email: 'grace@taparide.demo', portal: Portal.partner);
+    await _go(t, '/portal/operator');
+    await _shot(t, 'driver_desktop');
+    t.view.physicalSize = phone;
+    await t.pumpAndSettle();
+    await _shot(t, 'driver_phone');
+  });
+
+  testWidgets('operator dashboard with live fleet', (t) async {
+    await _app(t, desktop, email: 'ops@abujametro.demo', portal: Portal.partner);
+    await _go(t, '/portal/operator');
+    await _shot(t, 'operator_live_desktop');
+  });
 }

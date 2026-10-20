@@ -427,7 +427,7 @@ class Vehicle {
   bool get electric => kind.isElectric;
   String get displayName => kind == VehicleKind.bus || kind == VehicleKind.minibus ? 'Bus #$plate' : '$model · $plate';
 
-  Vehicle copyWith({VehicleStatus? status, Verification? verification}) => Vehicle(
+  Vehicle copyWith({VehicleStatus? status, Verification? verification, int? monthEarnings}) => Vehicle(
         id: id,
         operatorId: operatorId,
         ownerId: ownerId,
@@ -438,7 +438,7 @@ class Vehicle {
         status: status ?? this.status,
         verification: verification ?? this.verification,
         area: area,
-        monthEarnings: monthEarnings,
+        monthEarnings: monthEarnings ?? this.monthEarnings,
         driverName: driverName,
         batteryPct: batteryPct,
         rangeKm: rangeKm,

@@ -8,7 +8,6 @@ import '../../core/format.dart';
 import '../../core/insights.dart';
 import '../../core/models.dart';
 import '../../core/reminders.dart';
-import '../../shared/mascot/mascot.dart';
 import '../../shared/ui.dart';
 import '../assistant/assistant_sheet.dart';
 
@@ -146,7 +145,8 @@ class AskTapiCard extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Row(children: [
-          const Mascot(mood: MascotMood.wave, size: 76),
+          const IconBadge(Icons.auto_awesome_rounded, size: 52, color: AppColors.forest, iconColor: Colors.white, radius: 26),
+          const SizedBox(width: 6),
           const SizedBox(width: 8),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

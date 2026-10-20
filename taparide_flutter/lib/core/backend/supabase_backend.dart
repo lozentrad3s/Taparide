@@ -243,6 +243,10 @@ class SupabaseBackend implements Backend {
       Vehicle.fromJson(_row(await _client.rpc('set_vehicle_status', params: {'p_vehicle_id': vehicleId, 'p_status': status.wire}))));
 
   @override
+  Future<Booking> completeRide(String bookingId) =>
+      _guard(() async => Booking.fromJson(_row(await _client.rpc('complete_ride', params: {'p_booking_id': bookingId}))));
+
+  @override
   Future<TransitRoute> updateRouteFare(String routeId, int fare) =>
       _guard(() async => TransitRoute.fromJson(_row(await _client.rpc('update_route_fare', params: {'p_route_id': routeId, 'p_fare': fare}))));
 

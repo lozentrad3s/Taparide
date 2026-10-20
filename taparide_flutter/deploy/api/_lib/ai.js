@@ -143,8 +143,7 @@ function toAnthropicSchema(schema) {
  * `input` is either {text, images?} (a user message) or {toolResults:[{id,name,result}]}.
  * Returns {history, text, toolCalls:[{id,name,args}], provider, model}.
  */
-export async function chatStep({ system, tools, history = [], input }) {
-  const p = provider();
+async function chatStepWith(p, { system, tools, history = [], input }) {
   if (p === "anthropic") {
     const messages = [...history];
     if (input.toolResults) {
@@ -180,8 +179,8 @@ export async function chatStep({ system, tools, history = [], input }) {
 }
 
 /** Single structured-output call with optional images/PDFs (document verification). */
-export async function extractJson({ system, prompt, images = [], schema }) {
-  if (provider() === "anthropic") {
+async function extractJsonWith(p, { system, prompt, images = [], schema }) {
+  if (p === "anthropic") {
     const response = await anthropicCreate({
       system,
       messages: [{ role: "user", content: [...imageBlocksAnthropic(images), { type: "text", text: prompt }] }],
@@ -238,3 +237,35 @@ export function handleError(res, error) {
   if (!(error instanceof AiError)) console.error(error);
   send(res, status, { error: error instanceof AiError ? error.message : "Something went wrong on the server." });
 }
+
+// ---------------------------------------------------------------- provider choice
+// Gemini first (AI_PROVIDER, default "gemini"). If it is down or rate-limited and the
+// other provider has a key, a new conversation falls back to it. A conversation that has
+// started stays on the provider whose native history it carries.
+
+function fallbackFor(p, error) {
+  if (error instanceof AiError && error.status < 500 && error.status !== 429) return null;
+  if (p === "gemini" && process.env.ANTHROPIC_API_KEY) return "anthropic";
+  if (p === "anthropic" && process.env.GEMINI_API_KEY) return "gemini";
+  return null;
+}
+
+async function withFallback(run) {
+  const first = provider();
+  try {
+    return await run(first);
+  } catch (error) {
+    const other = fallbackFor(first, error);
+    if (!other) throw error;
+    console.warn(`AI provider ${first} failed (${error?.message}); using ${other}`);
+    return run(other);
+  }
+}
+
+export async function chatStep(args) {
+  const history = args.history || [];
+  if (history.length) return chatStepWith(history[0]?.parts ? "gemini" : "anthropic", args);
+  return withFallback((p) => chatStepWith(p, args));
+}
+
+export const extractJson = (args) => withFallback((p) => extractJsonWith(p, args));

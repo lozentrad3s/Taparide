@@ -90,7 +90,7 @@ void main() {
     final (state, backend) = await freshState();
     await state.signIn(email: 'aisha@taparide.demo', password: DemoSeed.password, portal: Portal.passenger);
     final before = (await backend.fetchMyBookings()).length;
-    expect(before, 6);
+    expect(before, 7);
     final route = state.routeById('r02')!;
     await state.bookTransit(route, route.upcomingDepartures(state.now).first, PaymentMethod.qr);
     await state.signOut();

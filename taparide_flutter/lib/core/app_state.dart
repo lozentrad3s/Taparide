@@ -379,6 +379,13 @@ class AppState extends ChangeNotifier {
     _notify();
   }
 
+  Future<void> completeRide(Booking booking) async {
+    final updated = await backend.completeRide(booking.id);
+    partnerBookings = [for (final b in partnerBookings) b.id == updated.id ? updated : b];
+    vehicles = await backend.fetchVehicles();
+    _notify();
+  }
+
   Future<void> updateRouteFare(TransitRoute route, int fare) async {
     final updated = await backend.updateRouteFare(route.id, fare);
     routes = [for (final r in routes) r.id == updated.id ? updated : r];

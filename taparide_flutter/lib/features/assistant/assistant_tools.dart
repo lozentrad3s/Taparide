@@ -190,6 +190,14 @@ class AssistantTools {
 
   Map<String, String> _time(DateTime d) => {'iso': d.toIso8601String(), 'local': Fmt.dayTime(d)};
 
+  /// A known Abuja place, or a geocoded one (CARTO / OpenStreetMap) for anything else.
+  Future<({String name, LatLng point})?> _findPlace(String query) async {
+    final known = resolvePlace(query, routes: state.routes);
+    if (known != null) return known;
+    final found = await state.api.geocode(query);
+    return found.isEmpty ? null : found.first;
+  }
+
   Future<Map<String, Object?>> _planTrip(String from, String to, String mode) async {
     LatLng? a;
     String fromName = from;
@@ -199,12 +207,12 @@ class AssistantTools {
       fromName = 'your location';
       if (a == null) return {'error': 'Location is off or outside Abuja. Ask the rider where they are starting from.'};
     } else {
-      final p = resolvePlace(from, routes: state.routes);
+      final p = await _findPlace(from);
       if (p == null) return {'error': 'Unknown place "$from". Ask for a nearby area or landmark.'};
       a = p.point;
       fromName = p.name;
     }
-    final q = resolvePlace(to, routes: state.routes);
+    final q = await _findPlace(to);
     if (q == null) return {'error': 'Unknown place "$to". Ask for a nearby area or landmark.'};
     final plan = await state.api.roadRoute(a, q.point, mode: mode == 'walking' ? 'walking' : 'driving');
     if (plan == null) {

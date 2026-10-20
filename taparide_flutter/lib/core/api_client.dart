@@ -125,6 +125,35 @@ class ApiClient {
     return AiDocumentCheck.fromJson(data);
   }
 
+  /// Which services are live on the server (tiles provider, AI, backend). Never includes keys.
+  Future<Map<String, dynamic>> config() async {
+    try {
+      final res = await _http.get(_uri('/api/config')).timeout(const Duration(seconds: 8));
+      return res.statusCode == 200 ? Map<String, dynamic>.from(jsonDecode(res.body) as Map) : const {};
+    } catch (_) {
+      return const {};
+    }
+  }
+
+  final _geoCache = <String, List<({String name, LatLng point})>>{};
+
+  /// Place search inside the FCT (CARTO, with an OpenStreetMap fallback). Empty when nothing matches.
+  Future<List<({String name, LatLng point})>> geocode(String query) async {
+    final q = query.trim().toLowerCase();
+    if (q.length < 2) return const [];
+    if (_geoCache.containsKey(q)) return _geoCache[q]!;
+    try {
+      final res = await _http.get(_uri('/api/geocode').replace(queryParameters: {'q': query.trim()}), headers: await _headers()).timeout(const Duration(seconds: 12));
+      if (res.statusCode != 200) return const [];
+      final rows = ((jsonDecode(res.body) as Map)['results'] as List? ?? const []);
+      return _geoCache[q] = [
+        for (final r in rows.cast<Map>()) (name: '${r['name']}', point: LatLng((r['lat'] as num).toDouble(), (r['lng'] as num).toDouble())),
+      ];
+    } catch (_) {
+      return const [];
+    }
+  }
+
   /// The AI analyst's written reading of a partner's figures.
   Future<AiInsights> insights(Map<String, Object?> metrics) async => AiInsights.fromJson(await _post('/api/insights', {'metrics': metrics}, timeout: const Duration(seconds: 75)));
 
@@ -132,7 +161,8 @@ class ApiClient {
   Future<List<LatLng>?> roadPath(List<LatLng> stops) async {
     final legs = await Future.wait([for (var i = 0; i < stops.length - 1; i++) roadRoute(stops[i], stops[i + 1])]);
     if (legs.any((l) => l == null || l.points.length < 2)) return null;
-    return [for (final l in legs) ...l!.points];
+    final path = cleanPath([for (final l in legs) ...l!.points]);
+    return path.length < 2 ? null : path;
   }
 
   /// Road route between two points via the FindMe AI routing proxy. Null when unavailable.
@@ -180,7 +210,8 @@ List<LatLng> decodePolyline(String encoded) {
         result |= (b & 0x1f) << shift;
         shift += 5;
       } while (b >= 0x20 && index < encoded.length);
-      final delta = (result & 1) != 0 ? ~(result >> 1) : (result >> 1);
+      // -(n + 1) rather than ~n: on the web ~ yields an unsigned 32-bit number.
+      final delta = (result & 1) != 0 ? -((result >> 1) + 1) : (result >> 1);
       if (pass == 0) {
         lat += delta;
       } else {
@@ -189,5 +220,16 @@ List<LatLng> decodePolyline(String encoded) {
     }
     points.add(LatLng(lat / 1e5, lng / 1e5));
   }
-  return points;
+  return cleanPath(points);
+}
+
+/// Drops repeated and invalid points so map lines never contain zero-length or NaN segments.
+List<LatLng> cleanPath(Iterable<LatLng> points) {
+  final out = <LatLng>[];
+  for (final p in points) {
+    if (!p.latitude.isFinite || !p.longitude.isFinite || p.latitude.abs() > 90 || p.longitude.abs() > 180) continue;
+    if (out.isNotEmpty && (out.last.latitude - p.latitude).abs() < 1e-7 && (out.last.longitude - p.longitude).abs() < 1e-7) continue;
+    out.add(p);
+  }
+  return out;
 }

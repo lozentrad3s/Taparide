@@ -9,6 +9,8 @@ import '../../core/format.dart';
 import '../../core/models.dart';
 import '../../core/photos.dart';
 import '../../shared/ui.dart';
+import 'driver_dashboard.dart';
+import 'partner_widgets.dart';
 import 'portal_widgets.dart';
 
 // ------------------------------------------------------------------ platform overview (admin)
@@ -323,15 +325,19 @@ class _OperatorPageState extends State<OperatorPage> {
     if (d == null) {
       return const PortalScaffold(title: 'Operator dashboard', children: [EmptyState(icon: Icons.directions_bus_rounded, title: 'No provider linked', message: 'Ask a platform admin to link your account to your company.')]);
     }
+    final picker = canPick && operators.isNotEmpty ? ProviderPicker(providers: operators, selected: d.provider.id, onChanged: (v) => setState(() => _picked = v)) : null;
+    // Private drivers get a driver-focused dashboard (online switch, current ride, earnings).
+    if (d.provider.kind == ProviderKind.privateDriver) return DriverDashboard(provider: d.provider, picker: picker);
+    final report = state.insightsFor(d.provider.id);
 
     return PortalScaffold(
       title: 'Operator Dashboard',
       subtitle: '${d.provider.name} · ${d.provider.kind.label}',
       leading: IconBadge(d.provider.kind.icon, size: 52, color: AppColors.forest, iconColor: Colors.white, radius: 26),
-      actions: [
-        if (canPick && operators.isNotEmpty) ProviderPicker(providers: operators, selected: d.provider.id, onChanged: (v) => setState(() => _picked = v)),
-      ],
+      actions: [if (picker != null) picker],
       children: [
+        PartnerQuickActions(report: report),
+        const SizedBox(height: 16),
         LayoutBuilder(builder: (context, c) {
           final forest = ForestFigures(figures: [
             Figure(label: 'Total Trips', value: Fmt.count(d.totalTrips), delta: d.tripsDelta, onDark: true, large: true, caption: d.tripsDelta == null ? 'all time' : 'this month'),
@@ -350,6 +356,17 @@ class _OperatorPageState extends State<OperatorPage> {
                 )
               : Column(children: [forest, const SizedBox(height: 12), IntrinsicHeight(child: tiles)]);
         }),
+        const SizedBox(height: 18),
+        _TwoUp(
+          leftFlex: 3,
+          rightFlex: 2,
+          left: LiveFleetMap(vehicles: d.vehicles, routes: d.routes),
+          right: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            AiTeaser(report: report),
+            const SizedBox(height: 18),
+            PartnerAlertsPanel(alerts: partnerAlerts(context, report)),
+          ]),
+        ),
         const SizedBox(height: 18),
         _TwoUp(
           left: Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -442,6 +459,7 @@ class _FleetPageState extends State<FleetPage> {
     }
     final needsAttention = d.vehicles.where((v) => v.status == VehicleStatus.maintenance || v.status == VehicleStatus.inactive).toList();
     final topEarners = [...d.vehicles]..sort((a, b) => b.monthEarnings.compareTo(a.monthEarnings));
+    final report = state.insightsFor(d.provider.id);
 
     return PortalScaffold(
       title: 'Fleet Owner Dashboard',
@@ -449,6 +467,8 @@ class _FleetPageState extends State<FleetPage> {
       leading: const IconBadge(Icons.local_shipping_rounded, size: 52, color: AppColors.forest, iconColor: Colors.white, radius: 26),
       actions: [if (canPick && owners.length > 1) ProviderPicker(providers: owners, selected: d.provider.id, onChanged: (v) => setState(() => _picked = v))],
       children: [
+        PartnerQuickActions(report: report, canEditFares: false),
+        const SizedBox(height: 16),
         LayoutBuilder(builder: (context, c) {
           final tiles = [
             FigureCard(label: 'Total Vehicles', value: '${d.vehicles.length}', icon: Icons.directions_bus_rounded, onTap: () => context.go('/portal/vehicles')),
@@ -457,6 +477,15 @@ class _FleetPageState extends State<FleetPage> {
           ];
           return Cols(min: 230, max: 3, children: tiles);
         }),
+        const SizedBox(height: 18),
+        _TwoUp(
+          left: LiveFleetMap(vehicles: d.vehicles, routes: [for (final r in state.routes) if (d.vehicles.any((v) => v.operatorId == r.providerId)) r]),
+          right: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            AiTeaser(report: report),
+            const SizedBox(height: 18),
+            PartnerAlertsPanel(alerts: partnerAlerts(context, report)),
+          ]),
+        ),
         const SizedBox(height: 18),
         _TwoUp(
           leftFlex: 2,

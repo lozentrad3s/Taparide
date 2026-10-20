@@ -16,7 +16,7 @@ import 'demo_seed.dart';
 class DemoBackend implements Backend {
   DemoBackend._(this._prefs, this._latency, this._clock);
 
-  static const _storageKey = 'taparide_demo_state_v2';
+  static const _storageKey = 'taparide_demo_state_v3';
 
   static Future<DemoBackend> create({Duration latency = const Duration(milliseconds: 260), DateTime Function()? clock}) async {
     final prefs = await SharedPreferences.getInstance();
@@ -604,6 +604,25 @@ class DemoBackend implements Backend {
     final updated = vehicle.copyWith(status: status);
     _vehicles[index] = updated;
     _log('Set vehicle status to ${status.label.toLowerCase()}', updated.displayName);
+    _save();
+    return updated;
+  }
+
+  @override
+  Future<Booking> completeRide(String bookingId) async {
+    await _wait();
+    final me = _me;
+    final index = _bookings.indexWhere((b) => b.id == bookingId);
+    if (index < 0) throw const BackendException(BackendErrorKind.notFound, 'Booking not found.');
+    final booking = _bookings[index];
+    if (booking.kind != BookingKind.electric || booking.providerId == null) throw const BackendException(BackendErrorKind.validation, 'Only car rides are completed by the driver.');
+    _require(_manages(me, booking.providerId!), 'complete this ride');
+    if (booking.status != BookingStatus.confirmed) throw const BackendException(BackendErrorKind.validation, 'This ride is not in progress.');
+    final v = _vehicles.indexWhere((x) => x.id == booking.vehicleId);
+    if (v >= 0) _vehicles[v] = _vehicles[v].copyWith(status: VehicleStatus.active, monthEarnings: _vehicles[v].monthEarnings + booking.fare);
+    final updated = booking.copyWith(status: BookingStatus.completed);
+    _bookings[index] = updated;
+    _log('Completed ride', '${booking.origin} → ${booking.destination}');
     _save();
     return updated;
   }

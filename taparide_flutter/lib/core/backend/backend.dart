@@ -57,6 +57,9 @@ abstract class Backend {
   Future<TransportProvider> setProviderStatus(String providerId, Verification status);
   Future<Vehicle> setVehicleVerification(String vehicleId, Verification status);
   Future<Vehicle> setVehicleStatus(String vehicleId, VehicleStatus status);
+
+  /// Driver finishes a car ride: the booking completes, the car is free again and the fare counts towards its earnings.
+  Future<Booking> completeRide(String bookingId);
   Future<TransitRoute> updateRouteFare(String routeId, int fare);
   Future<Vehicle> registerVehicle({required String operatorId, required VehicleKind kind, required String plate, required String model, required int capacity, String? ownerId});
   Future<AppUser> setUserRole(String userId, UserRole role, {String? providerId});

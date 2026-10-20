@@ -6,7 +6,8 @@ import '../brand.dart';
 
 /// Non-web fallback: the logo pin, which hops once when it appears or its mood changes
 /// (no endless looping motion, and none at all with reduced motion).
-Widget buildMascot(String mood, double size) => _PinMascot(mood: mood, size: size);
+Widget buildMascot(String mood, double size, VoidCallback? onTap) =>
+    onTap == null ? _PinMascot(mood: mood, size: size) : GestureDetector(onTap: onTap, behavior: HitTestBehavior.opaque, child: _PinMascot(mood: mood, size: size));
 
 class _PinMascot extends StatefulWidget {
   const _PinMascot({required this.mood, required this.size});

@@ -9,6 +9,8 @@ import '../../core/models.dart';
 import '../../core/photos.dart';
 import '../../shared/brand.dart';
 import '../../shared/ui.dart';
+import '../../shared/mascot/mascot.dart';
+import '../assistant/assistant_sheet.dart';
 import 'rider_widgets.dart';
 import 'smart_cards.dart';
 
@@ -64,9 +66,21 @@ class HomePage extends StatelessWidget {
         ]),
       SizedBox(height: wide ? 12 : 18),
       const ReminderBanner(),
-      Text('${Fmt.greeting(state.now)}, ${user.firstName}', style: wide ? text.displaySmall : text.headlineLarge),
-      const SizedBox(height: 4),
-      Text('Where are you headed today?', style: text.bodyLarge),
+      Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('${Fmt.greeting(state.now)}, ${user.firstName}', style: wide ? text.displaySmall : text.headlineLarge),
+            const SizedBox(height: 4),
+            Text(_tapiLine(state), style: text.bodyLarge),
+          ]),
+        ),
+        const SizedBox(width: 8),
+        // Tapi greets the rider; tapping Tapi opens the assistant.
+        Tooltip(
+          message: 'Ask Tapi',
+          child: Mascot(mood: MascotMood.wave, size: wide ? 120 : 92, semanticLabel: 'Tapi, your ride assistant. Tap to ask.', onTap: () => openAssistant(context)),
+        ),
+      ]),
       const SizedBox(height: 18),
       _SearchField(onSubmit: (q) => context.go(Uri(path: '/app/routes', queryParameters: q.isEmpty ? null : {'q': q}).toString())),
       const SizedBox(height: 18),
@@ -107,6 +121,15 @@ class HomePage extends StatelessWidget {
       const SizedBox(height: 14),
       const _SafetyStrip(),
     ];
+  }
+
+  /// Tapi's one-line hello: the next trip if there is one, otherwise an invitation.
+  static String _tapiLine(AppState state) {
+    final next = state.upcomingTrips.firstOrNull;
+    if (next != null && next.departureAt.difference(state.now).inHours < 12) {
+      return 'Your ${Fmt.time(next.departureAt)} to ${next.destination} is booked. I\'ll remind you when to leave.';
+    }
+    return 'Where are you headed today? Tap me to plan it.';
   }
 
   void _showMore(BuildContext context) {

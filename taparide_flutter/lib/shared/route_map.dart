@@ -3,14 +3,43 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../app/theme.dart';
+import '../core/api_client.dart' show apiBase, cleanPath;
 import '../core/models.dart';
 
 /// Map provider settings in one place so a commercial tile service can be swapped in.
 abstract final class MapTiles {
   /// Tests and offline builds switch network tiles off; the route still draws.
   static bool enabled = true;
-  static const urlTemplate = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
-  static const subdomains = ['a', 'b', 'c', 'd'];
+
+  /// Tiles come through our server, which adds the CARTO key (kept secret) and caches them.
+  static String get urlTemplate => '${apiBase()}/api/tiles/{z}/{x}/{y}{r}.png';
+  static const subdomains = <String>[];
+
+  /// Credit line for whichever provider is serving tiles (set from /api/config).
+  static final attribution = ValueNotifier<String>('© OpenStreetMap contributors');
+}
+
+/// The map credit the tile providers require, bottom-right on every map.
+class MapCredit extends StatelessWidget {
+  const MapCredit({super.key});
+
+  @override
+  Widget build(BuildContext context) => Align(
+        alignment: Alignment.bottomRight,
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: DecoratedBox(
+            decoration: const BoxDecoration(color: Color(0xD9FFFFFF), borderRadius: BorderRadius.all(Radius.circular(4))),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              child: ValueListenableBuilder<String>(
+                valueListenable: MapTiles.attribution,
+                builder: (context, text, _) => Text(text, style: const TextStyle(fontSize: 10, color: AppColors.inkSoft)),
+              ),
+            ),
+          ),
+        ),
+      );
 }
 
 /// Real map of the route: the line in brand green with its named stops.
@@ -65,8 +94,8 @@ class _RouteMapState extends State<RouteMap> {
               retinaMode: RetinaMode.isHighDensity(context),
               userAgentPackageName: 'com.taparide.app',
             ),
-          PolylineLayer(polylines: [
-            Polyline(points: _road ?? points, strokeWidth: 6, color: AppColors.forest, borderStrokeWidth: 2.5, borderColor: Colors.white),
+          PolylineLayer(simplificationTolerance: 0, polylines: [
+            Polyline(points: _road ?? cleanPath(points), strokeWidth: 6, color: AppColors.forest, borderStrokeWidth: 2.5, borderColor: Colors.white),
           ]),
           // Stop names sit to the right of each stop so the route reads even without tiles.
           MarkerLayer(markers: [
@@ -90,19 +119,7 @@ class _RouteMapState extends State<RouteMap> {
               ),
           ]),
           // Tile credit, always visible as the providers require.
-          const Align(
-            alignment: Alignment.bottomRight,
-            child: Padding(
-              padding: EdgeInsets.all(6),
-              child: DecoratedBox(
-                decoration: BoxDecoration(color: Color(0xD9FFFFFF), borderRadius: BorderRadius.all(Radius.circular(4))),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  child: Text('© OpenStreetMap · © CARTO', style: TextStyle(fontSize: 10, color: AppColors.inkSoft)),
-                ),
-              ),
-            ),
-          ),
+          const MapCredit(),
         ],
       ),
     );

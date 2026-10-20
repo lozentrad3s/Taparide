@@ -3,12 +3,14 @@ import 'dart:js_interop';
 import 'package:flutter/widgets.dart';
 import 'package:web/web.dart' as web;
 
-/// Web: the three.js mascot (web/mascot/) in an iframe; mood changes are posted to it.
-Widget buildMascot(String mood, double size) => _WebMascot(mood: mood);
+/// Web: the three.js mascot (web/mascot/) in an iframe. Mood changes and the app's
+/// pointer position are posted to it; taps come back as `tapi-tap` messages.
+Widget buildMascot(String mood, double size, VoidCallback? onTap) => _WebMascot(mood: mood, onTap: onTap);
 
 class _WebMascot extends StatefulWidget {
-  const _WebMascot({required this.mood});
+  const _WebMascot({required this.mood, this.onTap});
   final String mood;
+  final VoidCallback? onTap;
 
   @override
   State<_WebMascot> createState() => _WebMascotState();
@@ -17,17 +19,57 @@ class _WebMascot extends StatefulWidget {
 class _WebMascotState extends State<_WebMascot> {
   web.HTMLIFrameElement? _frame;
   late final String _initialMood = widget.mood;
+  JSFunction? _onMessage;
+  JSFunction? _onPointer;
+  bool _pending = false;
+  double _px = 0, _py = 0;
 
-  void _post(String mood) {
+  void _post(Map<String, Object?> data) {
     try {
-      _frame?.contentWindow?.postMessage({'type': 'tapi', 'mood': mood}.jsify(), '*'.toJS);
+      _frame?.contentWindow?.postMessage(data.jsify(), web.window.location.origin.toJS);
     } catch (_) {}
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _onMessage = ((web.MessageEvent e) {
+      final frame = _frame;
+      if (frame == null || e.source != frame.contentWindow) return;
+      final data = e.data.dartify();
+      if (data is Map && data['type'] == 'tapi-tap') widget.onTap?.call();
+      if (data is Map && data['type'] == 'tapi-ready') _post({'type': 'tapi', 'mood': widget.mood});
+    }).toJS;
+    // Tapi's eyes follow the pointer anywhere in the app, not just over the mascot.
+    _onPointer = ((web.PointerEvent e) {
+      final frame = _frame;
+      if (frame == null) return;
+      final r = frame.getBoundingClientRect();
+      final half = web.window.innerWidth / 2;
+      _px = ((e.clientX - (r.left + r.width / 2)) / half).clamp(-1.0, 1.0);
+      _py = (-(e.clientY - (r.top + r.height / 2)) / half).clamp(-1.0, 1.0);
+      if (_pending) return;
+      _pending = true;
+      web.window.requestAnimationFrame(((num _) {
+        _pending = false;
+        _post({'type': 'tapi', 'pointer': [_px, _py]});
+      }).toJS);
+    }).toJS;
+    web.window.addEventListener('message', _onMessage);
+    web.window.addEventListener('pointermove', _onPointer);
+  }
+
+  @override
+  void dispose() {
+    web.window.removeEventListener('message', _onMessage);
+    web.window.removeEventListener('pointermove', _onPointer);
+    super.dispose();
   }
 
   @override
   void didUpdateWidget(covariant _WebMascot old) {
     super.didUpdateWidget(old);
-    if (old.mood != widget.mood) _post(widget.mood);
+    if (old.mood != widget.mood) _post({'type': 'tapi', 'mood': widget.mood});
   }
 
   @override

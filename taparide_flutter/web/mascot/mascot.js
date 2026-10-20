@@ -163,6 +163,8 @@ addEventListener('message', (e) => {
 renderer.domElement.addEventListener('pointerdown', () => {
   setMood('celebrate');
   setTimeout(() => setMood(params.get('mood') || 'idle'), 1600);
+  // Let the host app react (e.g. open the assistant).
+  parent?.postMessage({ type: 'tapi-tap' }, location.origin);
 });
 
 let moodStart = performance.now();

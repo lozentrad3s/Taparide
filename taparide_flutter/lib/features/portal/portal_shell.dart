@@ -42,10 +42,22 @@ class PortalSection {
 
   static const all = [overview, insights, fcta, operator, fleet, applications, providers, evs, routes, vehicles, bookings, verification, users, audit];
 
+  /// The operator dashboard as private drivers see it (same page, driver wording).
+  static const driver = PortalSection('/portal/operator', 'Driver dashboard', Icons.directions_car_rounded, {UserRole.operator, UserRole.government, UserRole.admin}, short: 'Driver');
+
   static PortalSection? byPath(String path) => all.where((s) => s.path == path).firstOrNull;
 
+  // Sections are identified by their path (the driver view is the operator page).
+  @override
+  bool operator ==(Object other) => other is PortalSection && other.path == path;
+
+  @override
+  int get hashCode => path.hashCode;
+
   /// Sections in the order each role uses them most.
-  static List<PortalSection> forRole(UserRole role) => switch (role) {
+  static List<PortalSection> forRole(UserRole role, {bool privateDriver = false}) => privateDriver
+      ? const [driver, insights, bookings, vehicles]
+      : switch (role) {
         UserRole.admin => all,
         UserRole.government => [fcta, insights, applications, providers, verification, vehicles, routes, evs, operator, bookings, audit],
         UserRole.operator => [operator, insights, routes, vehicles, bookings, evs],
@@ -64,7 +76,8 @@ class PortalShell extends StatelessWidget {
     final state = context.watch<AppState>();
     final user = state.user;
     if (user == null) return const SizedBox.shrink();
-    final sections = PortalSection.forRole(user.role);
+    final privateDriver = user.role == UserRole.operator && state.providerById(user.providerId)?.kind == ProviderKind.privateDriver;
+    final sections = PortalSection.forRole(user.role, privateDriver: privateDriver);
     final current = PortalSection.byPath(location);
     final wide = isWide(context, 1024);
 

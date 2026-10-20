@@ -4,20 +4,52 @@
   "buildCommand": "",
   "outputDirectory": "public",
   "functions": {
-    "api/assistant.js": { "maxDuration": 60 },
-    "api/verify-documents.js": { "maxDuration": 60 },
-    "api/insights.js": { "maxDuration": 60 }
+    "api/assistant.js": {
+      "maxDuration": 60
+    },
+    "api/verify-documents.js": {
+      "maxDuration": 60
+    },
+    "api/insights.js": {
+      "maxDuration": 60
+    },
+    "api/geocode.js": {
+      "maxDuration": 15
+    },
+    "api/tiles.js": {
+      "maxDuration": 10
+    }
   },
   "rewrites": [
-    { "source": "/api/findme/:path*", "destination": "https://findme-ai-lozen-s-projects.vercel.app/api/:path*" }
+    {
+      "source": "/api/findme/:path*",
+      "destination": "https://findme-ai-lozen-s-projects.vercel.app/api/:path*"
+    },
+    {
+      "source": "/api/tiles/:z/:x/:f",
+      "destination": "/api/tiles?z=:z&x=:x&f=:f"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
   ],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Permissions-Policy", "value": "geolocation=(self \"https://findme-ai-lozen-s-projects.vercel.app\"), camera=(self), microphone=(self \"https://findme-ai-lozen-s-projects.vercel.app\")" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "geolocation=(self \"https://findme-ai-lozen-s-projects.vercel.app\"), camera=(self), microphone=(self \"https://findme-ai-lozen-s-projects.vercel.app\")"
+        }
       ]
     }
   ]

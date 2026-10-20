@@ -14,6 +14,7 @@ abstract final class DemoSeed {
   static const pKubwa = 'p_kubwa';
   static const pNyanya = 'p_nyanya';
   static const pKeke = 'p_keke';
+  static const pGrace = 'p_grace';
 
   static const uAisha = 'u_aisha';
 
@@ -25,6 +26,7 @@ abstract final class DemoSeed {
     ('Tunde Bello · NaviRide Electric', 'ev@naviride.demo', UserRole.operator),
     ('Fatima Lawal · FCTA Transport', 'transport@fcta.demo', UserRole.government),
     ('Daniel Adeyemi · Platform admin', 'admin@taparide.demo', UserRole.admin),
+    ('Grace Okafor · private driver', 'grace@taparide.demo', UserRole.operator),
     ('Musa Abdullahi · driver applicant', 'musa@taparide.demo', UserRole.passenger),
     ('Ngozi Eze · company applicant', 'ngozi@capitalcabs.demo', UserRole.passenger),
   ];
@@ -38,6 +40,7 @@ abstract final class DemoSeed {
         AppUser(id: 'u_admin', fullName: 'Daniel Adeyemi', email: 'admin@taparide.demo', phone: '+234 701 000 1212', role: UserRole.admin, createdAt: DateTime(2026, 6, 1)),
         AppUser(id: 'u_emeka', fullName: 'Emeka Nwosu', email: 'emeka@taparide.demo', role: UserRole.passenger, organisation: 'Banex Plaza offices', createdAt: DateTime(2026, 9, 2)),
         AppUser(id: 'u_zainab', fullName: 'Zainab Yusuf', email: 'zainab@taparide.demo', role: UserRole.passenger, organisation: 'Jabi tech hub', createdAt: DateTime(2026, 9, 11)),
+        AppUser(id: 'u_grace', fullName: 'Grace Okafor', email: 'grace@taparide.demo', phone: '+234 805 555 0404', role: UserRole.operator, providerId: pGrace, createdAt: DateTime(2026, 9, 28)),
         AppUser(id: 'u_musa', fullName: 'Musa Abdullahi', email: 'musa@taparide.demo', phone: '+234 803 555 0101', role: UserRole.passenger, createdAt: DateTime(2026, 10, 10)),
         AppUser(id: 'u_ngozi', fullName: 'Ngozi Eze', email: 'ngozi@capitalcabs.demo', phone: '+234 802 555 0202', role: UserRole.passenger, organisation: 'Capital City Cabs Ltd', createdAt: DateTime(2026, 10, 11)),
       ];
@@ -50,6 +53,7 @@ abstract final class DemoSeed {
         TransportProvider(id: pAirport, name: 'FCT Airport E-Shuttle', kind: ProviderKind.shuttle, status: Verification.verified, area: 'Airport Road', contactName: 'Sani Garba', contactEmail: 'shuttle@airporteshuttle.demo', joinedAt: DateTime(2026, 8, 18), description: 'Electric airport shuttle to the city centre.'),
         TransportProvider(id: pKubwa, name: 'Kubwa Express Shuttles', kind: ProviderKind.shuttle, status: Verification.pending, area: 'Kubwa', contactName: 'Peter Ojo', contactEmail: 'hello@kubwaexpress.demo', joinedAt: DateTime(2026, 10, 9), description: 'Minibus commuter service applying to join the platform.'),
         TransportProvider(id: pNyanya, name: 'Nyanya Commuter Union', kind: ProviderKind.busOperator, status: Verification.pending, area: 'Nyanya · AYA', contactName: 'Musa Danjuma', contactEmail: 'office@nyanyacommuters.demo', joinedAt: DateTime(2026, 10, 12), description: 'Union of minibus owners on the Nyanya corridor.'),
+        TransportProvider(id: pGrace, name: 'Grace Okafor', kind: ProviderKind.privateDriver, status: Verification.verified, area: 'Wuse 2', contactName: 'Grace Okafor', contactEmail: 'grace@taparide.demo', joinedAt: DateTime(2026, 9, 28), description: 'Private driver approved through partner registration (Toyota Camry).'),
         TransportProvider(id: pKeke, name: 'City Keke Cooperative', kind: ProviderKind.tricycle, status: Verification.suspended, area: 'Garki', contactName: 'Blessing Udo', contactEmail: 'coop@citykeke.demo', joinedAt: DateTime(2026, 8, 25), description: 'Electric tricycle pilot. Suspended pending permit renewal.'),
       ];
 
@@ -149,6 +153,7 @@ abstract final class DemoSeed {
       Vehicle(id: 'v_kek302', operatorId: pKeke, plate: 'KEK 302', kind: VehicleKind.evKeke, model: 'Electric keke', capacity: 3, status: VehicleStatus.inactive, verification: Verification.pending, area: 'Garki', monthEarnings: 0, batteryPct: 60, rangeKm: 90),
       Vehicle(id: 'v_kbx401', operatorId: pKubwa, plate: 'KBX 401', kind: VehicleKind.minibus, model: 'Minibus · 18 seats', capacity: 18, status: VehicleStatus.active, verification: Verification.pending, area: 'Kubwa', monthEarnings: 0),
       Vehicle(id: 'v_kbx402', operatorId: pKubwa, plate: 'KBX 402', kind: VehicleKind.minibus, model: 'Minibus · 18 seats', capacity: 18, status: VehicleStatus.active, verification: Verification.pending, area: 'Kubwa', monthEarnings: 0),
+      Vehicle(id: 'v_grace_car', operatorId: pGrace, plate: 'ABJ 552 TR', kind: VehicleKind.car, model: 'Toyota Camry', capacity: 4, status: VehicleStatus.onTrip, verification: Verification.verified, area: 'Wuse 2', monthEarnings: 186500, baseFare: 1000, perKmFare: 150, driverName: 'Grace Okafor'),
       Vehicle(id: 'v_nyc501', operatorId: pNyanya, plate: 'NYC 501', kind: VehicleKind.minibus, model: 'Minibus · 18 seats', capacity: 18, status: VehicleStatus.active, verification: Verification.pending, area: 'Nyanya', monthEarnings: 0),
     ]);
     return list;
@@ -210,6 +215,29 @@ abstract final class DemoSeed {
       b('bk_seed05', 'u_zainab', 'Zainab Yusuf', 'r02', 'Central Area', 'Gwarinpa', today.add(const Duration(hours: 7, minutes: 45)), 700, 'v_abj015', BookingStatus.confirmed, seat: 'S03'),
       b('bk_seed06', 'u_emeka', 'Emeka Nwosu', 'r05', 'Nyanya', 'Central Area', today.add(const Duration(hours: 6, minutes: 40)), 600, 'v_abj010', BookingStatus.confirmed, seat: 'S30'),
       b('bk_seed07', 'u_zainab', 'Zainab Yusuf', 'r04', 'Kubwa', 'Central Area', today.add(const Duration(hours: 7)), 800, 'v_abj007', BookingStatus.confirmed, seat: 'S17'),
+      // Grace's car rides: one in progress, two completed earlier today.
+      for (final (id, who, name, from, to, fare, ago, status) in [
+        ('bk_ride01', 'u_zainab', 'Zainab Yusuf', 'Jabi', 'Wuse 2', 2400, 6, BookingStatus.confirmed),
+        ('bk_ride02', 'u_emeka', 'Emeka Nwosu', 'Maitama', 'Central Area', 1900, 95, BookingStatus.completed),
+        ('bk_ride03', uAisha, 'Aisha Bello', 'Wuse 2', 'Garki', 2150, 210, BookingStatus.completed),
+      ])
+        Booking(
+          id: id,
+          userId: who,
+          passengerName: name,
+          kind: BookingKind.electric,
+          status: status,
+          origin: from,
+          destination: to,
+          departureAt: now.subtract(Duration(minutes: ago)),
+          fare: fare,
+          paymentMethod: PaymentMethod.tapCard,
+          ticketCode: 'EV-${id.substring(id.length - 4).toUpperCase()}',
+          createdAt: now.subtract(Duration(minutes: ago + 6)),
+          title: 'Toyota Camry · ABJ 552 TR',
+          vehicleId: 'v_grace_car',
+          providerId: pGrace,
+        ),
     ];
   }
 
