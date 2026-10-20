@@ -482,7 +482,8 @@ class DemandPanel extends StatelessWidget {
                 initialCenter: points.isEmpty ? const LatLng(9.0579, 7.4951) : points.first,
                 initialZoom: 11.5,
                 backgroundColor: const Color(0xFFEAF1EC),
-                interactionOptions: const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
+                // The page scrolls with the mouse wheel; the map zooms with pinch or double-click.
+                interactionOptions: const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate & ~InteractiveFlag.scrollWheelZoom),
               ),
               children: [
                 if (MapTiles.enabled)

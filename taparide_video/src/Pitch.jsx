@@ -367,6 +367,8 @@ function Dashboards() {
           <Eyebrow delay={4} size={28}>A dashboard for every partner</Eyebrow>
           <div style={{ height: 20 }} />
           <Sequenced
+            dip
+            len={16}
             items={parts.map((p, k) => ({
               from: k * each,
               el: (

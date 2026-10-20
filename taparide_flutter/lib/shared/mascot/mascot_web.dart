@@ -37,7 +37,6 @@ class _WebMascotState extends State<_WebMascot> {
       final frame = _frame;
       if (frame == null || e.source != frame.contentWindow) return;
       final data = e.data.dartify();
-      if (data is Map && data['type'] == 'tapi-tap') widget.onTap?.call();
       if (data is Map && data['type'] == 'tapi-ready') _post({'type': 'tapi', 'mood': widget.mood});
     }).toJS;
     // Tapi's eyes follow the pointer anywhere in the app, not just over the mascot.
@@ -72,13 +71,25 @@ class _WebMascotState extends State<_WebMascot> {
     if (old.mood != widget.mood) _post({'type': 'tapi', 'mood': widget.mood});
   }
 
+  /// Taps are handled by Flutter, not the iframe: the browser would otherwise send taps to the
+  /// iframe even when a sheet or dialog is drawn on top of it (e.g. the assistant's close button).
+  void _tap() {
+    _post({'type': 'tapi', 'mood': 'celebrate'});
+    Future.delayed(const Duration(milliseconds: 1600), () {
+      if (mounted) _post({'type': 'tapi', 'mood': widget.mood});
+    });
+    widget.onTap?.call();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return HtmlElementView.fromTagName(
+    final view = HtmlElementView.fromTagName(
       tagName: 'iframe',
       onElementCreated: (element) {
         final frame = element as web.HTMLIFrameElement;
         frame.src = 'mascot/index.html?mood=$_initialMood';
+        frame.style.pointerEvents = 'none';
+        frame.tabIndex = -1;
         frame.style.border = 'none';
         frame.style.width = '100%';
         frame.style.height = '100%';
@@ -89,5 +100,14 @@ class _WebMascotState extends State<_WebMascot> {
         _frame = frame;
       },
     );
+    // The tap target sits on top of the platform view: a detector wrapped around it would lose
+    // the gesture to the platform view, which claims every pointer that reaches it.
+    return Stack(fit: StackFit.expand, children: [
+      view,
+      MouseRegion(
+        cursor: widget.onTap != null ? SystemMouseCursors.click : MouseCursor.defer,
+        child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: _tap),
+      ),
+    ]);
   }
 }

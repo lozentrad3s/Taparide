@@ -39,14 +39,16 @@ export function Crossfade({ a, b, at, len = 14 }) {
 }
 
 /** Shows one of several children by frame windows, cross-dissolving between them. */
-export function Sequenced({ items, len = 12 }) {
+export function Sequenced({ items, len = 12, dip = false }) {
   const frame = useCurrentFrame();
+  // `dip`: the outgoing item fades out before the incoming one fades in (cleaner for text).
+  const half = dip ? len / 2 : 0;
   return (
     <div style={{ position: 'relative' }}>
       {items.map(({ from, el }, i) => {
         const next = items[i + 1]?.from ?? Infinity;
-        const inO = i === 0 ? 1 : interpolate(frame, [from, from + len], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
-        const outO = next === Infinity ? 1 : interpolate(frame, [next, next + len], [1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+        const inO = i === 0 ? 1 : interpolate(frame, [from + half, from + len], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+        const outO = next === Infinity ? 1 : interpolate(frame, [next, next + len - half], [1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
         const o = Math.min(inO, outO);
         if (o <= 0 && i !== 0) return null; // the first item stays mounted to hold the layout
         return (
