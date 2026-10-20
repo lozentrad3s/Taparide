@@ -75,6 +75,7 @@ class _Line {
   _Line.card(this.card) : role = 'card', text = '', activity = null;
   _Line.activity(this.activity) : role = 'activity', text = '', card = null;
   _Line.error(this.text) : role = 'error', card = null, activity = null;
+  _Line.note(this.activity) : role = 'note', text = '', card = null;
 
   final String role;
   final String text;
@@ -165,7 +166,7 @@ class _AssistantViewState extends State<AssistantView> {
         // The AI service is unreachable or not configured: answer on the device instead.
         if (_history.isNotEmpty) rethrow;
         _offline = true;
-        if (mounted) setState(() => _lines.add(_Line.activity('Offline mode: quick answers on your device')));
+        if (mounted) setState(() => _lines.add(_Line.note('Quick answers on your device')));
         await _answerOffline(state, tools, message);
         return;
       }
@@ -328,6 +329,12 @@ class _LineView extends StatelessWidget {
         return Row(children: [
           const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
           const SizedBox(width: 10),
+          Text(line.activity ?? '', style: text.labelMedium?.copyWith(color: AppColors.muted)),
+        ]);
+      case 'note':
+        return Row(children: [
+          const Icon(Icons.bolt_rounded, size: 16, color: AppColors.leafText),
+          const SizedBox(width: 8),
           Text(line.activity ?? '', style: text.labelMedium?.copyWith(color: AppColors.muted)),
         ]);
       case 'error':

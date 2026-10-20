@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'admin_dashboard.dart';
 import 'applications_page.dart';
 import 'dashboard_pages.dart';
 import 'insights_page.dart';
@@ -10,7 +11,7 @@ export 'portal_shell.dart' show PortalSection;
 
 /// Maps a portal section to its page. `?provider=` opens a specific provider's dashboard.
 Widget portalPageFor(PortalSection section, Map<String, String> query) => switch (section.path) {
-      '/portal/overview' => const OverviewPage(),
+      '/portal/overview' => const AdminDashboard(),
       '/portal/fcta' => const FctaPage(),
       '/portal/operator' => OperatorPage(providerId: query['provider']),
       '/portal/fleet' => FleetPage(providerId: query['provider']),

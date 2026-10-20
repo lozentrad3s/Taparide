@@ -160,7 +160,7 @@ class _InsightsPageState extends State<InsightsPage> {
         ),
         const SizedBox(height: 18),
         _TwoUp(
-          left: _DemandPanel(report: report),
+          left: DemandPanel(report: report),
           right: _TrafficPanel(checks: traffic, loading: _loadingTraffic, onRetry: () {
             _trafficCache.remove(key);
             _loadTraffic();
@@ -170,7 +170,7 @@ class _InsightsPageState extends State<InsightsPage> {
         _TwoUp(
           left: Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             const PanelTitle('When people ride', subtitle: 'Bookings by departure hour'),
-            _HourBars(values: report.bookingsByHour),
+            HourBars(values: report.bookingsByHour),
           ])),
           right: Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             const PanelTitle('Opportunities', subtitle: 'Worked out from your routes, fleet and demand'),
@@ -459,8 +459,8 @@ class _EarnerRow extends StatelessWidget {
   }
 }
 
-class _DemandPanel extends StatelessWidget {
-  const _DemandPanel({required this.report});
+class DemandPanel extends StatelessWidget {
+  const DemandPanel({required this.report});
   final InsightsReport report;
 
   @override
@@ -580,8 +580,8 @@ class _TrafficPanel extends StatelessWidget {
   }
 }
 
-class _HourBars extends StatelessWidget {
-  const _HourBars({required this.values});
+class HourBars extends StatelessWidget {
+  const HourBars({required this.values});
   final List<int> values;
 
   @override

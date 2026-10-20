@@ -39,7 +39,7 @@ class OfflineAssistant {
       final r = await _run('set_reminder', {'booking_id': next.id, if (minutes != null) 'minutes_before': minutes});
       final leave = r['leave_by'];
       return [
-        'Your next trip is ${next.origin} → ${next.destination} at ${Fmt.dayTime(next.departureAt)}.',
+        'Your next trip is ${next.origin} → ${next.destination}, ${Fmt.dayTime(next.departureAt)}.',
         if (leave != null) 'Leave by $leave (about ${r['travel_minutes_to_stop']} min to the stop).',
         minutes != null ? 'I will remind you $minutes minutes before it departs.' : 'I set two reminders: 10 minutes before you need to leave, and when it is time to go.',
       ].join(' ');

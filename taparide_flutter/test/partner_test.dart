@@ -115,6 +115,21 @@ void main() {
     expect(state.suggestions.first.title, contains('Wuse – Maitama'));
   });
 
+  test('admin analytics add up across the platform', () async {
+    final (state, _) = await freshState();
+    await state.signIn(email: 'admin@taparide.demo', password: DemoSeed.password, portal: Portal.partner);
+    final a = state.adminAnalytics();
+    expect(a.faresThisMonth, a.byOperator.fold<int>(0, (s, r) => s + r.monthlyRevenue));
+    final metro = a.byOperator.firstWhere((r) => r.provider.id == DemoSeed.pMetro);
+    expect(metro.monthlyRevenue, state.insightsFor(DemoSeed.pMetro).monthlyRevenue, reason: 'admin and partner dashboards agree');
+    expect(a.vehicles, state.vehicles.length);
+    expect(a.totalUsers, state.users.length);
+    expect(a.openApplications, 2, reason: 'the two seeded applications');
+    expect(a.byOperator.any((r) => r.provider.kind == ProviderKind.fleetOwner), isFalse, reason: 'fleet owners are not double counted');
+    expect(a.byOperator.first.monthlyRevenue, greaterThanOrEqualTo(a.byOperator.last.monthlyRevenue));
+    expect(a.toCsvRows(state.now).length, greaterThan(10));
+  });
+
   testWidgets('admin opens AI insights for any organisation and the application queue', (tester) async {
     final state = await pumpApp(tester, size: const Size(1440, 1000));
     await tester.runAsync(() => state.signIn(email: 'admin@taparide.demo', password: DemoSeed.password, portal: Portal.partner));

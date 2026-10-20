@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import 'package:latlong2/latlong.dart';
 
+import 'admin_analytics.dart';
 import 'analytics.dart';
 import 'api_client.dart';
 import 'backend/backend.dart';
@@ -431,6 +432,25 @@ class AppState extends ChangeNotifier {
         routes: routes,
         vehicles: vehicles,
         bookings: partnerBookings,
+        now: now,
+      );
+
+  /// Which server services are live (from /api/config): tiles, geocoder, ai, backend. Never keys.
+  Map<String, dynamic> services = const {};
+
+  void setServices(Map<String, dynamic> value) {
+    services = value;
+    _notify();
+  }
+
+  /// Platform-wide analytics for the admin control centre.
+  AdminAnalytics adminAnalytics() => AdminAnalytics.build(
+        providers: providers,
+        routes: routes,
+        vehicles: vehicles,
+        bookings: partnerBookings,
+        applications: partnerApplications,
+        users: users,
         now: now,
       );
 

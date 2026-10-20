@@ -120,6 +120,11 @@ void main() {
   testWidgets('admin portal', (t) async {
     await _app(t, desktop, email: 'admin@taparide.demo', portal: Portal.partner);
     await _shot(t, 'admin_overview_desktop');
+    t.view.physicalSize = const Size(1440, 3000);
+    await t.pumpAndSettle();
+    await _shot(t, 'admin_overview_full');
+    t.view.physicalSize = desktop;
+    await t.pumpAndSettle();
     for (final page in ['insights', 'applications', 'fcta', 'operator', 'fleet', 'providers', 'evs', 'routes', 'vehicles', 'verification', 'users']) {
       await _go(t, '/portal/$page');
       await _shot(t, 'admin_${page}_desktop');

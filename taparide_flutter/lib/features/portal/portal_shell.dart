@@ -24,7 +24,7 @@ class PortalSection {
 
   static const _partners = {UserRole.operator, UserRole.fleetOwner, UserRole.government, UserRole.admin};
 
-  static const overview = PortalSection('/portal/overview', 'Overview', Icons.space_dashboard_rounded, {UserRole.admin});
+  static const overview = PortalSection('/portal/overview', 'Control centre', Icons.space_dashboard_rounded, {UserRole.admin}, short: 'Admin');
   static const fcta = PortalSection('/portal/fcta', 'FCTA dashboard', Icons.account_balance_rounded, {UserRole.government, UserRole.admin}, short: 'FCTA');
   static const operator = PortalSection('/portal/operator', 'Operator dashboard', Icons.directions_bus_rounded, {UserRole.operator, UserRole.government, UserRole.admin}, short: 'Dashboard');
   static const fleet = PortalSection('/portal/fleet', 'Fleet owner dashboard', Icons.local_shipping_rounded, {UserRole.fleetOwner, UserRole.admin}, short: 'Fleet');
