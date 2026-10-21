@@ -2,8 +2,13 @@
   "name": "taparide-web",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "@anthropic-ai/sdk": "latest"
+  },
+  "devDependencies": {
+    "pg": "^8.23.1"
   }
 }

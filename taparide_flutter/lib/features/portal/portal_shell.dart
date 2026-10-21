@@ -76,6 +76,11 @@ class PortalShell extends StatelessWidget {
     final state = context.watch<AppState>();
     final user = state.user;
     if (user == null) return const SizedBox.shrink();
+    // Until the partner's own company has loaded we can't tell a driver from an operator,
+    // so hold the shell rather than flash the wrong menu.
+    if (user.providerId != null && state.providerById(user.providerId) == null && state.dataState != LoadState.ready && state.dataState != LoadState.error) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
     final privateDriver = user.role == UserRole.operator && state.providerById(user.providerId)?.kind == ProviderKind.privateDriver;
     final sections = PortalSection.forRole(user.role, privateDriver: privateDriver);
     final current = PortalSection.byPath(location);
