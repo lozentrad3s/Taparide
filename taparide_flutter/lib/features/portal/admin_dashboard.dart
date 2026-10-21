@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../app/theme.dart';
 import '../../core/app_state.dart';
+import '../../core/backend/demo_backend.dart';
 import '../../core/format.dart';
 import '../../core/models.dart';
 import '../../core/partner_models.dart';
@@ -32,10 +33,16 @@ class AdminDashboard extends StatelessWidget {
     final fcta = state.fctaDashboard();
 
     return PortalScaffold(
-      title: 'Admin control centre',
-      subtitle: 'The whole of Tap A Ride · ${Fmt.date(state.now)}',
+      title: 'Master control centre',
+      subtitle: 'Signed in as ${state.user?.fullName ?? ''} · the whole of Tap A Ride · ${Fmt.date(state.now)}',
       leading: const IconBadge(Icons.admin_panel_settings_rounded, size: 52, color: AppColors.forest, iconColor: Colors.white, radius: 26),
       actions: [
+        if (state.backend is DemoBackend)
+          TextButton.icon(
+            onPressed: () => _resetDemo(context),
+            icon: const Icon(Icons.restart_alt_rounded, size: 18),
+            label: const Text('Reset demo data'),
+          ),
         OutlinedButton.icon(
           onPressed: () async {
             final ok = await downloadCsv('taparide-platform-report.csv', a.toCsvRows(state.now));
@@ -138,6 +145,8 @@ class AdminDashboard extends StatelessWidget {
             if (state.audit.isEmpty) Text('No changes recorded yet.', style: text.bodyMedium),
           ])),
         ),
+        const SizedBox(height: 18),
+        _SecurityPanel(users: state.users, demo: state.backend.isDemo),
         const SizedBox(height: 22),
         Text('Open any dashboard', style: text.titleLarge),
         const SizedBox(height: 4),
@@ -156,6 +165,27 @@ class AdminDashboard extends StatelessWidget {
         ]),
       ],
     );
+  }
+
+  static Future<void> _resetDemo(BuildContext context) async {
+    final state = context.read<AppState>();
+    final backend = state.backend;
+    if (backend is! DemoBackend) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (d) => AlertDialog(
+        title: const Text('Reset demo data?'),
+        content: const Text('Every booking, approval and change made in this browser is cleared and the original demo data comes back. Do this before a demo so testers start fresh. You will be signed out.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('Cancel')),
+          FilledButton(onPressed: () => Navigator.pop(d, true), child: const Text('Reset')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    await backend.reset();
+    await state.signOut();
+    if (context.mounted) context.go('/');
   }
 
   static String _dashboardFor(TransportProvider p) => p.kind == ProviderKind.fleetOwner ? '/portal/fleet?provider=${p.id}' : '/portal/operator?provider=${p.id}';
@@ -202,6 +232,47 @@ class _SystemStrip extends StatelessWidget {
             Text('$label ', style: text.labelLarge),
             StatusPill(status, tone: tone),
           ]),
+      ]),
+    );
+  }
+}
+
+/// Who can see what: every staff account and its role, with where the data lives.
+class _SecurityPanel extends StatelessWidget {
+  const _SecurityPanel({required this.users, required this.demo});
+  final List<AppUser> users;
+  final bool demo;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final staff = [for (final u in users) if (u.role != UserRole.passenger) u]..sort((a, b) => b.role.index.compareTo(a.role.index));
+    return Panel(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        PanelTitle('Security & access', subtitle: '${staff.length} staff accounts · only master admins see this page', trailing: TextButton(onPressed: () => context.go('/portal/users'), child: const Text('Change roles'))),
+        for (final u in staff)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: Row(children: [
+              Avatar(initials: u.fullName.split(' ').map((p) => p.isEmpty ? '' : p[0]).take(2).join(), size: 32),
+              const SizedBox(width: 10),
+              Expanded(child: Text('${u.fullName} · ${u.email}', style: text.bodyMedium, overflow: TextOverflow.ellipsis)),
+              StatusPill(u.role == UserRole.admin ? 'Master admin' : u.role.label, tone: u.role == UserRole.admin ? Tone.danger : (u.role == UserRole.government ? Tone.info : Tone.neutral)),
+            ]),
+          ),
+        const Divider(height: 24),
+        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(demo ? Icons.info_outline_rounded : Icons.lock_rounded, size: 18, color: AppColors.muted),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              demo
+                  ? 'Demo mode: data lives in each visitor\'s browser. The master admin sign-in is private (only a hash ships in the app) and is not listed on the login page. Connect Supabase for shared, server-enforced data.'
+                  : 'Live mode: roles are enforced by the database (row-level security). Only accounts promoted to admin can open this page.',
+              style: text.bodySmall,
+            ),
+          ),
+        ]),
       ]),
     );
   }

@@ -49,6 +49,22 @@
         {
           "key": "Permissions-Policy",
           "value": "geolocation=(self \"https://findme-ai-lozen-s-projects.vercel.app\"), camera=(self), microphone=(self \"https://findme-ai-lozen-s-projects.vercel.app\")"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors 'self'; base-uri 'self'; object-src 'none'; form-action 'self'"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains"
+        },
+        {
+          "key": "Cross-Origin-Opener-Policy",
+          "value": "same-origin-allow-popups"
         }
       ]
     }

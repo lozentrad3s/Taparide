@@ -6,6 +6,13 @@ import '../partner_models.dart';
 abstract final class DemoSeed {
   static const password = 'Ride2026!';
 
+  /// The master admin's private sign-in, injected at build time (see deploy/scripts/build-web.mjs).
+  /// Only a salted SHA-256 hash ships in the app; without it (tests, local runs) the demo password applies.
+  static const masterEmail = String.fromEnvironment('MASTER_ADMIN_EMAIL', defaultValue: 'admin@taparide.demo');
+  static const masterName = String.fromEnvironment('MASTER_ADMIN_NAME', defaultValue: 'Daniel Adeyemi');
+  static const masterSalt = String.fromEnvironment('MASTER_ADMIN_SALT');
+  static const masterHash = String.fromEnvironment('MASTER_ADMIN_HASH');
+
   static const pMetro = 'p_metro';
   static const pGreenFleet = 'p_greenfleet';
   static const pNaviRide = 'p_naviride';
@@ -18,14 +25,13 @@ abstract final class DemoSeed {
 
   static const uAisha = 'u_aisha';
 
-  /// Sign-in shortcuts shown on the login screen in demo mode.
+  /// Sign-in shortcuts shown on the login screen in demo mode. The master admin is deliberately not listed.
   static const demoAccounts = <(String, String, UserRole)>[
     ('Aisha Bello', 'aisha@taparide.demo', UserRole.passenger),
     ('Ibrahim Musa · Abuja Metro Bus Co.', 'ops@abujametro.demo', UserRole.operator),
     ('Chiamaka Obi · GreenFleet Logistics', 'fleet@greenfleet.demo', UserRole.fleetOwner),
     ('Tunde Bello · NaviRide Electric', 'ev@naviride.demo', UserRole.operator),
     ('Fatima Lawal · FCTA Transport', 'transport@fcta.demo', UserRole.government),
-    ('Daniel Adeyemi · Platform admin', 'admin@taparide.demo', UserRole.admin),
     ('Grace Okafor · private driver', 'grace@taparide.demo', UserRole.operator),
     ('Musa Abdullahi · driver applicant', 'musa@taparide.demo', UserRole.passenger),
     ('Ngozi Eze · company applicant', 'ngozi@capitalcabs.demo', UserRole.passenger),
@@ -37,7 +43,7 @@ abstract final class DemoSeed {
         AppUser(id: 'u_fleet', fullName: 'Chiamaka Obi', email: 'fleet@greenfleet.demo', phone: '+234 812 000 5566', role: UserRole.fleetOwner, providerId: pGreenFleet, createdAt: DateTime(2026, 7, 9)),
         AppUser(id: 'u_ev', fullName: 'Tunde Bello', email: 'ev@naviride.demo', phone: '+234 815 000 7788', role: UserRole.operator, providerId: pNaviRide, createdAt: DateTime(2026, 8, 3)),
         AppUser(id: 'u_fcta', fullName: 'Fatima Lawal', email: 'transport@fcta.demo', phone: '+234 806 000 9900', role: UserRole.government, organisation: 'FCTA Transport Secretariat', createdAt: DateTime(2026, 6, 20)),
-        AppUser(id: 'u_admin', fullName: 'Daniel Adeyemi', email: 'admin@taparide.demo', phone: '+234 701 000 1212', role: UserRole.admin, createdAt: DateTime(2026, 6, 1)),
+        AppUser(id: 'u_admin', fullName: masterName, email: masterEmail, phone: '+234 701 000 1212', role: UserRole.admin, createdAt: DateTime(2026, 6, 1)),
         AppUser(id: 'u_emeka', fullName: 'Emeka Nwosu', email: 'emeka@taparide.demo', role: UserRole.passenger, organisation: 'Banex Plaza offices', createdAt: DateTime(2026, 9, 2)),
         AppUser(id: 'u_zainab', fullName: 'Zainab Yusuf', email: 'zainab@taparide.demo', role: UserRole.passenger, organisation: 'Jabi tech hub', createdAt: DateTime(2026, 9, 11)),
         AppUser(id: 'u_grace', fullName: 'Grace Okafor', email: 'grace@taparide.demo', phone: '+234 805 555 0404', role: UserRole.operator, providerId: pGrace, createdAt: DateTime(2026, 9, 28)),

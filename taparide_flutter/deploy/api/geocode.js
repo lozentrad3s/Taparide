@@ -21,7 +21,8 @@ function collect(node, out = []) {
 }
 
 async function carto(q) {
-  const key = process.env.CARTO_API_KEY;
+  // Geocoding needs a CARTO token with Location Data Services; basemap-only keys can't geocode.
+  const key = process.env.CARTO_LDS_TOKEN || (process.env.CARTO_GEOCODING === 'true' ? process.env.CARTO_API_KEY : '');
   if (!key) return null;
   const base = (process.env.CARTO_API_BASE || "https://gcp-us-east1.api.carto.com").replace(/\/$/, "");
   const url = `${base}/v3/lds/geocoding/geocode?address=${encodeURIComponent(`${q}, Abuja`)}&country=NG&limit=5`;

@@ -16,7 +16,7 @@ import 'demo_seed.dart';
 class DemoBackend implements Backend {
   DemoBackend._(this._prefs, this._latency, this._clock);
 
-  static const _storageKey = 'taparide_demo_state_v3';
+  static const _storageKey = 'taparide_demo_state_v4';
 
   static Future<DemoBackend> create({Duration latency = const Duration(milliseconds: 260), DateTime Function()? clock}) async {
     final prefs = await SharedPreferences.getInstance();
@@ -82,7 +82,11 @@ class DemoBackend implements Backend {
 
   void _seed() {
     final now = _clock();
-    _accounts = [for (final u in DemoSeed.users()) _Account.create(u, DemoSeed.password)];
+    _accounts = [
+      for (final u in DemoSeed.users())
+        // The master admin signs in with a private password whose hash is injected at build time.
+        if (u.role == UserRole.admin && DemoSeed.masterHash.isNotEmpty) _Account(u, DemoSeed.masterSalt, DemoSeed.masterHash) else _Account.create(u, DemoSeed.password),
+    ];
     _providers = DemoSeed.providers();
     _routes = DemoSeed.routes();
     _vehicles = DemoSeed.vehicles();
