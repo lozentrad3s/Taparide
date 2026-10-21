@@ -166,4 +166,5 @@ const out = join(dirname(fileURLToPath(import.meta.url)), '..', 'public', 'music
 mkdirSync(out, { recursive: true });
 writeFileSync(join(out, 'ad.wav'), render(46, { energy: 1, intro: 1, drums: 1 }));
 writeFileSync(join(out, 'pitch.wav'), render(166, { energy: 0.8, intro: 2, drums: 0.6 }));
+writeFileSync(join(out, 'commercial.wav'), render(112, { energy: 0.7, intro: 1, drums: 0.5 }));
 console.log('wrote', out);

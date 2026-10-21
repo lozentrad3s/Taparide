@@ -1,0 +1,36 @@
+{
+  "voice": "Charon",
+  "style": "Read this as the narrator of a premium technology commercial: warm, confident and inspiring, unhurried, with natural pauses between sentences.",
+  "segments": [
+    {
+      "id": "hook",
+      "text": "Every morning, more than four million people in Abuja ask the same three questions. How much is the fare? When will the bus come? And is this car safe?",
+      "source": "Abuja metro population 2025: Macrotrends (UN data)"
+    },
+    {
+      "id": "now",
+      "text": "Abuja is one of Africa's fastest-growing capitals, adding nearly two hundred thousand people every year. New terminals have been built. Electric and gas-powered buses are arriving. But the system to run them is missing.",
+      "source": "Growth ~4.6% a year: Macrotrends · Terminals & new fleets: New National Star, WithinNigeria"
+    },
+    {
+      "id": "market",
+      "text": "Nigeria's urban mobility and ride-hailing market is worth about four hundred million dollars today, and is forecast to more than double by twenty thirty-one. Yet most daily trips still run on cash, guesswork and trust.",
+      "source": "Urban mobility & ride-hailing: USD 400M (2025) to USD 965M (2031), Ken Research"
+    },
+    {
+      "id": "why",
+      "text": "Commuters can spend up to half their income just getting to work. Owners can't see what their vehicles earn. Government can't see the city move. We are building Tap A Ride because Abuja deserves transport that is fair, safe and visible.",
+      "source": "Up to half of income on commuting: Daily Trust"
+    },
+    {
+      "id": "solution",
+      "text": "One platform for everyone. Riders book, and tap to pay, at a fixed fare. Every vehicle is verified. Drivers, operators and fleet owners see every naira. The FCTA sees every route. And Tapi, our AI guide, tells you when to leave.",
+      "source": ""
+    },
+    {
+      "id": "future",
+      "text": "This is how Africa's cities will move: connected, cashless and smart. Starting in Abuja. Tap A Ride. Know your fare. Know your ride. Just tap.",
+      "source": ""
+    }
+  ]
+}
