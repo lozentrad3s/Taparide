@@ -161,7 +161,6 @@ class _LoginPageState extends State<LoginPage> {
 
   Widget _buildForm(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final backend = context.read<AppState>().backend;
     final partner = _portal == Portal.partner;
     final title = partner ? 'Partner portal' : (_register ? 'Create your rider account' : 'Welcome back');
     final subtitle = partner
@@ -291,7 +290,8 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 8),
               Text('Private drivers, transport companies and government agencies apply here. Your dashboard opens once the FCTA approves you.', style: text.bodySmall, textAlign: TextAlign.center),
             ],
-            if (backend.isDemo) ...[
+            // The same demo accounts exist in the live Supabase project (deploy/scripts/supabase-setup.mjs).
+            if (!const bool.fromEnvironment('HIDE_DEMO_ACCOUNTS')) ...[
               const SizedBox(height: 24),
               _DemoAccounts(partner: partner, onPick: _fillDemo),
             ],

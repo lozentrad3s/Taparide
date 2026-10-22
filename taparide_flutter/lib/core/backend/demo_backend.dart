@@ -16,7 +16,7 @@ import 'demo_seed.dart';
 class DemoBackend implements Backend {
   DemoBackend._(this._prefs, this._latency, this._clock);
 
-  static const _storageKey = 'taparide_demo_state_v4';
+  static const _storageKey = 'taparide_demo_state_v5';
 
   static Future<DemoBackend> create({Duration latency = const Duration(milliseconds: 260), DateTime Function()? clock}) async {
     final prefs = await SharedPreferences.getInstance();
@@ -85,7 +85,7 @@ class DemoBackend implements Backend {
     _accounts = [
       for (final u in DemoSeed.users())
         // The master admin signs in with a private password whose hash is injected at build time.
-        if (u.role == UserRole.admin && DemoSeed.masterHash.isNotEmpty) _Account(u, DemoSeed.masterSalt, DemoSeed.masterHash) else _Account.create(u, DemoSeed.password),
+        if (u.id == 'u_admin' && DemoSeed.masterHash.isNotEmpty) _Account(u, DemoSeed.masterSalt, DemoSeed.masterHash) else _Account.create(u, DemoSeed.password),
     ];
     _providers = DemoSeed.providers();
     _routes = DemoSeed.routes();
@@ -686,6 +686,8 @@ class DemoBackend implements Backend {
     _require(userId != me.id, 'change your own role');
     final index = _accounts.indexWhere((a) => a.user.id == userId);
     if (index < 0) throw const BackendException(BackendErrorKind.notFound, 'Account not found.');
+    // Admin accounts are managed by the platform owner, never from the app.
+    _require(role != UserRole.admin && _accounts[index].user.role != UserRole.admin, 'change admin accounts');
     final needsProvider = role == UserRole.operator || role == UserRole.fleetOwner;
     if (needsProvider && providerId == null) throw const BackendException(BackendErrorKind.validation, 'Choose the provider this account belongs to.');
     final updated = _accounts[index].user.copyWith(role: role, providerId: providerId, clearProvider: !needsProvider);

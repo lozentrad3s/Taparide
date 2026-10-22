@@ -76,6 +76,8 @@ const accounts = [
   { key: 'ev', email: 'ev@naviride.demo', name: 'Tunde Bello', phone: '+234 815 000 7788', role: 'operator', provider: 'p_naviride' },
   { key: 'fcta', email: 'transport@fcta.demo', name: 'Fatima Lawal', phone: '+234 806 000 9900', org: 'FCTA Transport Secretariat', role: 'government' },
   { key: 'grace', email: 'grace@taparide.demo', name: 'Grace Okafor', phone: '+234 805 555 0404', role: 'operator', provider: 'p_grace' },
+  // Shared demo admin; the protect_admins migration stops it from touching admin accounts.
+  { key: 'daniel', email: 'admin@taparide.demo', name: 'Daniel Adeyemi', phone: '+234 701 000 3434', role: 'admin' },
 ];
 if (master.MASTER_ADMIN_EMAIL && master.MASTER_ADMIN_PASSWORD) {
   accounts.push({ key: 'master', email: master.MASTER_ADMIN_EMAIL, name: master.MASTER_ADMIN_NAME || 'Platform owner', role: 'admin', password: master.MASTER_ADMIN_PASSWORD });
@@ -106,7 +108,7 @@ for (const a of accounts) {
       [a.email, a.password || DEMO_PASSWORD, meta],
     );
     ids[a.key] = r.rows[0].id;
-    log('created account', a.role === 'admin' ? '(master admin)' : a.email);
+    log('created account', a.password ? '(master admin)' : a.email);
   }
   // Email sign-in needs an identity row too (added if missing, e.g. after an interrupted run).
   await q(
@@ -149,6 +151,22 @@ if (!(await q('select 1 from public.bookings limit 1')).rowCount) {
     );
   }
   log('added bookings');
+}
+
+// The rest of the demo commutes (rail, Nyanya and Kubwa), added once each.
+for (const [who, name, route, from, to, at, fare, vehicle, status, seat] of [
+  ['aisha', 'Aisha Bello', 'r03', 'Central Station', 'Idu', `(date_trunc('day', now()) - interval '6 days' + interval '9 hours 20 minutes')`, 600, 'v_amr1', 'completed', 'C3'],
+  ['emeka', 'Emeka Nwosu', 'r05', 'Nyanya', 'Central Area', `(date_trunc('day', now()) + interval '6 hours 40 minutes')`, 600, 'v_abj010', 'confirmed', 'S30'],
+  ['zainab', 'Zainab Yusuf', 'r04', 'Kubwa', 'Central Area', `(date_trunc('day', now()) + interval '7 hours')`, 800, 'v_abj007', 'confirmed', 'S17'],
+]) {
+  const r = await q(
+    `insert into public.bookings (user_id, passenger_name, kind, status, origin, destination, departure_at, fare, payment_method, ticket_code, created_at, seat, route_id, vehicle_id, provider_id)
+     select $1, $2, 'transit', $3, $4, $5, ${at}, $6, 'tap_card', 'TR-' || upper(substr(md5(random()::text), 1, 6)), ${at} - interval '2 hours', $7, $8::text, $9, (select provider_id from public.routes where id = $8::text)
+     where exists (select 1 from public.routes where id = $8::text) and exists (select 1 from public.vehicles where id = $9)
+       and not exists (select 1 from public.bookings where user_id = $1 and route_id = $8::text)`,
+    [ids[who], name, status, from, to, fare, seat, route, vehicle],
+  );
+  if (r.rowCount) log('added booking', route, 'for', name);
 }
 
 if (!(await q('select 1 from public.partner_applications limit 1')).rowCount) {

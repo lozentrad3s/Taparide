@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../app/theme.dart';
 import '../../core/app_state.dart';
 import '../../core/backend/demo_backend.dart';
+import '../../core/backend/demo_seed.dart';
 import '../../core/format.dart';
 import '../../core/models.dart';
 import '../../core/partner_models.dart';
@@ -249,7 +250,7 @@ class _SecurityPanel extends StatelessWidget {
     final staff = [for (final u in users) if (u.role != UserRole.passenger) u]..sort((a, b) => b.role.index.compareTo(a.role.index));
     return Panel(
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        PanelTitle('Security & access', subtitle: '${staff.length} staff accounts · only master admins see this page', trailing: TextButton(onPressed: () => context.go('/portal/users'), child: const Text('Change roles'))),
+        PanelTitle('Security & access', subtitle: '${staff.length} staff accounts · only admins see this page', trailing: TextButton(onPressed: () => context.go('/portal/users'), child: const Text('Change roles'))),
         for (final u in staff)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 6),
@@ -257,7 +258,7 @@ class _SecurityPanel extends StatelessWidget {
               Avatar(initials: u.fullName.split(' ').map((p) => p.isEmpty ? '' : p[0]).take(2).join(), size: 32),
               const SizedBox(width: 10),
               Expanded(child: Text('${u.fullName} · ${u.email}', style: text.bodyMedium, overflow: TextOverflow.ellipsis)),
-              StatusPill(u.role == UserRole.admin ? 'Master admin' : u.role.label, tone: u.role == UserRole.admin ? Tone.danger : (u.role == UserRole.government ? Tone.info : Tone.neutral)),
+              StatusPill(u.role == UserRole.admin ? (u.email == DemoSeed.demoAdminEmail ? 'Demo admin' : 'Master admin') : u.role.label, tone: u.role == UserRole.admin ? Tone.danger : (u.role == UserRole.government ? Tone.info : Tone.neutral)),
             ]),
           ),
         const Divider(height: 24),
