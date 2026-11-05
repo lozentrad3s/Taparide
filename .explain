@@ -1,0 +1,676 @@
+# Tap A Ride: the whole project, explained
+
+> **Know your fare. Know your ride. Just tap.**
+> Tap A Ride is the Abuja Smart Mobility Platform: one system where riders book and pay for transport with a tap card or QR code, and operators, fleet owners and the FCTA see every trip, every naira and every verified vehicle.
+
+This file explains everything about the project in one place: the problem, the product, how the code is built and why, how money is made, and where we are going. It is written in Markdown, so it reads well in any editor or on GitHub.
+
+Last updated: 5 November 2026.
+
+---
+
+## Contents
+
+1. [The project in one minute](#1-the-project-in-one-minute)
+2. [The problem we solve](#2-the-problem-we-solve)
+3. [The solution](#3-the-solution)
+4. [Who uses it and what they get](#4-who-uses-it-and-what-they-get)
+5. [How it works, step by step](#5-how-it-works-step-by-step)
+6. [The technology stack and why we chose it](#6-the-technology-stack-and-why-we-chose-it)
+7. [System architecture](#7-system-architecture)
+8. [The codebase, folder by folder](#8-the-codebase-folder-by-folder)
+9. [The database](#9-the-database)
+10. [AI features](#10-ai-features)
+11. [Security](#11-security)
+12. [Testing and quality](#12-testing-and-quality)
+13. [Running, building and deploying](#13-running-building-and-deploying)
+14. [Marketing videos](#14-marketing-videos)
+15. [Business Model Canvas](#15-business-model-canvas)
+16. [Business model and pricing](#16-business-model-and-pricing)
+17. [Revenue targets](#17-revenue-targets)
+18. [Market and competition](#18-market-and-competition)
+19. [Go-to-market and scaling](#19-go-to-market-and-scaling)
+20. [Risks and how we handle them](#20-risks-and-how-we-handle-them)
+21. [What is real today and what is still simulated](#21-what-is-real-today-and-what-is-still-simulated)
+22. [Roadmap](#22-roadmap)
+23. [Glossary](#23-glossary)
+
+---
+
+## 1. The project in one minute
+
+| | |
+|---|---|
+| **Name** | Tap A Ride ("Taparide"), descriptor "Abuja Smart Mobility Platform", tagline "Ride • Connect • Go" |
+| **What it is** | A multi-tenant transport platform. We do not own vehicles; we are the software every operator, fleet owner and the government plugs into, and every rider uses |
+| **Where** | Abuja (FCT) first, then other Nigerian cities with state bus fleets |
+| **Why now** | ATDEW 2026 (Abuja Tech and Digital Economy Week), themed "Energising Smart Mobility: Powering Cities of the Future". National Innovation Challenge pitch: 24–26 November 2026 |
+| **Live app** | https://taparide.vercel.app |
+| **Code** | github.com/lozentrad3s/Taparide |
+| **Built with** | Flutter (Dart) for web and Android, Supabase (Postgres) for data and sign-in, Vercel serverless functions (Node.js) for AI, maps and keys, Gemini and Claude for AI |
+| **One-line pitch** | Abuja has the terminals and the buses. We are the system that runs them. |
+
+---
+
+## 2. The problem we solve
+
+Abuja has no structured, reliable mass transit. Most of its roughly 4.3 million residents depend on informal minibuses, taxis, tricycles and expensive ride-hailing. Every point below comes from Nigerian news reporting gathered in our concept brief (`project_brief_extracted.txt`).
+
+| Pain point | What people report |
+|---|---|
+| Transport eats income | Some residents spend up to half their income on daily commuting (Daily Trust) |
+| Fares change without warning | Fares jump at peak hours, when it rains, and with fuel and park levies |
+| "One chance" robberies | Commuters at night cannot tell which taxis are registered; many criminal vehicles use fake plates |
+| Stranded at night | Long queues at Berger, Area 1, AYA, Nyanya, Wuse, Gwarinpa and Kubwa as drivers stop early |
+| No information | No published routes, schedules or proper bus stops |
+| Good services go unused | The electric airport shuttle struggles because of awareness, routes and waiting time |
+| Cash friction | Hunting for change; bank transfers fail when the network is poor |
+
+**The real gap is software, not vehicles.**
+
+- **Idle infrastructure.** The FCTA built modern terminals (Mabushi, Kugbo, Federal Secretariat) that sit unused, waiting for operators under a public-private partnership.
+- **New fleets, no shared system.** The airport electric shuttle, the Renewed Hope electric buses for civil servants, Abuja Metro rail, CNG buses and private taxis each sell tickets their own way, or only in cash.
+- **The investor trust gap.** A person who buys a ₦10 million car and hires a driver only knows what the driver reports. Under-remittance is common, so private investment stays away.
+- **No proof of safety.** A rider has no easy way to check at the roadside that a vehicle is registered.
+
+---
+
+## 3. The solution
+
+One platform with five faces:
+
+1. **Rider app.** Search routes, see the fixed fare and the next departures, book a seat, pay by tap card or QR, get a boarding pass, share the trip, and see that the vehicle is verified.
+2. **Operator dashboard.** Routes, fares, vehicles, drivers, bookings and revenue for a bus company, shuttle or rail operator.
+3. **Fleet-owner dashboard.** What each vehicle earns, per day and per route, which ends the under-remittance problem.
+4. **Driver dashboard.** For approved private drivers: go online, see the current ride, complete it, track earnings.
+5. **FCTA (government) dashboard.** Ridership, a verified-vehicle register, route activity and an audit trail.
+
+Plus platform-wide services:
+
+- **Partner registration** with an AI pre-check of driver's licence and vehicle papers before an FCTA reviewer approves.
+- **Tag Along.** Verified professionals share rides home with colleagues who live nearby, on a cost-sharing basis.
+- **Electric vehicles.** Book EV rides with live battery and range, and find charging stations.
+- **Tapi**, a 3D mascot and AI ride assistant that plans trips, books seats and tells you when to leave.
+- **FindMe AI**, our sister project, gives the smart safety map: nearby places, live traffic, incidents and SOS.
+- **Master control centre** for the platform owner, with full analytics across the whole network.
+
+**Product principles** (from `taparide_flutter/PRODUCT.md`):
+
+1. Fixed and visible: fares, times and verification are always shown before a rider commits.
+2. One booking, every view: a rider's booking shows up in the operator, fleet and FCTA views.
+3. Cashless by default: tap card and QR are the main payment paths.
+4. Safety is a feature: verification and trip sharing are never hidden.
+5. Honest data: demo figures are labelled; nothing implies an endorsement that does not exist.
+
+---
+
+## 4. Who uses it and what they get
+
+| Role | Lands on | Can do | Pain point answered |
+|---|---|---|---|
+| **Passenger** | Rider home | Search, book, pay, cancel (refund), top up, Tag Along, EV rides, reminders, assistant | Unpredictable fares, no information, cash friction, safety fears |
+| **Transport operator** | Operator dashboard | Edit own fares, manage own vehicles, see own bookings and revenue, AI insights | Revenue leakage, empty seats, no demand data |
+| **Private driver** (operator role, private-driver provider) | Driver dashboard | Go online, complete rides, see earnings and where riders are | Finding riders, getting paid fairly |
+| **Fleet owner** | Fleet dashboard | See owned vehicles, earnings per vehicle, set vehicle status | Under-remittance, no trust, no investment |
+| **Government / FCTA** | FCTA dashboard | Approve providers and partner applications, verify vehicles, see all data, audit log | One-chance crime, idle terminals, no planning data |
+| **Platform admin** | Master control centre | Everything: suspensions, approvals, role changes (except admin accounts), platform analytics | Running the whole network |
+
+Each role only sees and changes what it is allowed to. This is enforced in the database, not just by hiding buttons (see [Security](#11-security)).
+
+**Demo accounts** (live site, password `Ride2026!`, also listed on the login page):
+
+| Account | Role |
+|---|---|
+| aisha@taparide.demo | Passenger (has a weekday commute habit the app learns from) |
+| emeka@taparide.demo, zainab@taparide.demo | Passengers |
+| ops@abujametro.demo | Operator · Abuja Metro Bus Co. |
+| fleet@greenfleet.demo | Fleet owner · GreenFleet Logistics |
+| ev@naviride.demo | Operator · NaviRide Electric |
+| transport@fcta.demo | Government / FCTA |
+| grace@taparide.demo | Approved private driver (Toyota Camry) |
+| musa@taparide.demo, ngozi@capitalcabs.demo | Partner applicants waiting for review |
+| admin@taparide.demo | Demo platform admin (cannot change admin accounts) |
+
+There is also a **private master admin** account for the platform owner. It is not listed anywhere; its sign-in details live only in the git-ignored file `taparide_flutter/.env.master.local`.
+
+---
+
+## 5. How it works, step by step
+
+### A morning commute (the core flow)
+
+1. At 6:55am Aisha opens the app. Because she rode Wuse → Maitama at 8:00 on most weekdays, the home screen suggests booking it early.
+2. She opens the route and sees the fixed fare (₦500), the next departures and the verified vehicle.
+3. She books a seat and pays with her tap-card balance (or a QR code).
+4. The database function `book_transit` checks that the provider is verified and she has enough balance, deducts the fare, creates the booking with a seat and ticket code, and writes the audit log. All of this happens in one transaction.
+5. She gets a boarding pass with a QR code, the operator, the vehicle plate and the driver.
+6. The same booking immediately appears in the operator's bookings, the fleet owner's per-vehicle earnings, and the FCTA's ridership figures. **One booking, every view.**
+
+### A partner joining
+
+1. A driver or company fills in the partner application (personal details, licence, vehicle or company papers, document photos).
+2. The AI document check reads the documents and compares them with what was typed ("Looks good" or "Needs a look"), to help the reviewer, never to replace them.
+3. An FCTA reviewer or admin approves, asks for changes, or declines.
+4. On approval, the database function `review_partner_application` creates the provider and vehicle, switches the applicant's role, and their dashboard opens.
+
+### A private-driver ride
+
+A rider books Grace's car (`book_electric`). Grace sees the ride on her driver dashboard, drives, taps **Complete ride** (`complete_ride`), and her earnings update.
+
+### How the money is meant to move (target design)
+
+The rider taps a card or shows a QR at the bus. The validator knows the vehicle, route and fare. The payment partner (Paystack or Flutterwave) charges the rider. The payment **splits automatically**: the operator's share goes to its bank account and a small platform fee goes to us. **We never hold riders' money**, because in Nigeria only a CBN-licensed Mobile Money Operator may run wallets. Phase 2 is a reloadable wallet held by a licensed partner. In the current build, payments are simulated (see [section 21](#21-what-is-real-today-and-what-is-still-simulated)).
+
+### Card security modes (rider's choice)
+
+| Mode | How it works | Best for |
+|---|---|---|
+| Tap & Go | Pays on tap with no phone; daily spending cap and per-tap limit | Riders who leave their phone at home |
+| Tap & Alert | Pays on tap; the phone gets an alert with "this wasn't me, block my card" | Riders who carry their phone |
+| Tap & Approve | Rider approves on the phone first | Large amounts only |
+
+### Hardware plan
+
+| Stage | On the bus | Rider uses |
+|---|---|---|
+| 1. Demo and pilot (now) | The conductor's Android phone running a validator app | Phone QR or printed QR card |
+| 2. Early operators | Handheld Android POS with NFC and QR | Branded NFC card (MIFARE DESFire, hard to clone) |
+| 3. Scale | Door-mounted validators (NFC, QR, 4G, GPS), about $135–$420 each | Travel card, phone QR, later bank cards |
+
+We order hardware only after an operator signs, so nothing is bought speculatively.
+
+---
+
+## 6. The technology stack and why we chose it
+
+### Languages
+
+| Language | Where | Why |
+|---|---|---|
+| **Dart** | The whole app (`taparide_flutter/lib`, about 16,000 lines) | Flutter's language: typed, fast, compiles to JavaScript/WebAssembly for the web and native code for Android |
+| **SQL / PL/pgSQL** | Database schema, security rules and business actions (`taparide_flutter/supabase`) | Puts the rules next to the data, so every client obeys them, and makes each booking one atomic transaction |
+| **JavaScript (Node.js, ES modules)** | Serverless API (`deploy/api`) and build/ops scripts (`deploy/scripts`) | Native on Vercel; keeps API keys on the server; quick to write |
+| **JavaScript + three.js** | Tapi the 3D mascot (`taparide_flutter/web/mascot`) | Real-time 3D in the browser, embedded in the Flutter web app |
+| **React (JSX)** | Marketing videos (`taparide_video`) with Remotion | Videos built as code: same brand, fonts and data as the app |
+| **HTML / CSS** | Web shell and early prototype | Needed by every web app |
+
+### Frameworks, services and libraries
+
+| Piece | What we use it for | Why we chose it |
+|---|---|---|
+| **Flutter 3.47** | The app UI for web (desktop and mobile browsers) and Android | **One codebase, every screen.** Riders are on mid-range Android phones; judges and partners are on laptops. Flutter draws its own pixels, so our custom design looks the same everywhere. Strong typing and hot reload made a full product buildable by a small team in weeks |
+| **go_router** | Navigation and role-based redirects | Deep links for every page (`/#/ride/r02`, `/#/portal/fcta`) and one place to send each role to its own home |
+| **provider** | App state (`AppState`) | Simple, well known, enough for this size; no extra architecture to learn |
+| **Supabase** | Sign-in (Auth), Postgres database, row-level security | A real Postgres database with built-in auth, a generous free tier, open source (no lock-in), and row-level security so permissions live in the database. It replaced writing our own backend server |
+| **supabase_flutter** | Talks to Supabase from the app | Official client; handles sessions and calls the SQL functions |
+| **Vercel** | Hosts the web app and runs the serverless API | Free static hosting plus serverless functions in one place, global CDN, edge caching for map tiles, encrypted ("sensitive") environment variables for keys |
+| **Google Gemini** | Default AI: assistant, AI insights, document checks; text-to-speech voice for the commercial | Fast and affordable, handles images (documents) and tool calls. The newest "flash" model is picked automatically |
+| **Anthropic Claude** (`@anthropic-ai/sdk`) | Second AI provider, used as fallback if a key is set | Strong tool use and reasoning; having two providers behind one interface means no single point of failure |
+| **flutter_map + latlong2** | Route maps, live fleet map, demand map | Open-source maps with no per-load fee from Google |
+| **CARTO basemaps** (via our `/api/tiles` proxy), **OpenStreetMap** fallback | Map tiles | Clean, light map style that suits the brand; the key stays on the server; edge cache keeps cost down; limited to the FCT region so the proxy can't be abused |
+| **OpenStreetMap Nominatim** | Turning place names into coordinates (geocoding) | Free and good for Abuja place names; CARTO geocoding can be switched on later |
+| **FindMe AI** (sister project) | Safety map, live traffic, road routes | Reused instead of rebuilt; reached through a `/api/findme` rewrite |
+| **qr_flutter** | QR boarding passes and tap-card QR | Small and reliable |
+| **shared_preferences** | Demo data, reminders and settings stored on the device | Works on web and Android with no setup |
+| **geolocator, image_picker, url_launcher, http, crypto, web** | Location, document photos, links, network calls, password hashing, browser APIs | Standard, maintained Flutter packages |
+| **Barlow + Fira Sans fonts** | Typography | Barlow fits a transport brand (condensed, legible on signage-like UI); Fira Sans supplies the ₦ sign, which Barlow lacks. Both are open-licence (SIL OFL) and self-hosted |
+| **Remotion 4 + @remotion/three + React Three Fiber** | Ad, pitch film and narrated commercial | Videos are code, so every frame uses real brand tokens and can be re-rendered when the product changes |
+| **Playwright** | End-to-end tests that click the real app like a user | Tests the live site on phone and desktop sizes |
+| **flutter_test** | Unit, flow and permission tests | Built into Flutter |
+| **pg** (node-postgres) | Database setup script | Runs migrations and seeds the live database through Supabase's connection pooler |
+| **GitHub** | Source control | Team collaboration and history |
+
+### Why this combination works
+
+- **Small team, full product.** One app codebase (Flutter), one database that enforces its own rules (Supabase), and a handful of serverless functions (Vercel). No servers to manage.
+- **Low running cost.** Every service has a free or low-cost tier that covers a pilot.
+- **Secure by design.** Secret keys never reach the browser; permissions are enforced by the database.
+- **Works offline for demos.** Without a database connection the app falls back to an on-device demo backend that applies the same rules, so a pitch never fails because of a network problem.
+- **Portable.** Postgres, Flutter and Node are standard. We can move hosts without rewriting the product.
+
+---
+
+## 7. System architecture
+
+```
+                           ┌────────────────────────────────────────────┐
+  Rider phone /            │  Flutter app (web + Android)               │
+  partner laptop  ───────► │  lib/  · go_router · provider · flutter_map │
+                           │  Backend interface:                         │
+                           │   ├─ SupabaseBackend  (live)                │
+                           │   └─ DemoBackend      (on-device fallback)  │
+                           └───────┬──────────────────────┬─────────────┘
+                                   │ Auth + SQL functions │ HTTPS /api/*
+                                   ▼                      ▼
+              ┌────────────────────────────┐   ┌──────────────────────────────┐
+              │ Supabase (Postgres)        │   │ Vercel serverless (Node.js)  │
+              │ · Auth (email + password)  │   │ /api/assistant  → Gemini/Claude│
+              │ · 11 tables, all with RLS  │   │ /api/insights   → Gemini/Claude│
+              │ · security-definer actions │   │ /api/verify-documents → AI    │
+              │   book_transit, top_up,    │   │ /api/geocode    → Nominatim  │
+              │   review_partner_app, ...  │   │ /api/tiles      → CARTO/OSM  │
+              │ · audit_log on every write │   │ /api/config     (flags only) │
+              └────────────────────────────┘   │ /api/findme/*   → FindMe AI  │
+                                               └──────────────────────────────┘
+```
+
+**Key design decisions**
+
+- **One `Backend` interface, two implementations.** `lib/core/backend/backend.dart` defines everything the app needs. `SupabaseBackend` is the live one; `DemoBackend` keeps data on the device with the same rules. `main.dart` picks Supabase when the build includes a Supabase URL and key.
+- **The database owns the rules.** Reads are filtered by row-level security; every write goes through a SQL function that re-checks the caller's role and writes the audit log.
+- **The AI never computes numbers.** The app computes every figure from real platform data; the model only explains them. This keeps dashboards accurate.
+- **AI tools run with the user's own permissions.** The assistant asks the app to run a tool (book a seat, list trips), and the app runs it as that user, so the AI can never do more than the user could.
+- **Keys stay server-side.** The browser only ever gets the Supabase public (anon) key, which is designed to be public and is protected by row-level security.
+
+---
+
+## 8. The codebase, folder by folder
+
+```
+Taparide project/
+├── .explain                      ← this file
+├── README.md                     ← repo overview
+├── project_brief_extracted.txt   ← concept & strategy brief (business source of truth)
+├── Abuja_Smart_Mobility_Concept_and_Strategy.docx
+├── taparide_flutter/             ← THE APP
+│   ├── lib/
+│   │   ├── main.dart             ← start-up: picks Supabase or demo backend, loads services
+│   │   ├── app/                  ← app.dart (shell), router.dart (routes + role redirects), theme.dart (brand tokens)
+│   │   ├── core/                 ← models, state and maths
+│   │   │   ├── models.dart, partner_models.dart   ← users, roles, providers, routes, vehicles, bookings, applications
+│   │   │   ├── app_state.dart    ← single source of app data; refresh, sign-in, actions
+│   │   │   ├── dashboards.dart, admin_analytics.dart, analytics.dart  ← dashboard figures
+│   │   │   ├── insights.dart     ← learns a rider's habits, suggests booking early
+│   │   │   ├── reminders.dart    ← "leave by" reminders and browser notifications
+│   │   │   ├── fleet_positions.dart, places.dart, location.dart  ← live map positions, Abuja places, GPS
+│   │   │   ├── api_client.dart   ← calls our /api endpoints (config, geocode, AI)
+│   │   │   ├── photos.dart       ← licensed photo credits
+│   │   │   └── backend/          ← backend.dart (interface), supabase_backend.dart, demo_backend.dart, demo_seed.dart
+│   │   ├── features/
+│   │   │   ├── landing/          ← public "Get started" page
+│   │   │   ├── auth/             ← sign in, register, password reset, demo-account shortcuts
+│   │   │   ├── passenger/        ← home, routes, route details, payment, ticket, trips, profile, tap card
+│   │   │   ├── ev/               ← electric vehicle booking and charging stations
+│   │   │   ├── tag_along/        ← shared rides with verified colleagues
+│   │   │   ├── nearby/           ← FindMe AI safety map
+│   │   │   ├── partner/          ← partner application and status
+│   │   │   ├── assistant/        ← Tapi assistant sheet, its tools, offline quick answers
+│   │   │   ├── portal/           ← partner portal: control centre, FCTA, operator, fleet, driver,
+│   │   │   │                        insights, applications, providers, routes, vehicles, bookings,
+│   │   │   │                        verification, users & roles, audit log
+│   │   │   └── common/           ← photo credits
+│   │   └── shared/               ← UI kit (ui.dart), brand lockup, route map, mascot, downloads, web frames
+│   ├── web/                      ← index.html, manifest, mascot/ (three.js Tapi)
+│   ├── assets/                   ← brand/ (logo), photos/ (Wikimedia Commons, credited), fonts/
+│   ├── supabase/
+│   │   ├── migrations/           ← schema, partner registration, driver rides, admin protection
+│   │   └── seed.sql              ← providers, routes, vehicles, stations, rides, baselines
+│   ├── deploy/                   ← everything Vercel runs
+│   │   ├── api/                  ← serverless endpoints (see section 7)
+│   │   │   └── _lib/             ← ai.js (Gemini + Claude), auth.js (origin check, rate limit)
+│   │   ├── scripts/              ← build-web, check-keys, supabase-setup, sync-vercel-env
+│   │   ├── vercel.json           ← security headers, rewrites, function limits
+│   │   └── public/               ← built web app (generated, not committed)
+│   ├── test/                     ← flow, permission, partner and driver tests; screens/ renders screenshots
+│   ├── PRODUCT.md                ← product context
+│   └── DESIGN.md                 ← design system: colours, type, components
+├── taparide_video/               ← Remotion projects: ad, pitch film, narrated commercial
+│   ├── src/                      ← Ad.jsx, Pitch.jsx, Commercial.jsx, components (Tapi 3D, UI)
+│   ├── scripts/                  ← voiceover.mjs (Gemini TTS), music.mjs
+│   └── out/                      ← rendered MP4s (not committed)
+└── index.html, app.js, styles.css, lib/, pubspec.yaml (root)
+                                  ← early static prototype and an unused Flutter starter; not the app
+```
+
+The folders `impeccable/`, `ui-ux-pro-max/`, `react-three-fiber/`, `emil-design-eng/` and `.github/skills/` hold design-tool references used while building the UI. They are not part of the app.
+
+### Design system (from `DESIGN.md`)
+
+- **Colours:** forest green `#0B5A3A` for actions, leaf green `#4DB52A` from the logo, mint backgrounds, white cards, ink `#111814` text. Amber, red and blue are reserved for status (warning, danger, info).
+- **Type:** Barlow for everything, with Fira Sans for the ₦ sign.
+- **Look:** clean green-and-white, deep green buttons, white cards and real Abuja photography, following the user's original mockup.
+- **Accessibility:** high contrast for outdoor use, 48dp touch targets, clear offline and loading states, reduced-motion support for the mascot.
+
+---
+
+## 9. The database
+
+Postgres on Supabase. **11 tables, every one with row-level security switched on.**
+
+| Table | Holds |
+|---|---|
+| `profiles` | Each user's name, phone, organisation, role and linked provider |
+| `wallets` | Tap-card number and balance (demo starter balance ₦2,500) |
+| `providers` | Operators, fleet owners, rail, EV companies, private drivers; verification status |
+| `routes` | Route stops, fixed fare, departure times, provider |
+| `vehicles` | Plate, type, capacity, status, verification, earnings, battery for EVs |
+| `bookings` | Every trip: who, route or vehicle, seat, fare, ticket code, status |
+| `shared_rides` | Tag Along rides and seat requests |
+| `charging_stations` | EV charging points and free ports |
+| `partner_applications` | Partner sign-ups, documents and the AI check result |
+| `audit_log` | Who did what and when |
+| `metric_baselines` | Figures for the FCT register not yet on the platform, so dashboards show the whole city honestly |
+
+**Business actions are SQL functions** (all `security definer`, each re-checks the caller's role):
+`book_transit`, `book_electric`, `cancel_booking`, `complete_ride`, `top_up`, `offer_shared_ride`, `request_shared_ride`, `settle_tag_along_requests`, `submit_partner_application`, `review_partner_application`, `set_provider_status`, `set_vehicle_verification`, `set_vehicle_status`, `update_route_fare`, `register_vehicle`, `set_user_role`, `log_action`.
+Helpers: `my_role`, `my_provider`, `is_staff`, `manages`, `provider_is_verified`, `handle_new_user` (creates the profile and wallet on sign-up).
+
+**Migrations** in `taparide_flutter/supabase/migrations/`, applied in order:
+
+1. `20261016000000_taparide_schema.sql`: tables, security rules, booking and admin functions
+2. `20261017000000_partner_registration.sql`: partner applications and review
+3. `20261020000000_driver_rides.sql`: private-driver `complete_ride`
+4. `20261022000000_protect_admins.sql`: admin accounts can only be changed by the platform owner
+
+`deploy/scripts/supabase-setup.mjs` applies migrations (tracked, so it is safe to re-run), loads the seed data, and creates the demo sign-in accounts.
+
+---
+
+## 10. AI features
+
+AI is used where it saves riders time or operators money, never as decoration.
+
+| Feature | Who | What it does | Where |
+|---|---|---|---|
+| **Tapi, the ride assistant** | Riders and partners | Plain-language trip planning and actions through tools: `search_routes`, `get_departures`, `book_seat`, `cancel_trip`, `list_my_trips`, `wallet_balance`, `list_electric_cars`, `book_electric_ride`, `list_tag_along_rides`, `plan_road_trip`, `open_findme_map`, `set_reminder`; for partners `dashboard_summary`, `route_performance`, `list_vehicles` | `features/assistant/`, `api/assistant.js` |
+| **Offline quick answers** | Riders | Common questions (balance, next bus) answered on the device without calling the AI | `offline_assistant.dart` |
+| **Travel Smart suggestions** | Riders | Learns weekday habits from trip history and suggests booking early; "leave by" reminders | `core/insights.dart`, `core/reminders.dart` |
+| **AI insights (AI analyst)** | Operators, fleet owners, FCTA, admin | Written summary of the partner's own figures: what changed, where demand is, what to do | `features/portal/insights_page.dart`, `api/insights.js` |
+| **Document pre-check** | FCTA reviewers | Reads licence and vehicle papers, compares them with the form, flags mismatches | `api/verify-documents.js` |
+| **Demand map** | Drivers, operators | Busiest areas and hours across Abuja | `features/portal/` |
+| **Tapi, the 3D mascot** | Everyone | three.js character with moods (wave, think, celebrate, sleep); tap it to open the assistant | `web/mascot/mascot.js`, `shared/mascot/` |
+
+**How the AI layer is built** (`deploy/api/_lib/ai.js`): two providers behind one interface. `AI_PROVIDER=gemini` is the default (newest "flash" model chosen automatically); Claude (`claude-opus-5-5` by default) is the alternative and fallback. Conversation history is kept in each provider's native format so tool calls stay valid. Only signed-in users from our own site can call the AI endpoints, with a per-IP rate limit.
+
+---
+
+## 11. Security
+
+| Layer | What protects it |
+|---|---|
+| **Data access** | Row-level security on all 11 tables: a rider sees only their own bookings, an operator only their company's, anonymous visitors see nothing |
+| **Data changes** | Every write goes through a SQL function that re-checks the caller's role and writes the audit log; there are no direct update permissions on profiles |
+| **Admin accounts** | No one can promote a user to admin or change an admin from the app; only the platform owner can, directly in the database. A shared demo admin therefore cannot lock out the master |
+| **Master admin** | Private account, not listed on the login page. In demo mode only a salted SHA-256 hash ships in the app, never the password |
+| **Secret keys** | Gemini, Claude, CARTO, and the database URL live in the git-ignored `.env.local` and in Vercel as "sensitive" (encrypted, hidden) variables. The browser only ever gets the public Supabase anon key |
+| **API endpoints** | Allow-list of our own origins (other sites get "403 forbidden"); signed-in Supabase session required for AI; per-IP rate limit |
+| **Map tile proxy** | Only serves the Abuja region, so it can't be used as a free tile server |
+| **Browser headers** | HSTS, `X-Frame-Options: SAMEORIGIN`, a restrictive Content-Security-Policy, `nosniff`, a strict referrer policy, and a Permissions-Policy that limits camera, microphone and location |
+| **Checks we run** | A secret-pattern scan of every published file and the git history, `npm audit` (0 vulnerabilities), and REST tests that confirm each role's access |
+| **Tooling** | `check-keys.mjs` tests every key against its real service and prints PASS/FAIL only; `sync-vercel-env.mjs` sends keys over stdin and never prints them |
+
+Environment variables (names only): `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_DB_URL` (setup only, never sent to Vercel), `AI_PROVIDER`, `GEMINI_API_KEY`, `GEMINI_MODEL`, `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`, `CARTO_API_KEY`, `CARTO_LDS_TOKEN`, `CARTO_GEOCODING`, `EXTRA_ORIGINS`. Master admin: `MASTER_ADMIN_EMAIL`, `MASTER_ADMIN_PASSWORD` (in `.env.master.local`).
+
+---
+
+## 12. Testing and quality
+
+- **Flutter tests** (`taparide_flutter/test`, 19 tests): booking flows, permission rules ("backend enforces roles, not just the UI"), a booking reaching the FCTA figures, insufficient balance and suspended providers, partner registration and driver rides. Run `flutter test`.
+- **Screenshot renders** (`test/screens`) produce review images of every screen.
+- **Live end-to-end tests** with Playwright click the real site at phone and desktop sizes: rider sign-in, Tapi open/close, Tap & Pay, booking, FindMe map, operator report download, driver dashboard, master control centre, partner applications.
+- **Static analysis** with `flutter analyze` and `flutter_lints`.
+
+---
+
+## 13. Running, building and deploying
+
+**Requirements:** the Flutter SDK in a path without spaces (for example `C:\src\flutter`), Node.js 20+, and the Vercel CLI for deployment.
+
+```bash
+# Run the app locally (demo backend, no keys needed)
+cd taparide_flutter
+flutter pub get
+flutter run -d chrome
+
+# Run the tests
+flutter test
+
+# Check every key in .env.local (prints PASS/FAIL only)
+cd deploy && node scripts/check-keys.mjs
+
+# Set up or update the live database (migrations, seed data, demo accounts)
+node scripts/supabase-setup.mjs
+
+# Build the web app into deploy/public (live on Supabase when the database is ready)
+node scripts/build-web.mjs
+
+# Copy server-side keys to Vercel as sensitive variables
+node scripts/sync-vercel-env.mjs
+
+# Deploy to production
+npx vercel deploy --prod --scope lozen-s-projects
+```
+
+**Hosting:** Vercel project `taparide` under `lozen-s-projects`, at https://taparide.vercel.app. The web build self-hosts its rendering engine (CanvasKit) instead of loading it from Google's CDN, which proved unreliable during testing.
+
+**Never commit:** `.env*` files, `flutter/`, `build/`, `deploy/public/`, `node_modules/`, `test/screens/out/`, `taparide_video/out/`, `public/music/`.
+
+---
+
+## 14. Marketing videos
+
+Built in `taparide_video` with Remotion (React video as code), rendered to MP4 in `taparide_video/out/`:
+
+| Video | Length | Formats |
+|---|---|---|
+| **Ad** | 44 seconds | 16:9 and 9:16 |
+| **Pitch film** | 2 min 41 s | 16:9 |
+| **Narrated commercial**: why Tap A Ride is the future, why we are building it, the market value and the gap | about 1 min 46 s | 16:9 and 9:16 |
+
+The commercial's voice-over is generated with Gemini text-to-speech (voice "Charon") from `src/commercial/script.json`, which lists a source for every fact. Tapi appears in 3D through `@remotion/three`.
+
+---
+
+## 15. Business Model Canvas
+
+| Block | Tap A Ride |
+|---|---|
+| **1. Customer segments** | Daily commuters in Abuja (students, civil servants, office workers, traders); transport operators (bus companies, shuttles, rail, EV companies); private drivers; fleet owners and vehicle investors; government (FCTA, DRTS, Transport Secretariat); employers with office clusters; later, state governments running CNG and electric bus fleets |
+| **2. Value propositions** | **Riders:** know your fare, know your ride, just tap: fixed fares, published departures, verified vehicles, no cash, safer night travel, an AI guide. **Operators:** see every naira, fill empty seats, same-day settlement, demand data. **Fleet owners:** per-vehicle earnings that end under-remittance and make transport investable. **Government:** a verified-vehicle register against "one chance" crime, ridership and planning data, a ready system to run idle terminals. **Employers:** staff arrive on time and less stressed |
+| **3. Channels** | Web app and Android app; onboarding desks at Berger, Area 1, Wuse and terminals; campus and office ambassadors; operator outreach and FCTA partnership; ATDEW demo and Investor Deal Room; social media ads and the commercial; travel-card agents |
+| **4. Customer relationships** | Self-service app with an AI assistant; dedicated onboarding for operators and fleet owners; a partner portal per company; government partnership; community-based Tag Along circles; ratings and safety support |
+| **5. Revenue streams** | Per-ride platform fee; fleet-owner subscription per vehicle; operator software plans; travel-card sales; Tag Along booking fee; data and planning contracts; employer plans (see section 16) |
+| **6. Key resources** | The multi-tenant platform (app, database, AI layer); the verified-vehicle and partner register; ridership data; brand and the Tapi assistant; the team; relationships with operators and the FCTA; payment-partner integration |
+| **7. Key activities** | Building and running the platform; onboarding and verifying operators, drivers and vehicles; rider acquisition; payment settlement; data analysis; customer support; regulatory engagement |
+| **8. Key partners** | FCTA and DRTS; transport operators (Air Shuttle NG, Renewed Hope buses, Abuja Metro, private fleets); payment partners (Paystack or Flutterwave); a licensed Mobile Money Operator or bank (Phase 2 wallet); hardware suppliers (validators, DESFire cards); cloud providers (Supabase, Vercel, Google, Anthropic); FindMe AI; Young Innovators of Nigeria / ATDEW |
+| **9. Cost structure** | Engineering and product team; cloud hosting, database and AI usage; payment-processing fees (borne in the split); validators and travel cards (bought after operators sign); field operations and onboarding desks; marketing; legal and compliance; customer support |
+
+---
+
+## 16. Business model and pricing
+
+**We earn a small fee on every ride and a subscription from the people who manage vehicles. Riders never pay a platform charge on top of the fare.**
+
+The concept brief lists the revenue streams but leaves prices to be set after the pilot. The prices below are **our planning assumptions**, chosen to be small next to typical Abuja fares (₦500–₦1,000 per trip). We will confirm them against operators' margins and riders' willingness to pay during the pilot.
+
+| Revenue stream | Who pays | How | Planning price |
+|---|---|---|---|
+| Per-ride platform fee | Operators (inside the payment split) | Flat fee per paid ride, taken automatically | **₦50 per ride** (about 7–10% of a ₦500–₦700 fare) |
+| Fleet-owner subscription | Fleet owners and investors | Monthly fee per vehicle: owner dashboard, reconciliation alerts, driver scorecards | **₦5,000 per vehicle per month** |
+| Operator software plan | Larger operators | Advanced scheduling, analytics, several depots | **₦150,000 per month** |
+| Travel card sales | Riders | One-off card fee covering the card's cost (low margin) | **₦1,000 per card** |
+| Tag Along service fee | Riders | Small booking fee per seat, within the cost-sharing cap | **₦100 per seat** |
+| Data and planning services | FCTA and agencies | Anonymised ridership and route reports under contract | **₦25M–₦60M per year** from Year 2 |
+| Employer plans | Companies | Tag Along circles and commute subsidies for staff | **₦150,000 per company per month** |
+
+### Unit economics of one ride (example)
+
+| | Amount |
+|---|---|
+| Fare the rider pays (fixed, published) | ₦500 |
+| Platform fee (ours) | ₦50 |
+| Operator's share, before processing | ₦450 |
+| Card processing (paid by the operator in the split; about 1.5% for local cards, confirm current Paystack pricing) | about ₦7.50 |
+
+Cash collection today costs operators far more than this through under-remittance and lost fares, which is why the fee is an easy yes.
+
+---
+
+## 17. Revenue targets
+
+These are **targets, not forecasts**. They rest on the assumptions shown and will be reset with real pilot data. Year 1 starts with the first paid pilot in December 2026.
+
+### Volume assumptions
+
+| Driver (yearly average) | Year 1 (Abuja pilot to launch) | Year 2 (Abuja at scale) | Year 3 (Abuja + 2nd city) |
+|---|---|---|---|
+| Paid rides per day | 6,000 | 40,000 | 120,000 |
+| Fleet vehicles subscribed | 150 | 1,000 | 3,000 |
+| Operators on a software plan | 3 | 10 | 25 |
+| Travel cards sold in the year | 20,000 | 100,000 | 250,000 |
+| Tag Along seats per day | 300 | 2,000 | 5,000 |
+| Employers on a plan | 4 | 20 | 50 |
+| Data contract | none | ₦25M | ₦60M |
+
+For scale: Abuja has about 4.3 million residents making millions of trips a day, so 120,000 paid rides a day is only a few percent of the city's daily trips. Kaduna's 100 CNG buses alone carried about 3.2 million passengers in their first year.
+
+### Revenue by stream (₦)
+
+| Stream | Year 1 | Year 2 | Year 3 |
+|---|---:|---:|---:|
+| Per-ride fee (rides/day × 365 × ₦50) | 109,500,000 | 730,000,000 | 2,190,000,000 |
+| Fleet subscriptions (vehicles × ₦5,000 × 12) | 9,000,000 | 60,000,000 | 180,000,000 |
+| Operator plans (operators × ₦150,000 × 12) | 5,400,000 | 18,000,000 | 45,000,000 |
+| Travel cards (cards × ₦1,000) | 20,000,000 | 100,000,000 | 250,000,000 |
+| Tag Along (seats/day × 365 × ₦100) | 10,950,000 | 73,000,000 | 182,500,000 |
+| Employer plans (companies × ₦150,000 × 12) | 7,200,000 | 36,000,000 | 90,000,000 |
+| Data and planning contracts | 0 | 25,000,000 | 60,000,000 |
+| **Total revenue target** | **₦162,050,000** | **₦1,042,000,000** | **₦2,997,500,000** |
+| Recurring revenue (excluding card sales) | ₦142,050,000 | ₦942,000,000 | ₦2,747,500,000 |
+
+**In short: about ₦162 million in Year 1, about ₦1.0 billion in Year 2 and about ₦3.0 billion in Year 3.**
+
+### Fare value flowing through the platform
+
+At an average fare of ₦600, the fares that pass through Tap A Ride (and settle straight to operators) would be about **₦1.3 billion in Year 1, ₦8.8 billion in Year 2 and ₦26.3 billion in Year 3.** The ₦50 fee is about 8% of that.
+
+### Break-even target
+
+If the Year 1 running cost is about **₦8 million a month** (a small team, cloud and AI, field onboarding desks), the non-ride income (fleet, operator, employer and Tag Along) covers about ₦2.7 million of it. The rest needs about **3,500 paid rides a day** at ₦50. That is the break-even target for the first year, below the Year 1 average of 6,000.
+
+### Milestones that unlock the targets
+
+1. **November 2026:** ATDEW live demo and National Innovation Challenge pitch; one operator signs a pilot.
+2. **December 2026 – March 2027:** first live route; commuter survey; Paystack split payments live; first fleet owners on subscription.
+3. **Mid 2027:** Air Shuttle NG or Renewed Hope buses on the platform; validators ordered; Tag Along launched with one office cluster.
+4. **2028:** Abuja at scale; first FCTA data contract; Phase 2 wallet with a licensed partner.
+5. **2029:** second city (Jos, Plateau is a natural candidate), then cities with large state fleets such as Kaduna and Enugu.
+
+---
+
+## 18. Market and competition
+
+**Market**
+
+- Nigeria's urban mobility and ride-hailing market is about **USD 400 million (2025)**, forecast to reach **USD 965 million by 2031** (Ken Research).
+- Abuja is one of Africa's fastest-growing capitals: about 4.2–4.3 million people, growing about 4.6% a year (Macrotrends, UN data).
+- Government is putting fleets on the road nationally: electric buses for civil servants, the electric airport shuttle, and the national CNG programme (Kaduna 100 CNG buses with about 3.2M passengers in year one; Plateau about 13,000 commuters a day; Enugu 100 CNG buses; Kano over 1,000 converted vehicles; Edo 50 CNG buses). Every one of them needs ticketing and revenue tracking.
+- Lagos shows that digital fare collection works and lets revenue be audited (Cowry card).
+
+**Competition: they run vehicles; we power everyone who does.**
+
+| Player | Model | Our difference |
+|---|---|---|
+| Shuttlers | Runs its own buses on fixed routes; 430+ buses daily | We don't compete for seats; we power operators, government fleets and fleet owners. Shuttlers could even run on us |
+| Treepz | Shared rides and ticketing | We focus on Abuja's public and private fleets, tap cards and owner transparency |
+| Cowry card (Lagos) | State tap card for BRT, rail, ferries | Lagos only; we bring the model to Abuja, plus booking, Tag Along and fleet-owner tools |
+| Bolt | Private car ride-hailing | We serve daily commuters at shared-transport prices; we deep-link to Bolt when a private car is needed. (Uber has left Nigeria) |
+
+**Our moat:** a multi-tenant platform with the verified-vehicle register, per-vehicle money trail and government data. Every new operator makes the network more useful for riders, and every rider makes it more valuable for operators.
+
+---
+
+## 19. Go-to-market and scaling
+
+| Group | Why they say yes | How we win them |
+|---|---|---|
+| Riders | Fixed fares, verified vehicles, no cash, less waiting | Free first travel card, launch discounts, onboarding desks at Berger, Area 1, Wuse and terminals, campus and office ambassadors |
+| Operators | See every naira, fill seats, paid the same day | Free onboarding, no upfront cost, pay only per ride; phones as validators before hardware |
+| Fleet owners | Stop under-remittance, prove returns | Dashboard trial on their vehicles; drivers who adopt get better terms |
+| FCTA and DRTS | Run idle terminals, fight one-chance crime, get planning data | Offer the platform for the terminal PPP; share the register; pilot one corridor |
+| Investors | A trustworthy, data-backed way into Abuja transport | ATDEW Investor Deal Room demo with live pilot numbers |
+| Employers | Staff on time and less stressed | Tag Along circles for clusters like Aminu Kano Crescent |
+
+**First pilot targets:** Air Shuttle NG (airport to Wuse 2), the Renewed Hope civil-servant electric buses, one private minibus or taxi fleet on Lugbe or Kubwa, and one office cluster for Tag Along.
+
+**Scaling:** the platform is multi-tenant, so a new city is a new tenant, not a rebuild. Order: Abuja → a second city with strong ties (Jos) → states with large bus fleets (Kaduna, Enugu).
+
+---
+
+## 20. Risks and how we handle them
+
+| Risk | How we handle it |
+|---|---|
+| Holding customer money without a licence | Phase 1: passes and pay-per-ride through Paystack or Flutterwave split payments; Phase 2: wallet held by a licensed MMO or bank |
+| Tag Along seen as illegal taxis | Cost-sharing cap, verified professionals only, DRTS e-hailing route for drivers who want to earn, seek DRTS endorsement |
+| Data protection | Comply with the Nigeria Data Protection Act; collect only what we need; row-level security |
+| Low rider uptake | Awareness campaigns, onboarding desks, launch discounts, the AI assistant |
+| Card fraud or cloning | DESFire cards, daily caps, instant block, rotating signed QR codes |
+| Poor network on routes | Offline-first validators that sync later |
+| Hardware delays | Phones as validators until a pilot is signed |
+| Drivers still taking cash | Cheaper cashless fares and GPS-versus-revenue alerts |
+| A public demo admin on the live database | Admin accounts are protected in the database; the master admin is private |
+| Dependence on one AI or map provider | Two AI providers behind one interface; OSM fallback for maps; on-device answers for common questions |
+
+This is not legal advice; positions must be confirmed with a Nigerian lawyer and, where needed, the CBN and DRTS.
+
+---
+
+## 21. What is real today and what is still simulated
+
+**Real and working on the live site**
+
+- The full app: rider, partner portal, FCTA, operator, fleet, driver and master admin dashboards
+- Live Supabase database with sign-in, row-level security and all business actions
+- Partner registration with AI document checks and admin review
+- Tapi the 3D mascot and AI assistant (Gemini), AI insights, offline quick answers
+- Real maps (CARTO through our proxy), geocoding, FindMe AI safety map and road routes
+- Security hardening, encrypted keys on Vercel, live end-to-end tests
+- Three marketing videos
+
+**Simulated or still to build**
+
+- **Payments are simulated.** The tap-card balance and top-ups are demo money. Next: Paystack split payments in test mode, then live.
+- **No physical validators or cards yet.** The QR boarding pass works; the conductor validator app and NFC cards come with the pilot.
+- **Dashboard figures are demo data**, labelled in the app, combined with baselines for the city. Real numbers start with the pilot.
+- **Tag Along hosts accept automatically** after a few seconds; a host-side accept or decline flow is still to build.
+- **Email confirmation** must be switched off in Supabase (or a mail sender configured) so that new sign-ups can log in.
+- **Housekeeping:** pin the `@anthropic-ai/sdk` version in `deploy/package.json` (it currently says `latest`); remove the unused root-level Flutter starter and early prototype when convenient.
+
+---
+
+## 22. Roadmap
+
+| Phase | When | Work | Gate to move on |
+|---|---|---|---|
+| 1. Kick-off | 28–30 Sep 2026 | Teams formed, business plan, National Innovation Challenge application | Plan approved ✔ |
+| 2. Build the MVP | October 2026 | Rider app, partner dashboards, AI assistant, live database, deployment | MVP works end to end ✔ |
+| 3. Pilot and demo | November 2026 | One live route, commuter survey (50–100 riders), ATDEW live demo, NIC pitch 24–26 Nov | An operator signs a pilot |
+| 4. Payments and hardware | Dec 2026 – Q1 2027 | Paystack splits, conductor validator app, NFC cards, first fleet subscriptions | Paid rides flowing daily |
+| 5. Scale in Abuja | 2027 – 2028 | More operators, Tag Along launch, validators on buses, FCTA data contract, Phase 2 wallet | Break-even month |
+| 6. New cities | 2029 onward | Jos, then Kaduna and Enugu as new tenants | Second city live |
+
+**Teams:** Developers (apps, dashboards, validator, payments), Legal (payment structure, Tag Along position, agreements, data protection), Marketers (commuter survey, operator outreach, launch campaign), Designers (brand, card design, screens).
+
+---
+
+## 23. Glossary
+
+| Term | Meaning |
+|---|---|
+| **ATDEW** | Abuja Tech and Digital Economy Week, hosted by Young Innovators of Nigeria |
+| **NIC** | National Innovation Challenge, the ATDEW pitch competition |
+| **FCT / FCTA** | Federal Capital Territory / its Administration |
+| **DRTS** | Directorate of Road Traffic Services |
+| **"One chance"** | Robbery by criminals posing as commercial drivers and passengers |
+| **Multi-tenant** | One platform serving many companies, each seeing only its own data |
+| **Row-level security (RLS)** | Database rules that decide which rows each user can read |
+| **Security definer function** | A database function that runs with elevated rights but checks the caller's role itself |
+| **Under-remittance** | A driver handing the owner less than the vehicle actually earned |
+| **MMO** | Mobile Money Operator, the CBN licence required to hold customer funds |
+| **Split payment** | One payment automatically divided between operator and platform |
+| **Validator** | The device on a bus that reads a tap card or QR code |
+| **DESFire** | A secure contactless card type that is hard to clone |
+| **Anon key** | Supabase's public key for browsers; safe to publish because RLS protects the data |
+| **Tapi** | Tap A Ride's 3D mascot and AI ride assistant |
+| **FindMe AI** | Our sister project: safety map, traffic, incidents, SOS and road routes |
