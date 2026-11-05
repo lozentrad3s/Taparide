@@ -233,25 +233,25 @@ We order hardware only after an operator signs, so nothing is bought speculative
 ## 7. System architecture
 
 ```
-                           ┌────────────────────────────────────────────┐
-  Rider phone /            │  Flutter app (web + Android)               │
-  partner laptop  ───────► │  lib/  · go_router · provider · flutter_map │
-                           │  Backend interface:                         │
-                           │   ├─ SupabaseBackend  (live)                │
-                           │   └─ DemoBackend      (on-device fallback)  │
-                           └───────┬──────────────────────┬─────────────┘
-                                   │ Auth + SQL functions │ HTTPS /api/*
-                                   ▼                      ▼
-              ┌────────────────────────────┐   ┌──────────────────────────────┐
-              │ Supabase (Postgres)        │   │ Vercel serverless (Node.js)  │
-              │ · Auth (email + password)  │   │ /api/assistant  → Gemini/Claude│
-              │ · 11 tables, all with RLS  │   │ /api/insights   → Gemini/Claude│
-              │ · security-definer actions │   │ /api/verify-documents → AI    │
-              │   book_transit, top_up,    │   │ /api/geocode    → Nominatim  │
-              │   review_partner_app, ...  │   │ /api/tiles      → CARTO/OSM  │
-              │ · audit_log on every write │   │ /api/config     (flags only) │
-              └────────────────────────────┘   │ /api/findme/*   → FindMe AI  │
-                                               └──────────────────────────────┘
+                           ┌──────────────────────────────────────────────┐
+  Rider phone /            │  Flutter app (web + Android)                 │
+  partner laptop  ───────► │  lib/  · go_router · provider · flutter_map  │
+                           │  Backend interface:                          │
+                           │   ├─ SupabaseBackend  (live)                 │
+                           │   └─ DemoBackend      (on-device fallback)   │
+                           └────────┬──────────────────────┬──────────────┘
+                                    │ Auth + SQL functions │ HTTPS /api/*
+                                    ▼                      ▼
+              ┌────────────────────────────┐   ┌──────────────────────────────────┐
+              │ Supabase (Postgres)        │   │ Vercel serverless (Node.js)      │
+              │ · Auth (email + password)  │   │ /api/assistant   → Gemini/Claude │
+              │ · 11 tables, all with RLS  │   │ /api/insights    → Gemini/Claude │
+              │ · security-definer actions │   │ /api/verify-documents → AI       │
+              │   book_transit, top_up,    │   │ /api/geocode     → Nominatim     │
+              │   review_partner_app, ...  │   │ /api/tiles       → CARTO/OSM     │
+              │ · audit_log on every write │   │ /api/config      (flags only)    │
+              └────────────────────────────┘   │ /api/findme/*    → FindMe AI     │
+                                               └──────────────────────────────────┘
 ```
 
 **Key design decisions**
