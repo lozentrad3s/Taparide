@@ -6,14 +6,63 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../app/theme.dart';
 import '../../core/app_state.dart';
 import '../../core/backend/demo_backend.dart';
+import '../../core/backend/backend.dart';
 import '../../core/format.dart';
+import '../../core/live_models.dart';
 import '../../core/models.dart';
 import '../../core/partner_models.dart';
 import '../../shared/ui.dart';
 import 'rider_widgets.dart';
 
-class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
+class ProfilePage extends StatefulWidget {
+  const ProfilePage({super.key, this.topUpReference});
+
+  /// Set when the rider returns from the payment page (`/app/profile?topup=…`).
+  final String? topUpReference;
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  bool _confirming = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final reference = widget.topUpReference;
+    if (reference != null && reference.isNotEmpty) WidgetsBinding.instance.addPostFrameCallback((_) => _confirmTopUp(reference));
+  }
+
+  Future<void> _confirmTopUp(String reference) async {
+    setState(() => _confirming = true);
+    final state = context.read<AppState>();
+    try {
+      var result = await state.confirmTopUp(reference);
+      // Bank transfers can take a moment to land; look again once.
+      if (result.status == TopUpStatus.pending) {
+        await Future<void>.delayed(const Duration(seconds: 5));
+        result = await state.confirmTopUp(reference);
+      }
+      if (!mounted) return;
+      switch (result.status) {
+        case TopUpStatus.paid:
+          showMessage(context, '${Fmt.naira(result.amount)} added to your Tap Card');
+        case TopUpStatus.pending:
+          showMessage(context, 'Your payment is still being confirmed. Your balance updates as soon as it lands.');
+        case TopUpStatus.failed:
+          showMessage(context, 'The payment did not go through. You were not charged.', error: true);
+      }
+    } on BackendException catch (e) {
+      if (mounted) showMessage(context, e.message, error: true);
+    } finally {
+      if (mounted) {
+        setState(() => _confirming = false);
+        // Drop the reference from the address so a refresh does not repeat the check.
+        context.go('/app/profile');
+      }
+    }
+  }
 
   Future<void> _signOut(BuildContext context) async {
     await context.read<AppState>().signOut();
@@ -79,6 +128,15 @@ class ProfilePage extends StatelessWidget {
                 const SizedBox(height: 22),
                 SectionHeader(title: 'Payment methods', subtitle: 'Spent on trips so far: ${Fmt.naira(spent)}'),
                 TapCardView(wallet: state.wallet, onTap: () => showTapAndPaySheet(context)),
+                if (_confirming)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Row(children: [
+                      const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                      const SizedBox(width: 10),
+                      Text('Confirming your payment…', style: text.bodySmall),
+                    ]),
+                  ),
                 const SizedBox(height: 10),
                 Row(children: [
                   Expanded(child: FilledButton.icon(onPressed: () => showTopUpSheet(context), icon: const Icon(Icons.add_rounded), label: const Text('Top up'))),

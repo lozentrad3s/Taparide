@@ -11,6 +11,7 @@ import '../../shared/brand.dart';
 import '../../shared/ui.dart';
 import '../../shared/mascot/mascot.dart';
 import '../assistant/assistant_sheet.dart';
+import '../events/events_page.dart';
 import 'rider_widgets.dart';
 import 'smart_cards.dart';
 
@@ -115,7 +116,9 @@ class HomePage extends StatelessWidget {
       const SizedBox(height: 22),
       _EvSection(vehicles: evs),
       const SizedBox(height: 22),
-      _TagAlongBanner(onOpen: () => context.push('/tag-along')),
+      _TagAlongBanner(onOpen: () => context.push('/tag-along'), requests: state.pendingRideRequests.length),
+      const SizedBox(height: 22),
+      const EventsBanner(),
       const SizedBox(height: 22),
       const NearbySafetyCard(),
       const SizedBox(height: 14),
@@ -142,6 +145,7 @@ class HomePage extends StatelessWidget {
             for (final item in [
               (Icons.electric_car_rounded, 'Book an electric vehicle', 'Zero-emission rides from verified EV operators', '/ev'),
               (Icons.groups_rounded, 'Tag Along', 'Share the ride home with colleagues nearby', '/tag-along'),
+              (Icons.celebration_rounded, 'Event rides', 'Share a ride to events around Abuja', '/events'),
               (Icons.radar_rounded, 'Nearby & safety', 'Live traffic, places near you and SOS (FindMe AI)', '/nearby'),
               (Icons.handshake_rounded, 'Become a partner', 'Drive with Tap A Ride or register your company', '/partner/apply'),
               (Icons.health_and_safety_outlined, 'Safety centre', 'Emergency numbers and trip sharing', '/app/profile'),
@@ -365,8 +369,11 @@ class _EvSection extends StatelessWidget {
 }
 
 class _TagAlongBanner extends StatelessWidget {
-  const _TagAlongBanner({required this.onOpen});
+  const _TagAlongBanner({required this.onOpen, this.requests = 0});
   final VoidCallback onOpen;
+
+  /// Riders waiting for this user's answer on rides they host.
+  final int requests;
 
   @override
   Widget build(BuildContext context) {
@@ -385,10 +392,13 @@ class _TagAlongBanner extends StatelessWidget {
               const SizedBox(height: 6),
               Text('Share rides, save more: ride home with verified colleagues who live near you.', style: text.bodySmall),
               const SizedBox(height: 10),
-              Row(children: [
-                Text('Find a Ride', style: text.labelLarge?.copyWith(color: AppColors.forest)),
-                const Icon(Icons.arrow_forward_rounded, size: 16, color: AppColors.forest),
-              ]),
+              if (requests > 0)
+                StatusPill('$requests request${requests == 1 ? '' : 's'} to answer', tone: Tone.warning, icon: Icons.how_to_reg_rounded)
+              else
+                Row(children: [
+                  Text('Find a Ride', style: text.labelLarge?.copyWith(color: AppColors.forest)),
+                  const Icon(Icons.arrow_forward_rounded, size: 16, color: AppColors.forest),
+                ]),
             ]),
           ),
         ),

@@ -94,8 +94,8 @@ flutter test test/screens --update-goldens --dart-define=SCREENS=true  # renders
 
 ## Not yet production
 
-- Payments are simulated (wallet top-ups in demo and a demo `top_up` function). Connect a payment provider before launch.
-- Tag Along hosts accept requests automatically after a few seconds; a host-side accept/decline flow is still to build.
+- Wallet top-ups go through Paystack (`deploy/api/pay.js`) once `PAYSTACK_SECRET_KEY` is set in `.env.local`, synced with `node scripts/sync-vercel-env.mjs`, and `node scripts/supabase-setup.mjs` is re-run. Until then top-ups are test money and the app says so. Point the Paystack webhook at `/api/pay?action=webhook`.
+- Vehicles report GPS from the driver or operator dashboard while it is open; background tracking needs the Android validator app.
 - Map tiles come from CARTO's free basemap (OpenStreetMap data). Use a commercial tile plan for production traffic.
 - Dashboard figures, organisations and people are illustrative demo data and are labelled as such in the app.
 

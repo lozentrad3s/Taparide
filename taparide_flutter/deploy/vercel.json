@@ -18,6 +18,9 @@
     },
     "api/tiles.js": {
       "maxDuration": 10
+    },
+    "api/pay.js": {
+      "maxDuration": 30
     }
   },
   "rewrites": [

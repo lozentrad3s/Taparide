@@ -22,7 +22,7 @@ export async function requireUser(req, { perMinute = 20 } = {}) {
   if (!url || !anon) return { id: "demo", demo: true }; // demo deployments have no accounts server-side
 
   const token = (req.headers.authorization || "").replace(/^Bearer\s+/i, "");
-  if (!token) throw new AiError(401, "Sign in to use the assistant.");
+  if (!token) throw new AiError(401, "Sign in to continue.");
   const res = await fetch(`${url}/auth/v1/user`, { headers: { apikey: anon, Authorization: `Bearer ${token}` } });
   if (!res.ok) throw new AiError(401, "Your session has ended. Please sign in again.");
   const user = await res.json();

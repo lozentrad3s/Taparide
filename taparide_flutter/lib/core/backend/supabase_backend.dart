@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../live_models.dart';
 import '../models.dart';
 import '../partner_models.dart';
 import 'backend.dart';
@@ -100,7 +101,11 @@ class SupabaseBackend implements Backend {
           password: password,
           data: {'full_name': fullName.trim(), 'phone': phone.trim(), 'organisation': organisation?.trim()},
         );
-        if (response.session == null || response.user == null) {
+        // Supabase answers a repeat sign-up with a user that has no identities instead of an error.
+        if (response.user == null || (response.user!.identities?.isEmpty ?? false)) {
+          throw const BackendException(BackendErrorKind.validation, 'An account with this email already exists. Sign in instead.');
+        }
+        if (response.session == null) {
           throw const BackendException(BackendErrorKind.validation, 'Check your email to confirm your account, then sign in.');
         }
         return _profile(response.user!.id);
@@ -138,7 +143,7 @@ class SupabaseBackend implements Backend {
   @override
   Future<List<SharedRide>> fetchSharedRides() => _guard(() async {
         final since = DateTime.now().subtract(const Duration(minutes: 30)).toUtc().toIso8601String();
-        return [for (final r in _rows(await _client.from('shared_rides').select().gte('depart_at', since).order('depart_at'))) SharedRide.fromJson(r)];
+        return [for (final r in _rows(await _client.from('shared_rides').select().eq('status', 'open').gte('depart_at', since).order('depart_at'))) SharedRide.fromJson(r)];
       });
 
   @override
@@ -195,7 +200,7 @@ class SupabaseBackend implements Backend {
       _guard(() async => Booking.fromJson(_row(await _client.rpc('request_shared_ride', params: {'p_ride_id': ride.id}))));
 
   @override
-  Future<SharedRide> offerSharedRide({required String origin, required String destination, required DateTime departAt, required int seats, required int costShare, required String vehicleLabel, String note = ''}) =>
+  Future<SharedRide> offerSharedRide({required String origin, required String destination, required DateTime departAt, required int seats, required int costShare, required String vehicleLabel, String note = '', String? eventId}) =>
       _guard(() async => SharedRide.fromJson(_row(await _client.rpc('offer_shared_ride', params: {
             'p_origin': origin,
             'p_destination': destination,
@@ -204,6 +209,7 @@ class SupabaseBackend implements Backend {
             'p_cost_share': costShare,
             'p_vehicle_label': vehicleLabel,
             'p_note': note,
+            'p_event_id': eventId,
           }))));
 
   @override
@@ -212,6 +218,82 @@ class SupabaseBackend implements Backend {
 
   @override
   Future<Wallet> topUp(int amount) => _guard(() async => Wallet.fromJson(_row(await _client.rpc('top_up', params: {'p_amount': amount}))));
+
+  // ------------------------------------------------------------ Tag Along hosting
+
+  @override
+  Future<List<Booking>> fetchRideRequests() => _guard(() async {
+        await _client.rpc('settle_tag_along_requests');
+        return [for (final r in _rows(await _client.rpc('my_ride_requests'))) Booking.fromJson(r)];
+      });
+
+  @override
+  Future<Booking> respondToRideRequest(String bookingId, {required bool accept}) =>
+      _guard(() async => Booking.fromJson(_row(await _client.rpc('respond_ride_request', params: {'p_booking_id': bookingId, 'p_accept': accept}))));
+
+  @override
+  Future<SharedRide> cancelSharedRide(String rideId) =>
+      _guard(() async => SharedRide.fromJson(_row(await _client.rpc('cancel_shared_ride', params: {'p_ride_id': rideId}))));
+
+  // ------------------------------------------------------------ events
+
+  @override
+  Future<List<RideEvent>> fetchEvents() => _guard(() async {
+        final since = DateTime.now().subtract(const Duration(hours: 6)).toUtc().toIso8601String();
+        final rows = _rows(await _client.from('events').select().eq('status', 'listed').gte('starts_at', since).order('starts_at').limit(100));
+        return [for (final r in rows) RideEvent.fromJson(r)];
+      });
+
+  @override
+  Future<RideEvent> createEvent({required String title, required String venue, required String area, required DateTime startsAt, DateTime? endsAt, required EventCategory category, String description = '', double? lat, double? lng}) =>
+      _guard(() async => RideEvent.fromJson(_row(await _client.rpc('create_event', params: {
+            'p_title': title,
+            'p_venue': venue,
+            'p_area': area,
+            'p_starts_at': startsAt.toUtc().toIso8601String(),
+            'p_ends_at': endsAt?.toUtc().toIso8601String(),
+            'p_category': category.name,
+            'p_description': description,
+            'p_lat': lat,
+            'p_lng': lng,
+          }))));
+
+  @override
+  Future<void> removeEvent(String eventId) => _guard(() => _client.rpc('remove_event', params: {'p_event_id': eventId}));
+
+  // ------------------------------------------------------------ share my ride
+
+  @override
+  Future<TripShare> shareTrip(String bookingId) =>
+      _guard(() async => TripShare.fromJson(_row(await _client.rpc('share_trip', params: {'p_booking_id': bookingId}))));
+
+  @override
+  Future<void> stopSharingTrip(String bookingId) => _guard(() => _client.rpc('stop_trip_share', params: {'p_booking_id': bookingId}));
+
+  @override
+  Future<void> updateTripLocation(String bookingId, double lat, double lng) =>
+      _guard(() => _client.rpc('update_trip_location', params: {'p_booking_id': bookingId, 'p_lat': lat, 'p_lng': lng}));
+
+  @override
+  Future<SharedTrip?> fetchSharedTrip(String token) => _guard(() async {
+        final result = await _client.rpc('get_shared_trip', params: {'p_token': token});
+        return result is Map ? SharedTrip.fromJson(Map<String, dynamic>.from(result)) : null;
+      });
+
+  // ------------------------------------------------------------ live vehicle positions
+
+  @override
+  Future<List<VehiclePosition>> fetchVehiclePositions() => _guard(() async {
+        final since = DateTime.now().subtract(const Duration(minutes: 5)).toUtc().toIso8601String();
+        return [for (final r in _rows(await _client.from('vehicle_positions').select().gte('updated_at', since))) VehiclePosition.fromJson(r)];
+      });
+
+  @override
+  Future<void> reportVehiclePosition(String vehicleId, double lat, double lng, {double? heading, double? speedKmh}) => _guard(() =>
+      _client.rpc('report_vehicle_position', params: {'p_vehicle_id': vehicleId, 'p_lat': lat, 'p_lng': lng, 'p_heading': heading, 'p_speed_kmh': speedKmh}));
+
+  @override
+  Future<void> stopVehicleTracking(String vehicleId) => _guard(() => _client.rpc('stop_vehicle_tracking', params: {'p_vehicle_id': vehicleId}));
 
   // ------------------------------------------------------------ partners
 

@@ -685,6 +685,8 @@ class SharedRide {
     required this.costShare,
     required this.vehicleLabel,
     this.note = '',
+    this.eventId,
+    this.cancelled = false,
   });
 
   final String id;
@@ -701,9 +703,15 @@ class SharedRide {
   final String vehicleLabel;
   final String note;
 
+  /// The event this ride goes to, if it was offered from an event page.
+  final String? eventId;
+
+  /// Withdrawn by the host.
+  final bool cancelled;
+
   int get seatsLeft => (seatsTotal - seatsTaken).clamp(0, seatsTotal);
 
-  SharedRide copyWith({int? seatsTaken}) => SharedRide(
+  SharedRide copyWith({int? seatsTaken, bool? cancelled}) => SharedRide(
         id: id,
         hostId: hostId,
         hostName: hostName,
@@ -717,6 +725,8 @@ class SharedRide {
         costShare: costShare,
         vehicleLabel: vehicleLabel,
         note: note,
+        eventId: eventId,
+        cancelled: cancelled ?? this.cancelled,
       );
 
   Map<String, Object?> toJson() => {
@@ -733,6 +743,8 @@ class SharedRide {
         'cost_share': costShare,
         'vehicle_label': vehicleLabel,
         'note': note,
+        'event_id': eventId,
+        'status': cancelled ? 'cancelled' : 'open',
       };
 
   factory SharedRide.fromJson(Map<String, dynamic> json) => SharedRide(
@@ -749,6 +761,8 @@ class SharedRide {
         costShare: _int(json['cost_share']),
         vehicleLabel: (json['vehicle_label'] as String?) ?? '',
         note: (json['note'] as String?) ?? '',
+        eventId: json['event_id'] as String?,
+        cancelled: json['status'] == 'cancelled',
       );
 }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/theme.dart';
 import '../../core/app_state.dart';
@@ -174,20 +175,38 @@ class _TopUpSheetState extends State<_TopUpSheet> {
             ),
         ]),
         const SizedBox(height: 14),
-        if (state.backend.isDemo)
-          Text('Demo mode: no real money moves. A live build connects a payment provider here.', style: text.bodySmall),
+        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(state.paymentsLive ? Icons.lock_rounded : Icons.science_outlined, size: 16, color: AppColors.muted),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              state.paymentsLive
+                  ? 'Pay by card, bank transfer or USSD on Paystack\'s secure page. Your card details never reach Tap A Ride.'
+                  : 'Test money: card and bank payments are not switched on yet, so no real money moves.',
+              style: text.bodySmall,
+            ),
+          ),
+        ]),
         const SizedBox(height: 16),
         FilledButton(
           onPressed: _busy
               ? null
               : () async {
                   setState(() => _busy = true);
-                  final ok = await attemptOk(context, () => context.read<AppState>().topUp(_amount), success: '${Fmt.naira(_amount)} added to your Tap Card');
+                  final app = context.read<AppState>();
+                  if (app.paymentsLive) {
+                    // Leave for the payment page; the app confirms the payment when the rider comes back.
+                    final start = await attempt(context, () => app.api.startTopUp(_amount));
+                    if (start != null) await launchUrl(Uri.parse(start.url), webOnlyWindowName: '_self');
+                    if (mounted) setState(() => _busy = false);
+                    return;
+                  }
+                  final ok = await attemptOk(context, () => app.topUp(_amount), success: '${Fmt.naira(_amount)} added to your Tap Card');
                   if (!mounted) return;
                   setState(() => _busy = false);
                   if (ok) Navigator.of(context).pop();
                 },
-          child: _busy ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white)) : Text('Add ${Fmt.naira(_amount)}'),
+          child: _busy ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white)) : Text(state.paymentsLive ? 'Pay ${Fmt.naira(_amount)}' : 'Add ${Fmt.naira(_amount)}'),
         ),
       ]),
     );

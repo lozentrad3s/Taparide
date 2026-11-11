@@ -25,6 +25,82 @@ Color statusColor(VehicleStatus s) => switch (s) {
       VehicleStatus.inactive => AppColors.red,
     };
 
+/// Lets a driver or conductor report a vehicle's GPS from this device, so riders and
+/// dashboards see where it really is.
+class LiveTrackerPanel extends StatefulWidget {
+  const LiveTrackerPanel({super.key, required this.vehicles});
+  final List<Vehicle> vehicles;
+
+  @override
+  State<LiveTrackerPanel> createState() => _LiveTrackerPanelState();
+}
+
+class _LiveTrackerPanelState extends State<LiveTrackerPanel> {
+  String? _picked;
+  bool _busy = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<AppState>();
+    final text = Theme.of(context).textTheme;
+    final vehicles = widget.vehicles;
+    if (vehicles.isEmpty) return const SizedBox.shrink();
+    final tracking = vehicles.where((v) => v.id == state.trackingVehicleId).firstOrNull;
+    final selected = tracking ?? vehicles.where((v) => v.id == _picked).firstOrNull ?? vehicles.first;
+    return Panel(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Row(children: [
+          IconBadge(tracking == null ? Icons.location_searching_rounded : Icons.my_location_rounded, size: 40, radius: 12),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Live location', style: text.titleMedium),
+              Text(
+                tracking == null
+                    ? 'Share this device\'s GPS as the vehicle\'s position. Riders see it on their ticket.'
+                    : 'Sharing ${tracking.displayName} from this device. Keep this page open while driving.',
+                style: text.bodySmall,
+              ),
+            ]),
+          ),
+          const SizedBox(width: 8),
+          if (_busy)
+            const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5))
+          else
+            Switch(
+              value: tracking != null,
+              activeThumbColor: Colors.white,
+              activeTrackColor: AppColors.leaf,
+              onChanged: (on) async {
+                setState(() => _busy = true);
+                if (on) {
+                  final ok = await state.startTracking(selected);
+                  if (context.mounted) showMessage(context, ok ? 'Sharing live location for ${selected.displayName}' : (state.trackingError ?? 'Could not start sharing.'), error: !ok);
+                } else {
+                  await state.stopTracking();
+                }
+                if (mounted) setState(() => _busy = false);
+              },
+            ),
+        ]),
+        if (vehicles.length > 1 && tracking == null) ...[
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            initialValue: selected.id,
+            decoration: const InputDecoration(labelText: 'Vehicle on this device'),
+            items: [for (final v in vehicles) DropdownMenuItem(value: v.id, child: Text(v.displayName, overflow: TextOverflow.ellipsis))],
+            onChanged: (v) => setState(() => _picked = v),
+          ),
+        ],
+        if (tracking != null && state.trackingError != null) ...[
+          const SizedBox(height: 8),
+          Text(state.trackingError!, style: text.bodySmall?.copyWith(color: AppColors.red)),
+        ],
+      ]),
+    );
+  }
+}
+
 /// Map of the partner's vehicles and routes. Positions refresh every few seconds.
 class LiveFleetMap extends StatefulWidget {
   const LiveFleetMap({super.key, required this.vehicles, required this.routes, this.height = 340});
@@ -44,7 +120,15 @@ class _LiveFleetMapState extends State<LiveFleetMap> {
   void initState() {
     super.initState();
     // Tests and offline builds switch tiles off; skip the ticker there too.
-    if (MapTiles.enabled) _tick = Timer.periodic(const Duration(seconds: 4), (_) => mounted ? setState(() {}) : null);
+    if (MapTiles.enabled) {
+      var ticks = 0;
+      _tick = Timer.periodic(const Duration(seconds: 4), (_) {
+        if (!mounted) return;
+        // Every 20 seconds, fetch the GPS fixes vehicles have reported.
+        if (++ticks % 5 == 0) context.read<AppState>().refreshPositions();
+        setState(() {});
+      });
+    }
   }
 
   @override
@@ -57,7 +141,12 @@ class _LiveFleetMapState extends State<LiveFleetMap> {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final state = context.watch<AppState>();
-    final positions = FleetPositions.estimate(vehicles: widget.vehicles, routes: widget.routes, now: state.now);
+    // Real GPS where a vehicle's driver is reporting; the timetable estimate everywhere else.
+    final positions = [
+      for (final p in FleetPositions.estimate(vehicles: widget.vehicles, routes: widget.routes, now: state.now))
+        state.livePosition(p.vehicle.id) == null ? p : FleetPosition(vehicle: p.vehicle, point: state.livePosition(p.vehicle.id)!.point, route: p.route),
+    ];
+    final gps = widget.vehicles.where((v) => state.livePosition(v.id) != null).length;
     final points = [for (final p in positions) p.point, for (final r in widget.routes) for (final s in r.stops) LatLng(s.lat, s.lng)];
     final moving = positions.where((p) => p.vehicle.status == VehicleStatus.onTrip || p.route != null).length;
     final sel = _selected == null ? null : positions.where((p) => p.vehicle.id == _selected!.id).firstOrNull;
@@ -65,7 +154,9 @@ class _LiveFleetMapState extends State<LiveFleetMap> {
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         PanelTitle(
           'Live fleet',
-          subtitle: '$moving of ${widget.vehicles.length} on the road · positions estimated from timetables',
+          subtitle: gps == 0
+              ? '$moving of ${widget.vehicles.length} on the road · positions estimated from timetables'
+              : '$moving of ${widget.vehicles.length} on the road · $gps reporting live GPS, the rest estimated from timetables',
           trailing: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
             decoration: BoxDecoration(color: AppColors.mint, borderRadius: BorderRadius.circular(20)),

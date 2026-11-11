@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 
 import 'analytics.dart';
 import 'backend/backend.dart';
+import 'live_models.dart';
 import 'partner_models.dart';
 
 /// Where the Tap A Ride server API lives (Vercel functions + the FindMe AI proxy).
@@ -133,6 +134,28 @@ class ApiClient {
     } catch (_) {
       return const {};
     }
+  }
+
+  /// Starts a card or bank top-up and returns the payment page to send the rider to.
+  Future<TopUpStart> startTopUp(int amount) async {
+    final data = await _post('/api/pay?action=init', {'amount': amount}, timeout: const Duration(seconds: 30));
+    return TopUpStart(url: '${data['url']}', reference: '${data['reference']}');
+  }
+
+  /// Asks the server to confirm a payment with the provider and credit the wallet (safe to repeat).
+  Future<TopUpResult> verifyTopUp(String reference) async {
+    final http.Response res;
+    try {
+      res = await _http.get(_uri('/api/pay').replace(queryParameters: {'action': 'verify', 'reference': reference}), headers: await _headers()).timeout(const Duration(seconds: 30));
+    } catch (_) {
+      throw const BackendException(BackendErrorKind.network, 'Could not reach Tap A Ride. Check your connection and try again.');
+    }
+    final data = Map<String, dynamic>.from(jsonDecode(res.body.isEmpty ? '{}' : res.body) as Map);
+    if (res.statusCode >= 400) throw BackendException(BackendErrorKind.unknown, (data['error'] as String?) ?? 'The payment could not be checked (${res.statusCode}).');
+    return TopUpResult(
+      status: TopUpStatus.values.where((s) => s.name == data['status']).firstOrNull ?? TopUpStatus.pending,
+      amount: (data['amount'] as num?)?.toInt() ?? 0,
+    );
   }
 
   final _geoCache = <String, List<({String name, LatLng point})>>{};

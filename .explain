@@ -5,7 +5,7 @@
 
 This file explains everything about the project in one place: the problem, the product, how the code is built and why, how money is made, and where we are going. It is written in Markdown, so it reads well in any editor or on GitHub.
 
-Last updated: 5 November 2026.
+Last updated: 11 November 2026.
 
 ---
 
@@ -88,7 +88,11 @@ One platform with five faces:
 Plus platform-wide services:
 
 - **Partner registration** with an AI pre-check of driver's licence and vehicle papers before an FCTA reviewer approves.
-- **Tag Along.** Verified professionals share rides home with colleagues who live nearby, on a cost-sharing basis.
+- **Tag Along.** Verified professionals share rides home with colleagues who live nearby, on a cost-sharing basis. The host accepts or declines each request; the rider's share is taken on acceptance, held, and paid to the host once the ride leaves.
+- **Event rides.** A list of events in Abuja. Riders offer or join shared rides to a specific event, and anyone can list their own event.
+- **Share my ride.** A private link for a trusted contact, opened without an account: the trip, the verified vehicle and driver, and the rider's live location.
+- **Live vehicle positions.** A driver's or conductor's phone reports the vehicle's GPS; riders see it on their ticket and partners on the fleet map. Vehicles that are not reporting fall back to a timetable estimate, labelled as such.
+- **Card and bank top-ups.** Paystack (card, bank transfer, USSD), confirmed by our server before the wallet is credited.
 - **Electric vehicles.** Book EV rides with live battery and range, and find charging stations.
 - **Tapi**, a 3D mascot and AI ride assistant that plans trips, books seats and tells you when to leave.
 - **FindMe AI**, our sister project, gives the smart safety map: nearby places, live traffic, incidents and SOS.
@@ -245,7 +249,7 @@ We order hardware only after an operator signs, so nothing is bought speculative
               ┌────────────────────────────┐   ┌──────────────────────────────────┐
               │ Supabase (Postgres)        │   │ Vercel serverless (Node.js)      │
               │ · Auth (email + password)  │   │ /api/assistant   → Gemini/Claude │
-              │ · 11 tables, all with RLS  │   │ /api/insights    → Gemini/Claude │
+              │ · 15 tables, all with RLS  │   │ /api/insights    → Gemini/Claude │
               │ · security-definer actions │   │ /api/verify-documents → AI       │
               │   book_transit, top_up,    │   │ /api/geocode     → Nominatim     │
               │   review_partner_app, ...  │   │ /api/tiles       → CARTO/OSM     │
@@ -335,7 +339,7 @@ The folders `impeccable/`, `ui-ux-pro-max/`, `react-three-fiber/`, `emil-design-
 
 ## 9. The database
 
-Postgres on Supabase. **11 tables, every one with row-level security switched on.**
+Postgres on Supabase. **15 tables, every one with row-level security switched on.**
 
 | Table | Holds |
 |---|---|
@@ -349,6 +353,10 @@ Postgres on Supabase. **11 tables, every one with row-level security switched on
 | `charging_stations` | EV charging points and free ports |
 | `partner_applications` | Partner sign-ups, documents and the AI check result |
 | `audit_log` | Who did what and when |
+| `events` | Events riders share rides to |
+| `trip_shares` | Private "share my ride" links and the rider's last location |
+| `vehicle_positions` | Each vehicle's last GPS fix from its driver's device |
+| `wallet_topups` | Card and bank top-ups and their payment references |
 | `metric_baselines` | Figures for the FCT register not yet on the platform, so dashboards show the whole city honestly |
 
 **Business actions are SQL functions** (all `security definer`, each re-checks the caller's role):
@@ -361,6 +369,7 @@ Helpers: `my_role`, `my_provider`, `is_staff`, `manages`, `provider_is_verified`
 2. `20261017000000_partner_registration.sql`: partner applications and review
 3. `20261020000000_driver_rides.sql`: private-driver `complete_ride`
 4. `20261022000000_protect_admins.sql`: admin accounts can only be changed by the platform owner
+5. `20261111000000_live_app.sql`: events, host-approved Tag Along with held shares, trip links, live vehicle positions and Paystack top-ups
 
 `deploy/scripts/supabase-setup.mjs` applies migrations (tracked, so it is safe to re-run), loads the seed data, and creates the demo sign-in accounts.
 
@@ -388,7 +397,7 @@ AI is used where it saves riders time or operators money, never as decoration.
 
 | Layer | What protects it |
 |---|---|
-| **Data access** | Row-level security on all 11 tables: a rider sees only their own bookings, an operator only their company's, anonymous visitors see nothing |
+| **Data access** | Row-level security on all 15 tables: a rider sees only their own bookings, an operator only their company's, anonymous visitors see nothing |
 | **Data changes** | Every write goes through a SQL function that re-checks the caller's role and writes the audit log; there are no direct update permissions on profiles |
 | **Admin accounts** | No one can promote a user to admin or change an admin from the app; only the platform owner can, directly in the database. A shared demo admin therefore cannot lock out the master |
 | **Master admin** | Private account, not listed on the login page. In demo mode only a salted SHA-256 hash ships in the app, never the password |
@@ -630,11 +639,11 @@ This is not legal advice; positions must be confirmed with a Nigerian lawyer and
 
 **Simulated or still to build**
 
-- **Payments are simulated.** The tap-card balance and top-ups are demo money. Next: Paystack split payments in test mode, then live.
+- **Top-ups are test money until a Paystack key is added.** The card and bank top-up flow is built and tested against a simulated Paystack; adding `PAYSTACK_SECRET_KEY` switches it on. Until then the app says "Test money" and new accounts start with ₦2,500 of it. Splitting each fare to the operator's bank account is the next payment step.
+- **Holding wallet money needs a licensed partner.** Once real money is in wallets, the balance must legally sit with a CBN-licensed partner (see section 20).
 - **No physical validators or cards yet.** The QR boarding pass works; the conductor validator app and NFC cards come with the pilot.
 - **Dashboard figures are demo data**, labelled in the app, combined with baselines for the city. Real numbers start with the pilot.
-- **Tag Along hosts accept automatically** after a few seconds; a host-side accept or decline flow is still to build.
-- **Email confirmation** must be switched off in Supabase (or a mail sender configured) so that new sign-ups can log in.
+- **Live location needs the page open.** A driver's phone reports GPS while the dashboard is open in the browser; background tracking comes with the Android validator app.
 - **Housekeeping:** pin the `@anthropic-ai/sdk` version in `deploy/package.json` (it currently says `latest`); remove the unused root-level Flutter starter and early prototype when convenient.
 
 ---

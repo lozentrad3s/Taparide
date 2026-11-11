@@ -4,6 +4,9 @@ import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:latlong2/latlong.dart';
+
+import '../live_models.dart';
 import '../models.dart';
 import '../partner_models.dart';
 import 'backend.dart';
@@ -43,6 +46,12 @@ class DemoBackend implements Backend {
   /// Uploaded document bytes stay in memory in demo mode (too large for local storage).
   final Map<String, DocumentFile> _documents = {};
   String? _sessionUserId;
+
+  // Events, trip links and vehicle positions live in memory in demo mode.
+  late final List<RideEvent> _events = _seedEvents();
+  final Map<String, String> _shares = {}; // token -> booking id
+  final Map<String, LatLng> _shareLocations = {};
+  final Map<String, VehiclePosition> _positions = {};
 
   @override
   String get modeLabel => 'Demo data';
@@ -295,7 +304,7 @@ class DemoBackend implements Backend {
     _me;
     _refreshSeedRides();
     final now = _clock();
-    final rides = [for (final r in _rides) if (r.departAt.isAfter(now.subtract(const Duration(minutes: 30)))) r]
+    final rides = [for (final r in _rides) if (!r.cancelled && r.departAt.isAfter(now.subtract(const Duration(minutes: 30)))) r]
       ..sort((a, b) => a.departAt.compareTo(b.departAt));
     return rides;
   }
@@ -323,7 +332,9 @@ class DemoBackend implements Backend {
     return [for (final b in _bookings) if (b.userId == me.id) b]..sort((a, b) => b.departureAt.compareTo(a.departureAt));
   }
 
-  /// Hosts accept join requests a few seconds after they are sent (simulated).
+  bool _hostIsAccount(String hostId) => _accounts.any((a) => a.user.id == hostId);
+
+  /// Sample hosts (not real accounts) accept a few seconds after a request; real hosts answer themselves.
   void _settleTagAlongRequests() {
     final now = _clock();
     var changed = false;
@@ -331,6 +342,7 @@ class DemoBackend implements Backend {
       final b = _bookings[i];
       if (b.kind == BookingKind.tagAlong && b.status == BookingStatus.requested && now.difference(b.createdAt).inSeconds >= 6) {
         final rideIndex = _rides.indexWhere((r) => r.id == b.rideId);
+        if (rideIndex >= 0 && _hostIsAccount(_rides[rideIndex].hostId)) continue;
         if (rideIndex >= 0 && _rides[rideIndex].seatsLeft > 0) {
           _rides[rideIndex] = _rides[rideIndex].copyWith(seatsTaken: _rides[rideIndex].seatsTaken + 1);
           _bookings[i] = b.copyWith(status: BookingStatus.accepted);
@@ -443,7 +455,7 @@ class DemoBackend implements Backend {
     await _wait();
     final me = _me;
     final current = _rides.where((r) => r.id == ride.id).firstOrNull;
-    if (current == null) throw const BackendException(BackendErrorKind.notFound, 'This ride has been withdrawn by the host.');
+    if (current == null || current.cancelled) throw const BackendException(BackendErrorKind.notFound, 'This ride has been withdrawn by the host.');
     if (current.hostId == me.id) throw const BackendException(BackendErrorKind.validation, 'You are hosting this ride.');
     if (current.seatsLeft <= 0) throw const BackendException(BackendErrorKind.validation, 'This ride is full.');
     if (_bookings.any((b) => b.userId == me.id && b.rideId == current.id && b.status.isOpen)) {
@@ -471,7 +483,7 @@ class DemoBackend implements Backend {
   }
 
   @override
-  Future<SharedRide> offerSharedRide({required String origin, required String destination, required DateTime departAt, required int seats, required int costShare, required String vehicleLabel, String note = ''}) async {
+  Future<SharedRide> offerSharedRide({required String origin, required String destination, required DateTime departAt, required int seats, required int costShare, required String vehicleLabel, String note = '', String? eventId}) async {
     await _wait();
     final me = _me;
     if (departAt.isBefore(_clock())) throw const BackendException(BackendErrorKind.validation, 'Choose a departure time later than now.');
@@ -489,6 +501,7 @@ class DemoBackend implements Backend {
       costShare: costShare,
       vehicleLabel: vehicleLabel.trim(),
       note: note.trim(),
+      eventId: eventId,
     );
     _rides.add(ride);
     _save();
@@ -514,8 +527,13 @@ class DemoBackend implements Backend {
     }
     if (booking.kind == BookingKind.tagAlong && booking.status == BookingStatus.accepted) {
       final r = _rides.indexWhere((x) => x.id == booking.rideId);
-      if (r >= 0) _rides[r] = _rides[r].copyWith(seatsTaken: max(0, _rides[r].seatsTaken - 1));
+      if (r >= 0) {
+        _rides[r] = _rides[r].copyWith(seatsTaken: max(0, _rides[r].seatsTaken - 1));
+        // A real host took the share when accepting; it goes back if the ride has not left.
+        if (_hostIsAccount(_rides[r].hostId) && booking.departureAt.isAfter(_clock())) _credit(me.id, booking.fare);
+      }
     }
+    _shares.removeWhere((_, id) => id == booking.id);
     final updated = booking.copyWith(status: BookingStatus.cancelled);
     _bookings[index] = updated;
     _save();
@@ -532,6 +550,181 @@ class DemoBackend implements Backend {
     _wallets[me.id] = updated;
     _save();
     return updated;
+  }
+
+  void _credit(String userId, int amount) {
+    final w = _walletFor(userId);
+    _wallets[userId] = Wallet(cardNumber: w.cardNumber, balance: w.balance + amount);
+  }
+
+  // ------------------------------------------------------------ Tag Along hosting
+
+  @override
+  Future<List<Booking>> fetchRideRequests() async {
+    await _wait();
+    final me = _me;
+    final mine = {for (final r in _rides) if (r.hostId == me.id) r.id};
+    return [for (final b in _bookings) if (b.rideId != null && mine.contains(b.rideId)) b]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  }
+
+  @override
+  Future<Booking> respondToRideRequest(String bookingId, {required bool accept}) async {
+    await _wait();
+    final me = _me;
+    final i = _bookings.indexWhere((b) => b.id == bookingId && b.kind == BookingKind.tagAlong);
+    if (i < 0) throw const BackendException(BackendErrorKind.notFound, 'Request not found.');
+    final b = _bookings[i];
+    final r = _rides.indexWhere((x) => x.id == b.rideId);
+    if (r < 0 || _rides[r].hostId != me.id) throw const BackendException(BackendErrorKind.permission, 'Only the host can answer this request.');
+    if (b.status != BookingStatus.requested) throw const BackendException(BackendErrorKind.validation, 'This request has already been answered.');
+    if (accept) {
+      if (_rides[r].seatsLeft <= 0) throw const BackendException(BackendErrorKind.validation, 'Your ride is full.');
+      if (_walletFor(b.userId).balance < b.fare) {
+        throw BackendException(BackendErrorKind.insufficientFunds, '${b.passengerName} no longer has enough balance for their share.');
+      }
+      _credit(b.userId, -b.fare);
+      _rides[r] = _rides[r].copyWith(seatsTaken: _rides[r].seatsTaken + 1);
+    }
+    _bookings[i] = b.copyWith(status: accept ? BookingStatus.accepted : BookingStatus.declined);
+    _save();
+    return _bookings[i];
+  }
+
+  @override
+  Future<SharedRide> cancelSharedRide(String rideId) async {
+    await _wait();
+    final me = _me;
+    final r = _rides.indexWhere((x) => x.id == rideId);
+    if (r < 0) throw const BackendException(BackendErrorKind.notFound, 'Ride not found.');
+    if (_rides[r].hostId != me.id) throw const BackendException(BackendErrorKind.permission, 'Only the host can withdraw this ride.');
+    for (var i = 0; i < _bookings.length; i++) {
+      final b = _bookings[i];
+      if (b.rideId != rideId || !b.status.isOpen) continue;
+      if (b.status == BookingStatus.accepted) _credit(b.userId, b.fare);
+      _bookings[i] = b.copyWith(status: b.status == BookingStatus.accepted ? BookingStatus.cancelled : BookingStatus.declined);
+    }
+    _rides[r] = _rides[r].copyWith(seatsTaken: 0, cancelled: true);
+    _save();
+    return _rides[r];
+  }
+
+  // ------------------------------------------------------------ events
+
+  List<RideEvent> _seedEvents() {
+    final now = _clock();
+    DateTime at(int days, int hour) => DateTime(now.year, now.month, now.day + days, hour);
+    return [
+      RideEvent(id: 'ev_showcase', title: 'Smart Mobility Showcase', venue: 'International Conference Centre', area: 'Central Area', startsAt: at(3, 10), endsAt: at(3, 16), category: EventCategory.conference, organiserName: 'Tap A Ride (sample event)', description: 'Sample event: demos and talks on how Abuja moves.', lat: 9.0412, lng: 7.4893),
+      RideEvent(id: 'ev_music', title: 'Abuja Live Music Night', venue: 'Millennium Park', area: 'Maitama', startsAt: at(5, 18), endsAt: at(5, 22), category: EventCategory.concert, organiserName: 'Tap A Ride (sample event)', description: 'Sample event: an evening of live music in the park.', lat: 9.0718, lng: 7.5003),
+      RideEvent(id: 'ev_cup', title: 'Community Cup Final', venue: 'Moshood Abiola National Stadium', area: 'Kukwaba', startsAt: at(6, 16), endsAt: at(6, 19), category: EventCategory.sport, organiserName: 'Tap A Ride (sample event)', description: 'Sample event: the weekend football final.', lat: 9.0379, lng: 7.4531),
+    ];
+  }
+
+  @override
+  Future<List<RideEvent>> fetchEvents() async {
+    await _wait();
+    _me;
+    final now = _clock();
+    return [for (final e in _events) if (e.startsAt.isAfter(now.subtract(const Duration(hours: 6)))) e]..sort((a, b) => a.startsAt.compareTo(b.startsAt));
+  }
+
+  @override
+  Future<RideEvent> createEvent({required String title, required String venue, required String area, required DateTime startsAt, DateTime? endsAt, required EventCategory category, String description = '', double? lat, double? lng}) async {
+    await _wait();
+    final me = _me;
+    if (startsAt.isBefore(_clock())) throw const BackendException(BackendErrorKind.validation, 'Choose a start time later than now.');
+    final event = RideEvent(id: _id('ev'), title: title.trim(), venue: venue.trim(), area: area.trim().isEmpty ? 'Abuja' : area.trim(), startsAt: startsAt, endsAt: endsAt, category: category, description: description.trim(), organiserId: me.id, organiserName: me.organisation ?? me.fullName, lat: lat, lng: lng);
+    _events.add(event);
+    return event;
+  }
+
+  @override
+  Future<void> removeEvent(String eventId) async {
+    await _wait();
+    final me = _me;
+    final event = _events.where((e) => e.id == eventId).firstOrNull;
+    if (event == null) throw const BackendException(BackendErrorKind.notFound, 'Event not found.');
+    _require(event.organiserId == me.id || me.role.canVerify, 'remove this event');
+    _events.remove(event);
+  }
+
+  // ------------------------------------------------------------ share my ride
+
+  @override
+  Future<TripShare> shareTrip(String bookingId) async {
+    await _wait();
+    final me = _me;
+    final b = _bookings.where((x) => x.id == bookingId && x.userId == me.id).firstOrNull;
+    if (b == null) throw const BackendException(BackendErrorKind.notFound, 'Booking not found.');
+    if (!b.status.isOpen) throw const BackendException(BackendErrorKind.validation, 'Only upcoming trips can be shared.');
+    final token = _shares.entries.where((e) => e.value == b.id).firstOrNull?.key ?? '${_id('t')}${_random.nextInt(1 << 30).toRadixString(36)}';
+    _shares[token] = b.id;
+    return TripShare(token: token, bookingId: b.id, expiresAt: b.departureAt.add(const Duration(hours: 6)));
+  }
+
+  @override
+  Future<void> stopSharingTrip(String bookingId) async {
+    await _wait();
+    _shares.removeWhere((_, id) => id == bookingId);
+  }
+
+  @override
+  Future<void> updateTripLocation(String bookingId, double lat, double lng) async {
+    if (_shares.containsValue(bookingId)) _shareLocations[bookingId] = LatLng(lat, lng);
+  }
+
+  @override
+  Future<SharedTrip?> fetchSharedTrip(String token) async {
+    await _wait();
+    final b = _bookings.where((x) => x.id == _shares[token]).firstOrNull;
+    if (b == null) return null;
+    final vehicle = _vehicles.where((v) => v.id == b.vehicleId).firstOrNull;
+    final route = _routes.where((r) => r.id == b.routeId).firstOrNull;
+    final provider = _providers.where((p) => p.id == (b.providerId ?? vehicle?.operatorId)).firstOrNull;
+    final ride = _rides.where((r) => r.id == b.rideId).firstOrNull;
+    final live = _positions[b.vehicleId];
+    return SharedTrip(
+      passenger: b.passengerName.split(' ').first,
+      kind: b.kind,
+      status: b.status,
+      origin: b.origin,
+      destination: b.destination,
+      departureAt: b.departureAt,
+      ticketCode: b.ticketCode,
+      expiresAt: b.departureAt.add(const Duration(hours: 6)),
+      operatorName: provider?.name,
+      operatorVerified: provider?.status == Verification.verified,
+      vehicle: vehicle?.displayName ?? ride?.vehicleLabel,
+      vehicleVerified: vehicle?.verification == Verification.verified,
+      driver: vehicle?.driverName ?? ride?.hostName,
+      stops: route?.stops ?? const [],
+      rider: _shareLocations[b.id],
+      riderLocatedAt: _shareLocations[b.id] == null ? null : _clock(),
+      vehiclePoint: live?.point,
+      vehicleLocatedAt: live?.updatedAt,
+    );
+  }
+
+  // ------------------------------------------------------------ live vehicle positions
+
+  @override
+  Future<List<VehiclePosition>> fetchVehiclePositions() async {
+    final now = _clock();
+    return [for (final p in _positions.values) if (now.difference(p.updatedAt).inMinutes < 5) p];
+  }
+
+  @override
+  Future<void> reportVehiclePosition(String vehicleId, double lat, double lng, {double? heading, double? speedKmh}) async {
+    final me = _me;
+    final v = _vehicles.where((x) => x.id == vehicleId).firstOrNull;
+    if (v == null) throw const BackendException(BackendErrorKind.notFound, 'Vehicle not found.');
+    _require(_manages(me, v.operatorId) || (v.ownerId != null && _manages(me, v.ownerId!)), 'track this vehicle');
+    _positions[vehicleId] = VehiclePosition(vehicleId: vehicleId, point: LatLng(lat, lng), updatedAt: _clock(), speedKmh: speedKmh);
+  }
+
+  @override
+  Future<void> stopVehicleTracking(String vehicleId) async {
+    _positions.remove(vehicleId);
   }
 
   // ------------------------------------------------------------ partners

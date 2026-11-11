@@ -11,6 +11,7 @@ import 'backend/backend.dart';
 import 'dashboards.dart';
 import 'format.dart';
 import 'insights.dart';
+import 'live_models.dart';
 import 'location.dart';
 import 'models.dart';
 import 'partner_models.dart';
@@ -58,6 +59,16 @@ class AppState extends ChangeNotifier {
   List<Vehicle> vehicles = const [];
   List<ChargingStation> stations = const [];
   List<SharedRide> rides = const [];
+  List<RideEvent> events = const [];
+
+  /// Requests on the Tag Along rides this user hosts.
+  List<Booking> rideRequests = const [];
+
+  /// Fresh GPS fixes from vehicles in service, by vehicle id.
+  Map<String, VehiclePosition> positions = const {};
+
+  /// Trip links this rider has switched on, by booking id.
+  final Map<String, TripShare> tripShares = {};
   List<Booking> myBookings = const [];
   List<Booking> partnerBookings = const [];
   List<AuditEntry> audit = const [];
@@ -71,7 +82,17 @@ class AppState extends ChangeNotifier {
   Timer? _pending;
   bool _disposed = false;
 
+  Timer? _shareTicker;
+  Timer? _trackTicker;
+
+  /// The vehicle this device is reporting GPS for (driver or conductor), if any.
+  String? trackingVehicleId;
+  String? trackingError;
+
   DateTime get now => _clock();
+
+  /// True once card and bank top-ups are switched on; until then wallet money is test money.
+  bool get paymentsLive => services['payments'] == 'paystack';
   bool get signedIn => user != null;
   bool get isPartner => user?.role.isPartner ?? false;
 
@@ -79,6 +100,8 @@ class AppState extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _pending?.cancel();
+    _shareTicker?.cancel();
+    _trackTicker?.cancel();
     super.dispose();
   }
 
@@ -132,6 +155,12 @@ class AppState extends ChangeNotifier {
 
   Future<void> signOut() async {
     _pending?.cancel();
+    _shareTicker?.cancel();
+    await stopTracking();
+    tripShares.clear();
+    events = const [];
+    rideRequests = const [];
+    positions = const {};
     await backend.signOut();
     user = null;
     dataState = LoadState.idle;
@@ -167,7 +196,9 @@ class AppState extends ChangeNotifier {
         backend.fetchChargingStations(),
         backend.fetchSharedRides(),
         backend.fetchBaselines(),
+        backend.fetchVehiclePositions(),
       ]);
+      positions = {for (final p in results[6] as List<VehiclePosition>) p.vehicleId: p};
       providers = results[0] as List<TransportProvider>;
       routes = results[1] as List<TransitRoute>;
       vehicles = results[2] as List<Vehicle>;
@@ -181,9 +212,11 @@ class AppState extends ChangeNotifier {
         users = me.role == UserRole.admin ? await backend.fetchUsers() : const [];
         partnerApplications = me.role.canVerify ? await backend.fetchPartnerApplications() : const [];
       } else {
-        final rider = await Future.wait<Object>([backend.fetchWallet(), backend.fetchMyBookings()]);
+        final rider = await Future.wait<Object>([backend.fetchWallet(), backend.fetchMyBookings(), backend.fetchEvents(), backend.fetchRideRequests()]);
         wallet = rider[0] as Wallet;
         myBookings = rider[1] as List<Booking>;
+        events = rider[2] as List<RideEvent>;
+        rideRequests = rider[3] as List<Booking>;
       }
       myApplications = await backend.fetchMyApplications();
       dataState = LoadState.ready;
@@ -201,10 +234,13 @@ class AppState extends ChangeNotifier {
   Future<void> refreshRider() async {
     if (user == null || isPartner) return;
     try {
-      final results = await Future.wait<Object>([backend.fetchWallet(), backend.fetchMyBookings(), backend.fetchSharedRides()]);
-      wallet = results[0] as Wallet;
-      myBookings = results[1] as List<Booking>;
-      rides = results[2] as List<SharedRide>;
+      final results = await Future.wait<Object>([backend.fetchMyBookings(), backend.fetchSharedRides(), backend.fetchEvents(), backend.fetchRideRequests()]);
+      myBookings = results[0] as List<Booking>;
+      rides = results[1] as List<SharedRide>;
+      events = results[2] as List<RideEvent>;
+      rideRequests = results[3] as List<Booking>;
+      // After the bookings: settling a ride that has left can change the balance.
+      wallet = await backend.fetchWallet();
       _notify();
     } on BackendException {
       // Keep the cached data; the next full refresh reports the problem.
@@ -329,14 +365,160 @@ class AppState extends ChangeNotifier {
     final booking = await backend.requestSharedRide(ride);
     myBookings = [booking, ...myBookings];
     _notify();
-    // Hosts answer within seconds in the demo; check back so the status updates on its own.
+    // Check back shortly so the status updates on its own when the host answers.
     _pending?.cancel();
     _pending = Timer(const Duration(seconds: 7), refreshRider);
     return booking;
   }
 
-  Future<SharedRide> offerSharedRide({required String origin, required String destination, required DateTime departAt, required int seats, required int costShare, required String vehicleLabel, String note = ''}) async {
-    final ride = await backend.offerSharedRide(origin: origin, destination: destination, departAt: departAt, seats: seats, costShare: costShare, vehicleLabel: vehicleLabel, note: note);
+  // ------------------------------------------------------------ Tag Along hosting
+
+  SharedRide? rideById(String? id) => id == null ? null : rides.where((r) => r.id == id).firstOrNull;
+
+  /// Requests still waiting for this host's answer.
+  List<Booking> get pendingRideRequests => [for (final b in rideRequests) if (b.status == BookingStatus.requested) b];
+
+  Future<void> respondToRideRequest(Booking request, {required bool accept}) async {
+    final updated = await backend.respondToRideRequest(request.id, accept: accept);
+    rideRequests = [for (final b in rideRequests) b.id == updated.id ? updated : b];
+    rides = await backend.fetchSharedRides();
+    _notify();
+  }
+
+  Future<void> cancelSharedRide(SharedRide ride) async {
+    await backend.cancelSharedRide(ride.id);
+    final results = await Future.wait<Object>([backend.fetchSharedRides(), backend.fetchRideRequests()]);
+    rides = results[0] as List<SharedRide>;
+    rideRequests = results[1] as List<Booking>;
+    _notify();
+  }
+
+  // ------------------------------------------------------------ events
+
+  RideEvent? eventById(String? id) => id == null ? null : events.where((e) => e.id == id).firstOrNull;
+  List<SharedRide> ridesForEvent(String eventId) => [for (final r in rides) if (r.eventId == eventId) r];
+
+  Future<RideEvent> createEvent({required String title, required String venue, required String area, required DateTime startsAt, DateTime? endsAt, required EventCategory category, String description = '', double? lat, double? lng}) async {
+    final event = await backend.createEvent(title: title, venue: venue, area: area, startsAt: startsAt, endsAt: endsAt, category: category, description: description, lat: lat, lng: lng);
+    events = [...events, event]..sort((a, b) => a.startsAt.compareTo(b.startsAt));
+    _notify();
+    return event;
+  }
+
+  Future<void> removeEvent(RideEvent event) async {
+    await backend.removeEvent(event.id);
+    events = [for (final e in events) if (e.id != event.id) e];
+    _notify();
+  }
+
+  // ------------------------------------------------------------ share my ride
+
+  /// Switches on the private link for a trip and starts sending this device's location to it.
+  Future<TripShare> shareTrip(Booking booking) async {
+    final share = await backend.shareTrip(booking.id);
+    tripShares[booking.id] = share;
+    _notify();
+    unawaited(_sendShareLocations());
+    _shareTicker ??= Timer.periodic(const Duration(seconds: 25), (_) => _sendShareLocations());
+    return share;
+  }
+
+  Future<void> stopSharingTrip(Booking booking) async {
+    await backend.stopSharingTrip(booking.id);
+    tripShares.remove(booking.id);
+    if (tripShares.isEmpty) {
+      _shareTicker?.cancel();
+      _shareTicker = null;
+    }
+    _notify();
+  }
+
+  Future<void> _sendShareLocations() async {
+    tripShares.removeWhere((_, s) => s.expiresAt.isBefore(now));
+    if (tripShares.isEmpty) return;
+    final here = await currentLocation();
+    if (here == null) return;
+    for (final id in tripShares.keys.toList()) {
+      try {
+        await backend.updateTripLocation(id, here.latitude, here.longitude);
+      } on BackendException {
+        // The contact still sees the trip and vehicle; the next tick tries again.
+      }
+    }
+  }
+
+  // ------------------------------------------------------------ live vehicle positions
+
+  Future<void> refreshPositions() async {
+    try {
+      positions = {for (final p in await backend.fetchVehiclePositions()) p.vehicleId: p};
+      _notify();
+    } on BackendException {
+      // Keep the last known positions.
+    }
+  }
+
+  /// A vehicle's GPS fix if its driver is reporting right now.
+  VehiclePosition? livePosition(String? vehicleId) {
+    final p = vehicleId == null ? null : positions[vehicleId];
+    return p != null && p.isFresh(now) ? p : null;
+  }
+
+  /// Starts reporting this device's GPS as [vehicle]'s position (driver or conductor phone).
+  Future<bool> startTracking(Vehicle vehicle) async {
+    await stopTracking();
+    trackingVehicleId = vehicle.id;
+    trackingError = null;
+    final ok = await _reportPosition();
+    if (!ok) {
+      trackingVehicleId = null;
+      _notify();
+      return false;
+    }
+    _trackTicker = Timer.periodic(const Duration(seconds: 15), (_) => _reportPosition());
+    _notify();
+    return true;
+  }
+
+  Future<void> stopTracking() async {
+    _trackTicker?.cancel();
+    _trackTicker = null;
+    final id = trackingVehicleId;
+    trackingVehicleId = null;
+    if (id == null) return;
+    try {
+      await backend.stopVehicleTracking(id);
+    } on BackendException {
+      // The fix simply goes stale after a few minutes.
+    }
+    positions = {...positions}..remove(id);
+    _notify();
+  }
+
+  Future<bool> _reportPosition() async {
+    final id = trackingVehicleId;
+    if (id == null) return false;
+    final here = await currentLocation();
+    if (here == null) {
+      trackingError = 'Allow location access on this device to share the vehicle\'s position.';
+      _notify();
+      return false;
+    }
+    try {
+      await backend.reportVehiclePosition(id, here.latitude, here.longitude);
+      positions = {...positions, id: VehiclePosition(vehicleId: id, point: here, updatedAt: now)};
+      trackingError = null;
+      _notify();
+      return true;
+    } on BackendException catch (e) {
+      trackingError = e.message;
+      _notify();
+      return false;
+    }
+  }
+
+  Future<SharedRide> offerSharedRide({required String origin, required String destination, required DateTime departAt, required int seats, required int costShare, required String vehicleLabel, String note = '', String? eventId}) async {
+    final ride = await backend.offerSharedRide(origin: origin, destination: destination, departAt: departAt, seats: seats, costShare: costShare, vehicleLabel: vehicleLabel, note: note, eventId: eventId);
     rides = [...rides, ride]..sort((a, b) => a.departAt.compareTo(b.departAt));
     _notify();
     return ride;
@@ -352,9 +534,18 @@ class AppState extends ChangeNotifier {
     _notify();
   }
 
+  /// Test-money top-up (demo mode, or a live server before payments are switched on).
   Future<void> topUp(int amount) async {
     wallet = await backend.topUp(amount);
     _notify();
+  }
+
+  /// Confirms a card or bank payment after the rider returns, and refreshes the balance.
+  Future<TopUpResult> confirmTopUp(String reference) async {
+    final result = await api.verifyTopUp(reference);
+    wallet = await backend.fetchWallet();
+    _notify();
+    return result;
   }
 
   // ------------------------------------------------------------ partner actions

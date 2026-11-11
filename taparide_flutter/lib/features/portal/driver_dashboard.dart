@@ -10,6 +10,7 @@ import '../../core/places.dart';
 import '../../shared/mascot/mascot.dart';
 import '../../shared/ui.dart';
 import '../assistant/assistant_sheet.dart';
+import 'partner_widgets.dart' show LiveTrackerPanel;
 import 'portal_widgets.dart';
 
 /// Dashboard for an approved private driver: go online, run the current ride,
@@ -89,6 +90,7 @@ class DriverDashboard extends StatelessWidget {
               ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(flex: 3, child: rideCard), const SizedBox(width: 16), Expanded(flex: 2, child: carCard)])
               : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [rideCard, const SizedBox(height: 16), carCard]);
         }),
+        if (car != null) ...[const SizedBox(height: 16), LiveTrackerPanel(vehicles: [car])],
         const SizedBox(height: 16),
         Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           const PanelTitle('Where riders are', subtitle: 'Busiest areas across Abuja right now'),

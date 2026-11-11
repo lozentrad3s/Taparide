@@ -20,6 +20,8 @@ import '../features/passenger/ticket_page.dart';
 import '../features/passenger/trips_page.dart';
 import '../features/portal/portal_pages.dart';
 import '../features/portal/portal_shell.dart';
+import '../features/events/events_page.dart';
+import '../features/share/shared_trip_page.dart';
 import '../features/tag_along/tag_along_page.dart';
 
 String homeFor(AppUser user) => switch (user.role) {
@@ -31,7 +33,7 @@ String homeFor(AppUser user) => switch (user.role) {
     };
 
 bool _riderPath(String path) =>
-    path.startsWith('/app') || path.startsWith('/ride') || path.startsWith('/ticket') || path == '/ev' || path == '/tag-along';
+    path.startsWith('/app') || path.startsWith('/ride') || path.startsWith('/ticket') || path == '/ev' || path == '/tag-along' || path.startsWith('/events');
 
 final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 
@@ -87,7 +89,7 @@ GoRouter buildRouter(AppState state) {
           StatefulShellBranch(routes: [GoRoute(path: '/app', builder: (context, s) => const HomePage())]),
           StatefulShellBranch(routes: [GoRoute(path: '/app/routes', builder: (context, s) => RoutesPage(initialQuery: s.uri.queryParameters['q']))]),
           StatefulShellBranch(routes: [GoRoute(path: '/app/trips', builder: (context, s) => const TripsPage())]),
-          StatefulShellBranch(routes: [GoRoute(path: '/app/profile', builder: (context, s) => const ProfilePage())]),
+          StatefulShellBranch(routes: [GoRoute(path: '/app/profile', builder: (context, s) => ProfilePage(topUpReference: s.uri.queryParameters['topup']))]),
         ],
       ),
       GoRoute(
@@ -108,6 +110,14 @@ GoRouter buildRouter(AppState state) {
       GoRoute(path: '/ticket/:bookingId', parentNavigatorKey: _rootKey, builder: (context, s) => TicketPage(bookingId: s.pathParameters['bookingId']!)),
       GoRoute(path: '/ev', parentNavigatorKey: _rootKey, builder: (context, s) => const EvPage()),
       GoRoute(path: '/tag-along', parentNavigatorKey: _rootKey, builder: (context, s) => const TagAlongPage()),
+      GoRoute(
+        path: '/events',
+        parentNavigatorKey: _rootKey,
+        builder: (context, s) => const EventsPage(),
+        routes: [GoRoute(path: ':eventId', parentNavigatorKey: _rootKey, builder: (context, s) => EventDetailPage(eventId: s.pathParameters['eventId']!))],
+      ),
+      // Opened from a link by a trusted contact: no sign-in.
+      GoRoute(path: '/trip/:token', parentNavigatorKey: _rootKey, builder: (context, s) => SharedTripPage(token: s.pathParameters['token']!)),
 
       // Partner portal: operators, fleet owners, FCTA and platform admins.
       ShellRoute(

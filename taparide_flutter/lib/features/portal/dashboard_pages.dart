@@ -362,6 +362,8 @@ class _OperatorPageState extends State<OperatorPage> {
           rightFlex: 2,
           left: LiveFleetMap(vehicles: d.vehicles, routes: d.routes),
           right: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            // The operator's own staff (or an admin) can report a vehicle's GPS from this device.
+            if (user.role != UserRole.government) ...[LiveTrackerPanel(vehicles: d.vehicles), const SizedBox(height: 18)],
             AiTeaser(report: report),
             const SizedBox(height: 18),
             PartnerAlertsPanel(alerts: partnerAlerts(context, report)),

@@ -1,3 +1,4 @@
+import '../live_models.dart';
 import '../models.dart';
 import '../partner_models.dart';
 
@@ -46,9 +47,37 @@ abstract class Backend {
   Future<Booking> bookTransit({required TransitRoute route, required DateTime departure, required PaymentMethod method});
   Future<Booking> bookElectric({required Vehicle vehicle, required String pickup, required String dropoff, required int fare, required PaymentMethod method});
   Future<Booking> requestSharedRide(SharedRide ride);
-  Future<SharedRide> offerSharedRide({required String origin, required String destination, required DateTime departAt, required int seats, required int costShare, required String vehicleLabel, String note});
+  Future<SharedRide> offerSharedRide({required String origin, required String destination, required DateTime departAt, required int seats, required int costShare, required String vehicleLabel, String note, String? eventId});
   Future<Booking> cancelBooking(String bookingId);
+  /// Test-money top-up. Refused by the live server once card and bank payments are on.
   Future<Wallet> topUp(int amount);
+
+  // ---- Tag Along hosting
+  /// Requests on the rides the signed-in user hosts.
+  Future<List<Booking>> fetchRideRequests();
+
+  /// Accepting takes the rider's share and holds it until the ride leaves; then it is paid to the host.
+  Future<Booking> respondToRideRequest(String bookingId, {required bool accept});
+  Future<SharedRide> cancelSharedRide(String rideId);
+
+  // ---- events
+  Future<List<RideEvent>> fetchEvents();
+  Future<RideEvent> createEvent({required String title, required String venue, required String area, required DateTime startsAt, DateTime? endsAt, required EventCategory category, String description, double? lat, double? lng});
+  Future<void> removeEvent(String eventId);
+
+  // ---- share my ride
+  /// A private link token for one upcoming trip (the same one while it is still valid).
+  Future<TripShare> shareTrip(String bookingId);
+  Future<void> stopSharingTrip(String bookingId);
+  Future<void> updateTripLocation(String bookingId, double lat, double lng);
+
+  /// Readable without signing in: the token is the key. Null when the link has ended.
+  Future<SharedTrip?> fetchSharedTrip(String token);
+
+  // ---- live vehicle positions
+  Future<List<VehiclePosition>> fetchVehiclePositions();
+  Future<void> reportVehiclePosition(String vehicleId, double lat, double lng, {double? heading, double? speedKmh});
+  Future<void> stopVehicleTracking(String vehicleId);
 
   // ---- partners (scoped server-side by role and provider)
   Future<List<Booking>> fetchPartnerBookings();

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +11,7 @@ import '../../core/app_state.dart';
 import '../../core/format.dart';
 import '../../core/models.dart';
 import '../../shared/ui.dart';
+import '../share/shared_trip_page.dart';
 import 'rider_widgets.dart';
 
 /// Boarding pass for a transit seat, EV ride or Tag Along request.
@@ -39,6 +42,8 @@ class TicketPage extends StatelessWidget {
   }
 
   Future<void> _share(BuildContext context, Booking booking, Vehicle? vehicle) async {
+    // Upcoming trips get a private live link; finished ones just copy the details.
+    if (booking.status.isOpen) return showShareTripSheet(context, booking);
     final details = [
       'My Tap A Ride trip: ${booking.origin} → ${booking.destination}',
       Fmt.dayTime(booking.departureAt),
@@ -162,13 +167,14 @@ class TicketPage extends StatelessWidget {
                   _DetailRow(icon: Icons.payments_outlined, label: 'Payment', value: booking.paymentMethod.label),
                 ]),
               ),
+              if (open && booking.vehicleId != null) _LiveVehicle(booking: booking, stops: route?.stops ?? const []),
               const SizedBox(height: 18),
               Row(children: [
                 Expanded(
                     child: OutlinedButton.icon(
                         onPressed: () => _share(context, booking, vehicle),
-                        icon: const Icon(Icons.ios_share_rounded, size: 18),
-                        label: const Text('Share trip'))),
+                        icon: Icon(state.tripShares.containsKey(booking.id) ? Icons.share_location_rounded : Icons.ios_share_rounded, size: 18),
+                        label: Text(state.tripShares.containsKey(booking.id) ? 'Sharing on' : (open ? 'Share my ride' : 'Share trip')))),
                 const SizedBox(width: 10),
                 Expanded(
                   child: OutlinedButton.icon(
@@ -190,6 +196,72 @@ class TicketPage extends StatelessWidget {
             ]),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// The booked vehicle on the map while its driver's device is reporting GPS.
+class _LiveVehicle extends StatefulWidget {
+  const _LiveVehicle({required this.booking, required this.stops});
+  final Booking booking;
+  final List<RouteStop> stops;
+
+  @override
+  State<_LiveVehicle> createState() => _LiveVehicleState();
+}
+
+class _LiveVehicleState extends State<_LiveVehicle> {
+  Timer? _poll;
+
+  @override
+  void initState() {
+    super.initState();
+    final state = context.read<AppState>();
+    WidgetsBinding.instance.addPostFrameCallback((_) => state.refreshPositions());
+    _poll = Timer.periodic(const Duration(seconds: 20), (_) => state.refreshPositions());
+  }
+
+  @override
+  void dispose() {
+    _poll?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<AppState>();
+    final text = Theme.of(context).textTheme;
+    final live = state.livePosition(widget.booking.vehicleId);
+    if (live == null) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 12),
+        child: Row(children: [
+          const Icon(Icons.schedule_rounded, size: 16, color: AppColors.muted),
+          const SizedBox(width: 6),
+          Expanded(child: Text('Running to timetable. The live position shows here when the driver\'s device is reporting.', style: text.bodySmall)),
+        ]),
+      );
+    }
+    final seconds = state.now.difference(live.updatedAt).inSeconds;
+    return Padding(
+      padding: const EdgeInsets.only(top: 18),
+      child: Panel(
+        padding: EdgeInsets.zero,
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+            child: SizedBox(height: 220, child: TripMap(stops: widget.stops, vehicle: live.point)),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(children: [
+              Container(width: 9, height: 9, decoration: const BoxDecoration(color: AppColors.leaf, shape: BoxShape.circle)),
+              const SizedBox(width: 8),
+              Expanded(child: Text('Live vehicle position · updated ${seconds < 60 ? 'just now' : '${seconds ~/ 60} min ago'}', style: text.labelMedium)),
+            ]),
+          ),
+        ]),
       ),
     );
   }

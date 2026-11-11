@@ -6,6 +6,7 @@ import '../../app/theme.dart';
 import '../../core/app_state.dart';
 import '../../core/backend/backend.dart';
 import '../../core/format.dart';
+import '../../core/live_models.dart';
 import '../../core/models.dart';
 import '../../core/photos.dart';
 import '../../shared/ui.dart';
@@ -39,7 +40,9 @@ class _TagAlongPageState extends State<TagAlongPage> {
     final text = Theme.of(context).textTheme;
     final wide = isWide(context, 980);
     final me = state.user!;
-    final rides = state.rides;
+    // Rides to events are listed on their event page.
+    final rides = [for (final r in state.rides) if (r.eventId == null || r.hostId == me.id) r];
+    final hosted = [for (final r in state.rides) if (r.hostId == me.id) r];
 
     final intro = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text('Share Rides. Save More.', style: wide ? text.displaySmall : text.headlineLarge),
@@ -63,7 +66,7 @@ class _TagAlongPageState extends State<TagAlongPage> {
       Wrap(spacing: 10, runSpacing: 10, children: [
         FilledButton(onPressed: _findRide, style: FilledButton.styleFrom(minimumSize: const Size(160, 52)), child: const Text('Find a Ride')),
         OutlinedButton.icon(
-          onPressed: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, builder: (_) => const _OfferRideSheet()),
+          onPressed: () => showOfferRideSheet(context),
           icon: const Icon(Icons.add_rounded),
           label: const Text('Offer a ride'),
         ),
@@ -107,6 +110,10 @@ class _TagAlongPageState extends State<TagAlongPage> {
                 width: 1080,
                 padding: EdgeInsets.symmetric(horizontal: wide ? 32 : 18),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  if (hosted.isNotEmpty) ...[
+                    HostRequestsPanel(rides: hosted),
+                    const SizedBox(height: 22),
+                  ],
                   SectionHeader(title: 'Rides leaving soon', subtitle: '${rides.length} shared rides from verified colleagues'),
                   if (rides.isEmpty)
                     const EmptyState(
@@ -122,7 +129,7 @@ class _TagAlongPageState extends State<TagAlongPage> {
                                 if (j > i) const SizedBox(width: 14),
                                 Expanded(
                                   child: j < rides.length
-                                      ? _RideCard(ride: rides[j], mine: rides[j].hostId == me.id, request: state.bookingForRide(rides[j].id))
+                                      ? RideCard(ride: rides[j], mine: rides[j].hostId == me.id, request: state.bookingForRide(rides[j].id))
                                       : const SizedBox.shrink(),
                                 ),
                               ],
@@ -140,22 +147,41 @@ class _TagAlongPageState extends State<TagAlongPage> {
   }
 }
 
-class _RideCard extends StatefulWidget {
-  const _RideCard({required this.ride, required this.mine, required this.request});
+/// One shared ride: join it, see your request, or (as host) withdraw it.
+class RideCard extends StatefulWidget {
+  const RideCard({super.key, required this.ride, required this.mine, required this.request});
   final SharedRide ride;
   final bool mine;
   final Booking? request;
 
   @override
-  State<_RideCard> createState() => _RideCardState();
+  State<RideCard> createState() => RideCardState();
 }
 
-class _RideCardState extends State<_RideCard> {
+class RideCardState extends State<RideCard> {
   bool _busy = false;
 
   Future<void> _join() async {
     setState(() => _busy = true);
     await attempt(context, () => context.read<AppState>().requestSharedRide(widget.ride), success: 'Request sent to ${widget.ride.hostName}');
+    if (mounted) setState(() => _busy = false);
+  }
+
+  Future<void> _withdraw() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (d) => AlertDialog(
+        title: const Text('Withdraw this ride?'),
+        content: const Text('Riders you accepted get their share back, and waiting requests are declined.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('Keep ride')),
+          FilledButton(onPressed: () => Navigator.pop(d, true), child: const Text('Withdraw')),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    setState(() => _busy = true);
+    await attemptOk(context, () => context.read<AppState>().cancelSharedRide(widget.ride), success: 'Ride withdrawn');
     if (mounted) setState(() => _busy = false);
   }
 
@@ -167,7 +193,11 @@ class _RideCardState extends State<_RideCard> {
     final full = ride.seatsLeft == 0;
     Widget action;
     if (widget.mine) {
-      action = const StatusPill('Your ride', tone: Tone.brand);
+      action = TextButton(
+        onPressed: _busy ? null : _withdraw,
+        style: TextButton.styleFrom(foregroundColor: AppColors.red),
+        child: const Text('Withdraw ride'),
+      );
     } else if (request != null) {
       action = TextButton(
         onPressed: () => context.push('/ticket/${request.id}'),
@@ -191,7 +221,7 @@ class _RideCardState extends State<_RideCard> {
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                Flexible(child: Text(ride.hostName, style: text.titleMedium, overflow: TextOverflow.ellipsis)),
+                Flexible(child: Text(widget.mine ? 'You are hosting' : ride.hostName, style: text.titleMedium, overflow: TextOverflow.ellipsis)),
                 if (ride.hostVerified) ...[const SizedBox(width: 6), const Icon(Icons.verified_rounded, size: 16, color: AppColors.forest)],
               ]),
               Text(ride.hostOrg, style: text.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
@@ -221,22 +251,107 @@ class _RideCardState extends State<_RideCard> {
   }
 }
 
-class _OfferRideSheet extends StatefulWidget {
-  const _OfferRideSheet();
+/// Requests waiting on the rides this user hosts, with accept and decline.
+class HostRequestsPanel extends StatelessWidget {
+  const HostRequestsPanel({super.key, required this.rides});
+  final List<SharedRide> rides;
 
   @override
-  State<_OfferRideSheet> createState() => _OfferRideSheetState();
+  Widget build(BuildContext context) {
+    final state = context.watch<AppState>();
+    final text = Theme.of(context).textTheme;
+    final ids = {for (final r in rides) r.id};
+    final requests = [for (final b in state.rideRequests) if (ids.contains(b.rideId) && (b.status == BookingStatus.requested || b.status == BookingStatus.accepted)) b];
+    return Panel(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Row(children: [
+          const IconBadge(Icons.how_to_reg_rounded, size: 38, radius: 12),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Your ride requests', style: text.titleMedium),
+              Text(
+                requests.isEmpty ? 'No one has asked to join yet. Requests appear here.' : 'A rider\'s share is taken when you accept and paid to your Tap Card once the ride leaves.',
+                style: text.bodySmall,
+              ),
+            ]),
+          ),
+        ]),
+        for (final b in requests) ...[
+          const Divider(height: 22),
+          _RequestRow(request: b),
+        ],
+      ]),
+    );
+  }
 }
 
-class _OfferRideSheetState extends State<_OfferRideSheet> {
+class _RequestRow extends StatefulWidget {
+  const _RequestRow({required this.request});
+  final Booking request;
+
+  @override
+  State<_RequestRow> createState() => _RequestRowState();
+}
+
+class _RequestRowState extends State<_RequestRow> {
+  bool _busy = false;
+
+  Future<void> _answer(bool accept) async {
+    setState(() => _busy = true);
+    await attemptOk(context, () => context.read<AppState>().respondToRideRequest(widget.request, accept: accept),
+        success: accept ? '${widget.request.passengerName} is in. ${Fmt.naira(widget.request.fare)} is held for you.' : 'Request declined');
+    if (mounted) setState(() => _busy = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final b = widget.request;
+    final waiting = b.status == BookingStatus.requested;
+    return Row(children: [
+      Avatar(initials: b.passengerName.split(' ').map((p) => p.isEmpty ? '' : p[0]).take(2).join(), size: 38),
+      const SizedBox(width: 12),
+      Expanded(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(b.passengerName, style: text.titleSmall, overflow: TextOverflow.ellipsis),
+          Text('${b.origin} → ${b.destination} · ${Fmt.dayTime(b.departureAt)} · ${Fmt.naira(b.fare)}', style: text.bodySmall, maxLines: 2, overflow: TextOverflow.ellipsis),
+        ]),
+      ),
+      const SizedBox(width: 8),
+      if (!waiting)
+        const StatusPill('Accepted', tone: Tone.success)
+      else if (_busy)
+        const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5))
+      else ...[
+        IconButton(tooltip: 'Decline ${b.passengerName}', onPressed: () => _answer(false), icon: const Icon(Icons.close_rounded, color: AppColors.red)),
+        FilledButton(onPressed: () => _answer(true), style: FilledButton.styleFrom(minimumSize: const Size(0, 40), padding: const EdgeInsets.symmetric(horizontal: 14)), child: const Text('Accept')),
+      ],
+    ]);
+  }
+}
+
+/// Opens the offer sheet; with an [event] the ride goes to that event's venue.
+Future<void> showOfferRideSheet(BuildContext context, {RideEvent? event}) =>
+    showModalBottomSheet<void>(context: context, isScrollControlled: true, builder: (_) => OfferRideSheet(event: event));
+
+class OfferRideSheet extends StatefulWidget {
+  const OfferRideSheet({super.key, this.event});
+  final RideEvent? event;
+
+  @override
+  State<OfferRideSheet> createState() => OfferRideSheetState();
+}
+
+class OfferRideSheetState extends State<OfferRideSheet> {
   final _form = GlobalKey<FormState>();
   final _origin = TextEditingController();
-  final _destination = TextEditingController();
+  late final _destination = TextEditingController(text: widget.event?.venue ?? '');
   final _vehicle = TextEditingController();
   final _note = TextEditingController();
   int _seats = 2;
   int _share = 1000;
-  TimeOfDay _time = const TimeOfDay(hour: 17, minute: 30);
+  late TimeOfDay _time = widget.event == null ? const TimeOfDay(hour: 17, minute: 30) : TimeOfDay.fromDateTime(widget.event!.startsAt.subtract(const Duration(minutes: 90)));
   bool _busy = false;
   String? _error;
 
@@ -249,6 +364,9 @@ class _OfferRideSheetState extends State<_OfferRideSheet> {
   }
 
   DateTime _departure() {
+    final event = widget.event;
+    // Event rides leave on the day of the event.
+    if (event != null) return DateTime(event.startsAt.year, event.startsAt.month, event.startsAt.day, _time.hour, _time.minute);
     final now = DateTime.now();
     var at = DateTime(now.year, now.month, now.day, _time.hour, _time.minute);
     if (at.isBefore(now)) at = at.add(const Duration(days: 1));
@@ -270,10 +388,11 @@ class _OfferRideSheetState extends State<_OfferRideSheet> {
             costShare: _share,
             vehicleLabel: _vehicle.text,
             note: _note.text,
+            eventId: widget.event?.id,
           );
       if (!mounted) return;
       Navigator.of(context).pop();
-      showMessage(context, 'Your ride is listed. Colleagues can now ask to join.');
+      showMessage(context, widget.event == null ? 'Your ride is listed. Colleagues can now ask to join.' : 'Your ride to ${widget.event!.title} is listed.');
     } on BackendException catch (e) {
       if (mounted) setState(() => _error = e.message);
     } finally {
@@ -291,9 +410,9 @@ class _OfferRideSheetState extends State<_OfferRideSheet> {
         key: _form,
         child: SingleChildScrollView(
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Text('Offer a ride', style: text.headlineSmall),
+            Text(widget.event == null ? 'Offer a ride' : 'Offer a ride to this event', style: text.headlineSmall),
             const SizedBox(height: 4),
-            Text('Share your empty seats with verified colleagues going your way.', style: text.bodySmall),
+            Text(widget.event == null ? 'Share your empty seats with verified colleagues going your way.' : '${widget.event!.title} · ${Fmt.dayTime(widget.event!.startsAt)}. Riders pay their share through the app.', style: text.bodySmall),
             const SizedBox(height: 18),
             Row(children: [
               Expanded(
@@ -314,7 +433,7 @@ class _OfferRideSheetState extends State<_OfferRideSheet> {
                     if (picked != null) setState(() => _time = picked);
                   },
                   icon: const Icon(Icons.schedule_rounded, size: 18),
-                  label: Text('Leaves ${Fmt.time(_departure())}'),
+                  label: Text(widget.event == null ? 'Leaves ${Fmt.time(_departure())}' : 'Leaves ${Fmt.dayTime(_departure())}'),
                 ),
               ),
               const SizedBox(width: 10),
