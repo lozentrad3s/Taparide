@@ -12,8 +12,11 @@ import '../../shared/ui.dart';
 import '../../shared/mascot/mascot.dart';
 import '../assistant/assistant_sheet.dart';
 import '../events/events_page.dart';
+import '../live/live_map_page.dart';
+import 'ad_strip.dart';
 import 'rider_widgets.dart';
 import 'smart_cards.dart';
+import 'where_to.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -65,7 +68,10 @@ class HomePage extends StatelessWidget {
             icon: const Icon(Icons.contactless_outlined),
           ),
         ]),
-      SizedBox(height: wide ? 12 : 18),
+      SizedBox(height: wide ? 12 : 14),
+      // Sponsored slot in the header: one ad at a time, never covering the screen.
+      const AdStrip(),
+      const SizedBox(height: 16),
       const ReminderBanner(),
       Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
         Expanded(
@@ -83,14 +89,19 @@ class HomePage extends StatelessWidget {
         ),
       ]),
       const SizedBox(height: 18),
-      _SearchField(onSubmit: (q) => context.go(Uri(path: '/app/routes', queryParameters: q.isEmpty ? null : {'q': q}).toString())),
+      const WhereToCard(),
       const SizedBox(height: 18),
-      _QuickActions(
-        onBook: () => context.go('/app/routes'),
-        onTapPay: () => showTapAndPaySheet(context),
-        onTrips: () => context.go('/app/trips'),
-        onMore: () => _showMore(context),
-      ),
+      // Every feature up front, so riders find Events and Tag Along without digging.
+      _FeatureGrid(items: [
+        _Feature(Icons.directions_bus_rounded, 'Book a ride', () => context.go('/app/routes'), primary: true),
+        _Feature(Icons.radar_rounded, 'Live map', () => context.push('/live')),
+        _Feature(Icons.electric_car_rounded, 'Electric', () => context.push('/ev')),
+        _Feature(Icons.groups_rounded, 'Tag Along', () => context.push('/tag-along'), badge: state.pendingRideRequests.length),
+        _Feature(Icons.celebration_rounded, 'Events', () => context.push('/events')),
+        _Feature(Icons.contactless_rounded, 'Tap & Pay', () => showTapAndPaySheet(context)),
+        _Feature(Icons.confirmation_number_rounded, 'My trips', () => context.go('/app/trips')),
+        _Feature(Icons.more_horiz_rounded, 'More', () => _showMore(context)),
+      ]),
       const SizedBox(height: 22),
       if (state.upcomingTrips.isNotEmpty) ...[
         _UpcomingTrip(booking: state.upcomingTrips.first, leaveBy: leaveByLine(state, state.upcomingTrips.first)),
@@ -112,6 +123,9 @@ class HomePage extends StatelessWidget {
   List<Widget> _secondary(BuildContext context, AppState state) {
     final evs = state.availableEvs.where((v) => v.status == VehicleStatus.active).take(3).toList();
     return [
+      const SectionHeader(title: 'Around you now'),
+      const LiveNearbyCard(),
+      const SizedBox(height: 22),
       const AskTapiCard(),
       const SizedBox(height: 22),
       _EvSection(vehicles: evs),
@@ -145,7 +159,8 @@ class HomePage extends StatelessWidget {
             for (final item in [
               (Icons.electric_car_rounded, 'Book an electric vehicle', 'Zero-emission rides from verified EV operators', '/ev'),
               (Icons.groups_rounded, 'Tag Along', 'Share the ride home with colleagues nearby', '/tag-along'),
-              (Icons.celebration_rounded, 'Event rides', 'Share a ride to events around Abuja', '/events'),
+              (Icons.celebration_rounded, 'Events', 'Tickets and event buses from your area', '/events'),
+              (Icons.radar_rounded, 'Live map', 'Buses and electric cars near you, with arrival times', '/live'),
               (Icons.radar_rounded, 'Nearby & safety', 'Live traffic, places near you and SOS (FindMe AI)', '/nearby'),
               (Icons.handshake_rounded, 'Become a partner', 'Drive with Tap A Ride or register your company', '/partner/apply'),
               (Icons.health_and_safety_outlined, 'Safety centre', 'Emergency numbers and trip sharing', '/app/profile'),
@@ -167,74 +182,63 @@ class HomePage extends StatelessWidget {
   }
 }
 
-class _SearchField extends StatelessWidget {
-  const _SearchField({required this.onSubmit});
-  final ValueChanged<String> onSubmit;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      textInputAction: TextInputAction.search,
-      onSubmitted: (v) => onSubmit(v.trim()),
-      decoration: InputDecoration(
-        hintText: 'Search for routes, destinations...',
-        prefixIcon: const Icon(Icons.search_rounded, color: AppColors.forest),
-        suffixIcon: IconButton(tooltip: 'Browse all routes', icon: const Icon(Icons.tune_rounded), onPressed: () => onSubmit('')),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.lg), borderSide: const BorderSide(color: AppColors.line)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.lg), borderSide: const BorderSide(color: AppColors.forest, width: 1.8)),
-      ),
-    );
-  }
+class _Feature {
+  const _Feature(this.icon, this.label, this.onTap, {this.primary = false, this.badge = 0});
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool primary;
+  final int badge;
 }
 
-class _QuickActions extends StatelessWidget {
-  const _QuickActions({required this.onBook, required this.onTapPay, required this.onTrips, required this.onMore});
-  final VoidCallback onBook;
-  final VoidCallback onTapPay;
-  final VoidCallback onTrips;
-  final VoidCallback onMore;
+/// All rider features as one grid: four across on phones, eight across on wide screens.
+class _FeatureGrid extends StatelessWidget {
+  const _FeatureGrid({required this.items});
+  final List<_Feature> items;
 
   @override
   Widget build(BuildContext context) {
-    final items = [
-      (Icons.directions_bus_rounded, 'Book a Ride', onBook),
-      (Icons.contactless_rounded, 'Tap & Pay', onTapPay),
-      (Icons.confirmation_number_rounded, 'My Trips', onTrips),
-      (Icons.more_horiz_rounded, 'More', onMore),
-    ];
-    return Row(children: [
-      for (var i = 0; i < items.length; i++) ...[
-        if (i > 0) const SizedBox(width: 10),
-        Expanded(
-          child: Semantics(
-            button: true,
-            label: items[i].$2,
-            child: InkWell(
-              onTap: items[i].$3,
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Column(children: [
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: i == 0 ? AppColors.forest : AppColors.surface,
-                      borderRadius: BorderRadius.circular(AppRadius.lg),
-                      border: Border.all(color: i == 0 ? AppColors.forest : AppColors.line),
-                      boxShadow: AppShadow.card,
+    final text = Theme.of(context).textTheme;
+    return LayoutBuilder(builder: (context, c) {
+      final perRow = c.maxWidth >= 640 ? 8 : 4;
+      final width = (c.maxWidth - (perRow - 1) * 8) / perRow;
+      return Wrap(spacing: 8, runSpacing: 12, children: [
+        for (final f in items)
+          SizedBox(
+            width: width,
+            child: Semantics(
+              button: true,
+              label: f.badge > 0 ? '${f.label}, ${f.badge} waiting' : f.label,
+              child: InkWell(
+                onTap: f.onTap,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Column(children: [
+                    Badge(
+                      isLabelVisible: f.badge > 0,
+                      label: Text('${f.badge}'),
+                      child: Container(
+                        width: 54,
+                        height: 54,
+                        decoration: BoxDecoration(
+                          color: f.primary ? AppColors.forest : AppColors.surface,
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                          border: Border.all(color: f.primary ? AppColors.forest : AppColors.line),
+                          boxShadow: AppShadow.card,
+                        ),
+                        child: Icon(f.icon, color: f.primary ? Colors.white : AppColors.forest, size: 25),
+                      ),
                     ),
-                    child: Icon(items[i].$1, color: i == 0 ? Colors.white : AppColors.forest, size: 26),
-                  ),
-                  const SizedBox(height: 8),
-                  ExcludeSemantics(child: Text(items[i].$2, style: Theme.of(context).textTheme.labelMedium, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis)),
-                ]),
+                    const SizedBox(height: 7),
+                    ExcludeSemantics(child: Text(f.label, style: text.labelMedium, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                  ]),
+                ),
               ),
             ),
           ),
-        ),
-      ],
-    ]);
+      ]);
+    });
   }
 }
 
@@ -255,7 +259,7 @@ class _UpcomingTrip extends StatelessWidget {
         Row(children: [
           Text('Your next trip', style: text.labelMedium?.copyWith(color: AppColors.onForestMuted)),
           const Spacer(),
-          StatusPill(booking.status.label, tone: booking.status == BookingStatus.requested ? Tone.warning : Tone.success),
+          StatusPill(booking.statusLabel, tone: booking.status == BookingStatus.requested ? Tone.warning : Tone.success),
         ]),
         const SizedBox(height: 12),
         RouteStrip(origin: booking.origin, destination: booking.destination, color: AppColors.leaf, textColor: Colors.white),
@@ -339,7 +343,7 @@ class _EvSection extends StatelessWidget {
         onTap: () => context.push('/ev'),
         semanticLabel: 'Book an electric vehicle, ${vehicles.length} available nearby',
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const SizedBox(height: 150, child: PhotoView(AppPhoto.evSuv, alignment: Alignment(0, 0.2), semanticLabel: 'White electric SUV')),
+          const SizedBox(height: 150, child: PhotoView(AppPhoto.evCharging, alignment: Alignment(0.2, 0.3), semanticLabel: 'Electric car plugged in at a charging point')),
           Padding(
             padding: const EdgeInsets.all(14),
             child: vehicles.isEmpty

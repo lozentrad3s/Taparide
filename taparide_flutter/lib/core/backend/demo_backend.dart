@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter/painting.dart' show Color;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:latlong2/latlong.dart';
@@ -19,7 +20,7 @@ import 'demo_seed.dart';
 class DemoBackend implements Backend {
   DemoBackend._(this._prefs, this._latency, this._clock);
 
-  static const _storageKey = 'taparide_demo_state_v5';
+  static const _storageKey = 'taparide_demo_state_v6';
 
   static Future<DemoBackend> create({Duration latency = const Duration(milliseconds: 260), DateTime Function()? clock}) async {
     final prefs = await SharedPreferences.getInstance();
@@ -49,6 +50,9 @@ class DemoBackend implements Backend {
 
   // Events, trip links and vehicle positions live in memory in demo mode.
   late final List<RideEvent> _events = _seedEvents();
+  late final List<EventBus> _eventBuses = _seedEventBuses();
+  final Map<String, ({String adId, String userId, DateTime startedAt, bool rewarded})> _adViews = {};
+  final Map<String, List<DateTime>> _adRewards = {}; // user id -> reward times
   final Map<String, String> _shares = {}; // token -> booking id
   final Map<String, LatLng> _shareLocations = {};
   final Map<String, VehiclePosition> _positions = {};
@@ -533,6 +537,17 @@ class DemoBackend implements Backend {
         if (_hostIsAccount(_rides[r].hostId) && booking.departureAt.isAfter(_clock())) _credit(me.id, booking.fare);
       }
     }
+    if (booking.kind == BookingKind.eventBus) {
+      final k = _eventBuses.indexWhere((x) => x.id == booking.eventBusId);
+      if (k >= 0) {
+        final key = EventBus.slotKey(booking.departureAt);
+        _eventBuses[k] = _eventBuses[k].copyWith(seatsBySlot: {..._eventBuses[k].seatsBySlot, key: max(0, _eventBuses[k].seatsAt(booking.departureAt) - 1)});
+      }
+    }
+    if (booking.kind == BookingKind.eventTicket) {
+      final k = _events.indexWhere((x) => x.id == booking.eventId);
+      if (k >= 0) _events[k] = _events[k].copyWith(ticketsSold: max(0, _events[k].ticketsSold - 1));
+    }
     _shares.removeWhere((_, id) => id == booking.id);
     final updated = booking.copyWith(status: BookingStatus.cancelled);
     _bookings[index] = updated;
@@ -613,10 +628,22 @@ class DemoBackend implements Backend {
   List<RideEvent> _seedEvents() {
     final now = _clock();
     DateTime at(int days, int hour) => DateTime(now.year, now.month, now.day + days, hour);
+    const org = 'Capital Events Hub (sample)';
     return [
-      RideEvent(id: 'ev_showcase', title: 'Smart Mobility Showcase', venue: 'International Conference Centre', area: 'Central Area', startsAt: at(3, 10), endsAt: at(3, 16), category: EventCategory.conference, organiserName: 'Tap A Ride (sample event)', description: 'Sample event: demos and talks on how Abuja moves.', lat: 9.0412, lng: 7.4893),
-      RideEvent(id: 'ev_music', title: 'Abuja Live Music Night', venue: 'Millennium Park', area: 'Maitama', startsAt: at(5, 18), endsAt: at(5, 22), category: EventCategory.concert, organiserName: 'Tap A Ride (sample event)', description: 'Sample event: an evening of live music in the park.', lat: 9.0718, lng: 7.5003),
-      RideEvent(id: 'ev_cup', title: 'Community Cup Final', venue: 'Moshood Abiola National Stadium', area: 'Kukwaba', startsAt: at(6, 16), endsAt: at(6, 19), category: EventCategory.sport, organiserName: 'Tap A Ride (sample event)', description: 'Sample event: the weekend football final.', lat: 9.0379, lng: 7.4531),
+      RideEvent(id: 'ev_showcase', title: 'Smart Mobility Showcase', venue: 'International Conference Centre', area: 'Central Area', startsAt: at(3, 10), endsAt: at(3, 16), category: EventCategory.conference, organiserId: 'u_events', organiserName: org, providerId: DemoSeed.pEvents, description: 'Sample event: demos and talks on how Abuja moves.', lat: 9.0412, lng: 7.4893, ticketPrice: 2000, ticketsTotal: 400, ticketsSold: 118),
+      RideEvent(id: 'ev_music', title: 'Abuja Live Music Night', venue: 'Millennium Park', area: 'Maitama', startsAt: at(5, 18), endsAt: at(5, 22), category: EventCategory.concert, organiserId: 'u_events', organiserName: org, providerId: DemoSeed.pEvents, description: 'Sample event: an evening of live music in the park.', lat: 9.0718, lng: 7.5003, ticketPrice: 5000, ticketsTotal: 1200, ticketsSold: 640),
+      RideEvent(id: 'ev_cup', title: 'Community Cup Final', venue: 'Moshood Abiola National Stadium', area: 'Kukwaba', startsAt: at(6, 20), endsAt: at(6, 22), category: EventCategory.sport, organiserId: 'u_events', organiserName: org, providerId: DemoSeed.pEvents, sponsored: true, description: 'Sample event: the weekend football final. Event buses run from Kubwa and Nyanya.', lat: 9.0379, lng: 7.4531),
+    ];
+  }
+
+  List<EventBus> _seedEventBuses() {
+    final now = _clock();
+    DateTime at(int days, int hour) => DateTime(now.year, now.month, now.day + days, hour);
+    Map<String, int> seats(List<(DateTime, int)> v) => {for (final e in v) EventBus.slotKey(e.$1): e.$2};
+    return [
+      EventBus(id: 'eb_kubwa', eventId: 'ev_cup', providerId: DemoSeed.pMetro, providerName: 'Abuja Metro Bus Co.', vehicleLabel: 'City bus', origin: 'Kubwa', fare: 1200, capacity: 40, minRiders: 20, slots: [at(6, 17), at(6, 18), at(6, 19)], seatsBySlot: seats([(at(6, 17), 4), (at(6, 18), 11), (at(6, 19), 7)]), status: EventBusStatus.open),
+      EventBus(id: 'eb_nyanya', eventId: 'ev_cup', providerId: DemoSeed.pMetro, providerName: 'Abuja Metro Bus Co.', vehicleLabel: 'Toyota Coaster', origin: 'Nyanya', fare: 1000, capacity: 30, minRiders: 15, slots: [at(6, 18), at(6, 19)], seatsBySlot: seats([(at(6, 18), 9), (at(6, 19), 3)]), status: EventBusStatus.open),
+      EventBus(id: 'eb_jabi', eventId: 'ev_music', providerId: DemoSeed.pAirport, providerName: 'FCT Airport E-Shuttle', vehicleLabel: 'Electric shuttle', origin: 'Jabi', fare: 800, capacity: 14, minRiders: 8, slots: [at(5, 16), at(5, 17)], seatsBySlot: seats([(at(5, 17), 8)]), status: EventBusStatus.confirmed, confirmedAt: at(5, 17)),
     ];
   }
 
@@ -629,12 +656,40 @@ class DemoBackend implements Backend {
   }
 
   @override
-  Future<RideEvent> createEvent({required String title, required String venue, required String area, required DateTime startsAt, DateTime? endsAt, required EventCategory category, String description = '', double? lat, double? lng}) async {
+  Future<RideEvent> createEvent({required String title, required String venue, required String area, required DateTime startsAt, DateTime? endsAt, required EventCategory category, String description = '', double? lat, double? lng, int ticketPrice = 0, int ticketsTotal = 0, String? ticketLink}) async {
     await _wait();
     final me = _me;
+    if (me.role != UserRole.eventPartner && me.role != UserRole.admin) {
+      throw const BackendException(BackendErrorKind.permission, 'Only event partners can list events. Apply as an event partner to post yours.');
+    }
+    final org = _providers.where((p) => p.id == me.providerId).firstOrNull;
+    if (me.role == UserRole.eventPartner && org?.status != Verification.verified) {
+      throw const BackendException(BackendErrorKind.permission, 'Your organisation is not verified yet.');
+    }
     if (startsAt.isBefore(_clock())) throw const BackendException(BackendErrorKind.validation, 'Choose a start time later than now.');
-    final event = RideEvent(id: _id('ev'), title: title.trim(), venue: venue.trim(), area: area.trim().isEmpty ? 'Abuja' : area.trim(), startsAt: startsAt, endsAt: endsAt, category: category, description: description.trim(), organiserId: me.id, organiserName: me.organisation ?? me.fullName, lat: lat, lng: lng);
+    if (ticketPrice > 0 && ticketsTotal < 1) throw const BackendException(BackendErrorKind.validation, 'Set how many tickets are for sale.');
+    final event = RideEvent(
+      id: _id('ev'),
+      title: title.trim(),
+      venue: venue.trim(),
+      area: area.trim().isEmpty ? 'Abuja' : area.trim(),
+      startsAt: startsAt,
+      endsAt: endsAt,
+      category: category,
+      description: description.trim(),
+      organiserId: me.id,
+      organiserName: org?.name ?? me.organisation ?? me.fullName,
+      providerId: me.providerId,
+      lat: lat,
+      lng: lng,
+      ticketPrice: max(0, ticketPrice),
+      ticketsTotal: max(0, ticketsTotal),
+      sponsored: me.role == UserRole.admin,
+      ticketLink: ticketLink,
+    );
     _events.add(event);
+    _log('Listed event', event.title);
+    _save();
     return event;
   }
 
@@ -644,8 +699,234 @@ class DemoBackend implements Backend {
     final me = _me;
     final event = _events.where((e) => e.id == eventId).firstOrNull;
     if (event == null) throw const BackendException(BackendErrorKind.notFound, 'Event not found.');
-    _require(event.organiserId == me.id || me.role.canVerify, 'remove this event');
+    _require(me.role.canVerify || (me.role == UserRole.eventPartner && event.providerId == me.providerId), 'remove this event');
     _events.remove(event);
+    for (var i = 0; i < _bookings.length; i++) {
+      final b = _bookings[i];
+      if (b.eventId == eventId && b.status.isOpen) {
+        _credit(b.userId, b.fare);
+        _bookings[i] = b.copyWith(status: BookingStatus.cancelled);
+      }
+    }
+    _eventBuses.removeWhere((b) => b.eventId == eventId);
+    _log('Removed event', event.title);
+    _save();
+  }
+
+  @override
+  Future<Booking> buyEventTicket(String eventId, PaymentMethod method) async {
+    await _wait();
+    final me = _me;
+    final i = _events.indexWhere((e) => e.id == eventId);
+    if (i < 0) throw const BackendException(BackendErrorKind.notFound, 'Event not found.');
+    final e = _events[i];
+    if (e.startsAt.isBefore(_clock())) throw const BackendException(BackendErrorKind.validation, 'This event has started.');
+    if (!e.sellsTickets) throw const BackendException(BackendErrorKind.validation, 'Tickets for this event are not sold on Tap A Ride.');
+    if (e.ticketsLeft <= 0) throw const BackendException(BackendErrorKind.validation, 'Sold out.');
+    if (_bookings.where((b) => b.userId == me.id && b.eventId == e.id && b.kind == BookingKind.eventTicket && b.status.isOpen).length >= 4) {
+      throw const BackendException(BackendErrorKind.validation, 'You can hold up to 4 tickets for one event.');
+    }
+    if (e.ticketPrice > 0) _charge(me.id, e.ticketPrice);
+    _events[i] = e.copyWith(ticketsSold: e.ticketsSold + 1);
+    final booking = Booking(id: _id('bk'), userId: me.id, passengerName: me.fullName, kind: BookingKind.eventTicket, status: BookingStatus.confirmed, origin: e.venue, destination: e.venue, departureAt: e.startsAt, fare: e.ticketPrice, paymentMethod: method, ticketCode: _ticket('ET'), createdAt: _clock(), title: e.title, seat: 'Entry', providerId: e.providerId, eventId: e.id);
+    _bookings.add(booking);
+    _save();
+    return booking;
+  }
+
+  // ------------------------------------------------------------ event buses
+
+  @override
+  Future<List<EventBus>> fetchEventBuses() async {
+    await _wait();
+    _me;
+    return [for (final b in _eventBuses) if (b.status != EventBusStatus.cancelled) b];
+  }
+
+  @override
+  Future<EventBus> offerEventBus({required String eventId, required String origin, required int fare, required int capacity, required int minRiders, required List<DateTime> slots, String? vehicleId}) async {
+    await _wait();
+    final me = _me;
+    if (me.role != UserRole.operator && me.role != UserRole.admin) {
+      throw const BackendException(BackendErrorKind.permission, 'Only registered bus operators can run event buses.');
+    }
+    final org = _providers.where((p) => p.id == (me.providerId ?? DemoSeed.pMetro)).firstOrNull;
+    if (org == null || org.status != Verification.verified) throw const BackendException(BackendErrorKind.permission, 'Your company is not verified yet.');
+    if (!{ProviderKind.busOperator, ProviderKind.shuttle, ProviderKind.electric}.contains(org.kind)) {
+      throw const BackendException(BackendErrorKind.permission, 'Event buses need a bus, shuttle or electric fleet operator.');
+    }
+    final event = _events.where((e) => e.id == eventId).firstOrNull;
+    if (event == null) throw const BackendException(BackendErrorKind.notFound, 'Event not found.');
+    if (slots.isEmpty) throw const BackendException(BackendErrorKind.validation, 'Add at least one departure time.');
+    if (slots.length > 4) throw const BackendException(BackendErrorKind.validation, 'Offer up to 4 departure times.');
+    if (slots.any((t) => t.isBefore(_clock()) || t.isAfter(event.startsAt))) {
+      throw const BackendException(BackendErrorKind.validation, 'Departure times must be before the event starts.');
+    }
+    if (fare < 100 || fare > 20000) throw const BackendException(BackendErrorKind.validation, 'Set a fare between ₦100 and ₦20,000.');
+    Vehicle? v;
+    if (vehicleId != null) {
+      v = _vehicles.where((x) => x.id == vehicleId && x.operatorId == org.id && x.verification == Verification.verified).firstOrNull;
+      if (v == null) throw const BackendException(BackendErrorKind.validation, 'Pick one of your verified vehicles.');
+    }
+    final cap = v?.capacity ?? capacity;
+    final bus = EventBus(
+      id: _id('eb'),
+      eventId: eventId,
+      providerId: org.id,
+      providerName: org.name,
+      vehicleId: v?.id,
+      vehicleLabel: v == null ? '' : '${v.model} · ${v.plate}',
+      origin: origin.trim(),
+      fare: fare,
+      capacity: cap,
+      minRiders: minRiders.clamp(1, cap),
+      slots: [...slots]..sort(),
+      seatsBySlot: const {},
+      status: EventBusStatus.open,
+    );
+    _eventBuses.add(bus);
+    _log('Offered event bus', '${event.title} from ${bus.origin}');
+    _save();
+    return bus;
+  }
+
+  @override
+  Future<Booking> bookEventBus(String busId, DateTime slot, PaymentMethod method) async {
+    await _wait();
+    final me = _me;
+    final i = _eventBuses.indexWhere((b) => b.id == busId);
+    if (i < 0 || _eventBuses[i].status == EventBusStatus.cancelled) throw const BackendException(BackendErrorKind.notFound, 'This bus is no longer running.');
+    final bus = _eventBuses[i];
+    final event = _events.where((e) => e.id == bus.eventId).firstOrNull;
+    if (event == null) throw const BackendException(BackendErrorKind.notFound, 'This event has been removed.');
+    final when = bus.status == EventBusStatus.confirmed ? bus.confirmedAt! : slot;
+    if (!bus.slots.any((s) => s.isAtSameMomentAs(when))) throw const BackendException(BackendErrorKind.validation, 'Pick one of the departure times offered.');
+    if (when.isBefore(_clock())) throw const BackendException(BackendErrorKind.validation, 'That departure has already left.');
+    if (_bookings.any((b) => b.userId == me.id && b.eventBusId == bus.id && b.status.isOpen)) {
+      throw const BackendException(BackendErrorKind.validation, 'You already have a seat on this bus.');
+    }
+    final taken = bus.seatsAt(when);
+    if (taken >= bus.capacity) throw const BackendException(BackendErrorKind.validation, 'That departure is full. Pick another time.');
+    _charge(me.id, bus.fare);
+    _eventBuses[i] = bus.copyWith(seatsBySlot: {...bus.seatsBySlot, EventBus.slotKey(when): taken + 1});
+    final booking = Booking(
+      id: _id('bk'),
+      userId: me.id,
+      passengerName: me.fullName,
+      kind: BookingKind.eventBus,
+      status: bus.status == EventBusStatus.confirmed ? BookingStatus.confirmed : BookingStatus.requested,
+      origin: bus.origin,
+      destination: event.venue,
+      departureAt: when,
+      fare: bus.fare,
+      paymentMethod: method,
+      ticketCode: _ticket('EB'),
+      createdAt: _clock(),
+      title: event.title,
+      seat: 'S${(taken + 1).toString().padLeft(2, '0')}',
+      vehicleId: bus.vehicleId,
+      providerId: bus.providerId,
+      eventId: event.id,
+      eventBusId: bus.id,
+    );
+    _bookings.add(booking);
+    _save();
+    return booking;
+  }
+
+  @override
+  Future<EventBus> confirmEventBus(String busId, DateTime slot) async {
+    await _wait();
+    final me = _me;
+    final i = _eventBuses.indexWhere((b) => b.id == busId);
+    if (i < 0) throw const BackendException(BackendErrorKind.notFound, 'Bus not found.');
+    final bus = _eventBuses[i];
+    _require(_manages(me, bus.providerId), 'confirm this bus');
+    if (!bus.slots.any((s) => s.isAtSameMomentAs(slot))) throw const BackendException(BackendErrorKind.validation, 'Pick one of the offered times.');
+    // Seeded seat counts stand for riders without accounts on this device.
+    final total = bus.riders;
+    if (total > bus.capacity) throw const BackendException(BackendErrorKind.validation, 'More riders than seats: add a second bus first.');
+    for (var k = 0; k < _bookings.length; k++) {
+      final b = _bookings[k];
+      if (b.eventBusId == bus.id && b.status.isOpen) _bookings[k] = b.copyWith(status: BookingStatus.confirmed, departureAt: slot);
+    }
+    _eventBuses[i] = bus.copyWith(status: EventBusStatus.confirmed, confirmedAt: slot, seatsBySlot: {EventBus.slotKey(slot): total});
+    _log('Confirmed event bus', bus.origin);
+    _save();
+    return _eventBuses[i];
+  }
+
+  @override
+  Future<EventBus> cancelEventBus(String busId) async {
+    await _wait();
+    final me = _me;
+    final i = _eventBuses.indexWhere((b) => b.id == busId);
+    if (i < 0) throw const BackendException(BackendErrorKind.notFound, 'Bus not found.');
+    _require(_manages(me, _eventBuses[i].providerId), 'cancel this bus');
+    for (var k = 0; k < _bookings.length; k++) {
+      final b = _bookings[k];
+      if (b.eventBusId == busId && b.status.isOpen) {
+        _credit(b.userId, b.fare);
+        _bookings[k] = b.copyWith(status: BookingStatus.cancelled);
+      }
+    }
+    _eventBuses[i] = _eventBuses[i].copyWith(status: EventBusStatus.cancelled, seatsBySlot: const {});
+    _log('Cancelled event bus', _eventBuses[i].origin);
+    _save();
+    return _eventBuses[i];
+  }
+
+  // ------------------------------------------------------------ header ads
+
+  static const _ads = [
+    PromoAd(id: 'ad_advertise', sponsor: 'Tap A Ride', headline: 'Your brand here, in front of Abuja commuters', body: 'Reach riders on every trip without interrupting them. Ask about header slots and sponsored rides.', ctaLabel: 'Advertise with us', ctaLink: 'mailto:hello@taparide.app', colour: Color(0xFF0B5D3B), icon: 'campaign', reward: 50, seconds: 15, house: true),
+    PromoAd(id: 'ad_ev', sponsor: 'Tap A Ride Electric', headline: 'Go electric this week', body: 'Verified electric cars across Maitama, Wuse and Jabi. Quiet, clean and fixed fares.', ctaLabel: 'Book an EV', ctaLink: '/ev', colour: Color(0xFF0E7C66), icon: 'electric_car', reward: 50, seconds: 15, house: true),
+    PromoAd(id: 'ad_events', sponsor: 'Tap A Ride Events', headline: 'Event buses: skip the parking', body: 'Book a seat on a bus to the stadium or the conference centre and ride back together.', ctaLabel: 'See events', ctaLink: '/events', colour: Color(0xFF1F3A8A), icon: 'celebration', reward: 50, seconds: 15, house: true),
+  ];
+
+  int _rewardsLeft(String userId) {
+    final now = _clock();
+    final today = DateTime(now.year, now.month, now.day);
+    return max(0, 3 - (_adRewards[userId] ?? const []).where((t) => !t.isBefore(today)).length);
+  }
+
+  @override
+  Future<List<PromoAd>> fetchAds() async {
+    await _wait();
+    _me;
+    return _ads;
+  }
+
+  @override
+  Future<void> countAdImpressions(List<String> adIds) async {}
+
+  @override
+  Future<AdView> startAdView(String adId) async {
+    await _wait();
+    final me = _me;
+    if (!_ads.any((a) => a.id == adId)) throw const BackendException(BackendErrorKind.notFound, 'This ad has ended.');
+    final id = _id('av');
+    _adViews[id] = (adId: adId, userId: me.id, startedAt: _clock(), rewarded: false);
+    return AdView(id: id, adId: adId);
+  }
+
+  @override
+  Future<AdReward> claimAdReward(String viewId) async {
+    await _wait();
+    final me = _me;
+    final v = _adViews[viewId];
+    if (v == null || v.userId != me.id) throw const BackendException(BackendErrorKind.notFound, 'Ad view not found.');
+    if (v.rewarded) throw const BackendException(BackendErrorKind.validation, 'You already earned this reward.');
+    final ad = _ads.firstWhere((a) => a.id == v.adId);
+    if (_clock().difference(v.startedAt).inSeconds < ad.seconds - 1) throw const BackendException(BackendErrorKind.validation, 'Watch the whole ad to earn the reward.');
+    final credit = _rewardsLeft(me.id) > 0 ? ad.reward : 0;
+    _adViews[viewId] = (adId: v.adId, userId: v.userId, startedAt: v.startedAt, rewarded: true);
+    if (credit > 0) {
+      _adRewards.putIfAbsent(me.id, () => []).add(_clock());
+      _credit(me.id, credit);
+      _save();
+    }
+    return AdReward(reward: credit, balance: _walletFor(me.id).balance, left: _rewardsLeft(me.id));
   }
 
   // ------------------------------------------------------------ share my ride
@@ -738,6 +1019,9 @@ class DemoBackend implements Backend {
     final List<Booking> scoped;
     if (me.role == UserRole.government || me.role == UserRole.admin) {
       scoped = List.of(_bookings);
+    } else if (me.role == UserRole.eventPartner) {
+      final mine = {for (final e in _events) if (e.providerId == me.providerId) e.id};
+      scoped = [for (final b in _bookings) if (mine.contains(b.eventId)) b];
     } else if (me.role == UserRole.fleetOwner) {
       final owned = {for (final v in _vehicles) if (v.ownerId == me.providerId) v.id};
       scoped = [for (final b in _bookings) if (owned.contains(b.vehicleId)) b];

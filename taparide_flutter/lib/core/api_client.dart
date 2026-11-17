@@ -15,10 +15,9 @@ String apiBase() {
   const configured = String.fromEnvironment('API_BASE');
   if (configured.isNotEmpty) return configured;
   if (kIsWeb) {
-    final origin = Uri.base.origin;
-    // Local previews (flutter run / a static server) have no API; use production.
-    if (origin.contains('localhost') || origin.contains('127.0.0.1')) return 'https://taparide.vercel.app';
-    return origin;
+    // Same origin everywhere, including `vercel dev` on localhost (the browser blocks
+    // cross-site calls to production). `flutter run` previews pass --dart-define=API_BASE.
+    return Uri.base.origin;
   }
   return 'https://taparide.vercel.app';
 }

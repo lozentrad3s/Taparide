@@ -21,7 +21,7 @@ double? _double(Object? raw) => raw is num ? raw.toDouble() : double.tryParse('$
 
 // ---------------------------------------------------------------- accounts
 
-enum UserRole { passenger, operator, fleetOwner, government, admin }
+enum UserRole { passenger, operator, fleetOwner, government, admin, eventPartner }
 
 extension UserRoleX on UserRole {
   String get label => switch (this) {
@@ -30,6 +30,7 @@ extension UserRoleX on UserRole {
         UserRole.fleetOwner => 'Fleet owner',
         UserRole.government => 'Government / FCTA',
         UserRole.admin => 'Platform admin',
+        UserRole.eventPartner => 'Event partner',
       };
 
   IconData get icon => switch (this) {
@@ -38,6 +39,7 @@ extension UserRoleX on UserRole {
         UserRole.fleetOwner => Icons.local_shipping_outlined,
         UserRole.government => Icons.account_balance_outlined,
         UserRole.admin => Icons.admin_panel_settings_outlined,
+        UserRole.eventPartner => Icons.celebration_outlined,
       };
 
   bool get isPartner => this != UserRole.passenger;
@@ -118,7 +120,7 @@ class AppUser {
 
 // ---------------------------------------------------------------- providers
 
-enum ProviderKind { busOperator, fleetOwner, rail, electric, shuttle, tricycle, privateDriver }
+enum ProviderKind { busOperator, fleetOwner, rail, electric, shuttle, tricycle, privateDriver, eventOrganiser }
 
 extension ProviderKindX on ProviderKind {
   String get label => switch (this) {
@@ -129,6 +131,7 @@ extension ProviderKindX on ProviderKind {
         ProviderKind.shuttle => 'Shuttle service',
         ProviderKind.tricycle => 'Tricycle (keke) co-op',
         ProviderKind.privateDriver => 'Private driver',
+        ProviderKind.eventOrganiser => 'Event organiser',
       };
 
   IconData get icon => switch (this) {
@@ -139,6 +142,7 @@ extension ProviderKindX on ProviderKind {
         ProviderKind.shuttle => Icons.airport_shuttle_rounded,
         ProviderKind.tricycle => Icons.electric_rickshaw_rounded,
         ProviderKind.privateDriver => Icons.drive_eta_rounded,
+        ProviderKind.eventOrganiser => Icons.celebration_rounded,
       };
 }
 
@@ -506,19 +510,23 @@ class ChargingStation {
 
 // ---------------------------------------------------------------- bookings
 
-enum BookingKind { transit, electric, tagAlong }
+enum BookingKind { transit, electric, tagAlong, eventBus, eventTicket }
 
 extension BookingKindX on BookingKind {
   String get label => switch (this) {
         BookingKind.transit => 'Public transport',
         BookingKind.electric => 'Electric ride',
         BookingKind.tagAlong => 'Tag Along',
+        BookingKind.eventBus => 'Event bus',
+        BookingKind.eventTicket => 'Event ticket',
       };
 
   IconData get icon => switch (this) {
         BookingKind.transit => Icons.directions_bus_rounded,
         BookingKind.electric => Icons.electric_car_rounded,
         BookingKind.tagAlong => Icons.groups_rounded,
+        BookingKind.eventBus => Icons.directions_bus_filled_rounded,
+        BookingKind.eventTicket => Icons.local_activity_rounded,
       };
 }
 
@@ -567,6 +575,8 @@ class Booking {
     this.vehicleId,
     this.rideId,
     this.providerId,
+    this.eventId,
+    this.eventBusId,
   });
 
   final String id;
@@ -587,13 +597,18 @@ class Booking {
   final String? vehicleId;
   final String? rideId;
   final String? providerId;
+  final String? eventId;
+  final String? eventBusId;
+
+  /// Status as riders read it (an event-bus seat waits for the operator to fix the time).
+  String get statusLabel => kind == BookingKind.eventBus && status == BookingStatus.requested ? 'Seat held' : status.label;
 
   bool get isUpcoming => status.isOpen && departureAt.isAfter(DateTime.now().subtract(const Duration(minutes: 30)));
 
   /// Payload encoded in the boarding QR code.
   String get qrPayload => 'TAPARIDE:$ticketCode:${routeId ?? vehicleId ?? rideId ?? '-'}:${departureAt.toUtc().toIso8601String()}';
 
-  Booking copyWith({BookingStatus? status}) => Booking(
+  Booking copyWith({BookingStatus? status, DateTime? departureAt}) => Booking(
         id: id,
         userId: userId,
         passengerName: passengerName,
@@ -601,7 +616,7 @@ class Booking {
         status: status ?? this.status,
         origin: origin,
         destination: destination,
-        departureAt: departureAt,
+        departureAt: departureAt ?? this.departureAt,
         fare: fare,
         paymentMethod: paymentMethod,
         ticketCode: ticketCode,
@@ -612,6 +627,8 @@ class Booking {
         vehicleId: vehicleId,
         rideId: rideId,
         providerId: providerId,
+        eventId: eventId,
+        eventBusId: eventBusId,
       );
 
   Map<String, Object?> toJson() => {
@@ -633,6 +650,8 @@ class Booking {
         'vehicle_id': vehicleId,
         'ride_id': rideId,
         'provider_id': providerId,
+        'event_id': eventId,
+        'event_bus_id': eventBusId,
       };
 
   factory Booking.fromJson(Map<String, dynamic> json) => Booking(
@@ -654,6 +673,8 @@ class Booking {
         vehicleId: json['vehicle_id'] as String?,
         rideId: json['ride_id'] as String?,
         providerId: json['provider_id'] as String?,
+        eventId: json['event_id'] as String?,
+        eventBusId: json['event_bus_id'] as String?,
       );
 }
 

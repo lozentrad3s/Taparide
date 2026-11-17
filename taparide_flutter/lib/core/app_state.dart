@@ -15,6 +15,7 @@ import 'live_models.dart';
 import 'location.dart';
 import 'models.dart';
 import 'partner_models.dart';
+import 'places.dart';
 import 'reminders.dart';
 
 enum LoadState { idle, loading, ready, error }
@@ -60,6 +61,18 @@ class AppState extends ChangeNotifier {
   List<ChargingStation> stations = const [];
   List<SharedRide> rides = const [];
   List<RideEvent> events = const [];
+  List<EventBus> eventBuses = const [];
+
+  /// Header ads for riders (house promotions until advertisers sign).
+  List<PromoAd> ads = const [];
+
+  /// Ad rewards left today, once the rider has claimed one (null = not known yet).
+  int? adRewardsLeft;
+
+  /// The rider's position (from the device), and the nearest named place.
+  LatLng? here;
+  String? hereName;
+  bool locating = false;
 
   /// Requests on the Tag Along rides this user hosts.
   List<Booking> rideRequests = const [];
@@ -197,7 +210,11 @@ class AppState extends ChangeNotifier {
         backend.fetchSharedRides(),
         backend.fetchBaselines(),
         backend.fetchVehiclePositions(),
+        backend.fetchEvents(),
+        backend.fetchEventBuses(),
       ]);
+      events = results[7] as List<RideEvent>;
+      eventBuses = results[8] as List<EventBus>;
       positions = {for (final p in results[6] as List<VehiclePosition>) p.vehicleId: p};
       providers = results[0] as List<TransportProvider>;
       routes = results[1] as List<TransitRoute>;
@@ -212,11 +229,11 @@ class AppState extends ChangeNotifier {
         users = me.role == UserRole.admin ? await backend.fetchUsers() : const [];
         partnerApplications = me.role.canVerify ? await backend.fetchPartnerApplications() : const [];
       } else {
-        final rider = await Future.wait<Object>([backend.fetchWallet(), backend.fetchMyBookings(), backend.fetchEvents(), backend.fetchRideRequests()]);
+        final rider = await Future.wait<Object>([backend.fetchWallet(), backend.fetchMyBookings(), backend.fetchRideRequests(), backend.fetchAds()]);
         wallet = rider[0] as Wallet;
         myBookings = rider[1] as List<Booking>;
-        events = rider[2] as List<RideEvent>;
-        rideRequests = rider[3] as List<Booking>;
+        rideRequests = rider[2] as List<Booking>;
+        ads = rider[3] as List<PromoAd>;
       }
       myApplications = await backend.fetchMyApplications();
       dataState = LoadState.ready;
@@ -234,11 +251,12 @@ class AppState extends ChangeNotifier {
   Future<void> refreshRider() async {
     if (user == null || isPartner) return;
     try {
-      final results = await Future.wait<Object>([backend.fetchMyBookings(), backend.fetchSharedRides(), backend.fetchEvents(), backend.fetchRideRequests()]);
+      final results = await Future.wait<Object>([backend.fetchMyBookings(), backend.fetchSharedRides(), backend.fetchEvents(), backend.fetchRideRequests(), backend.fetchEventBuses()]);
       myBookings = results[0] as List<Booking>;
       rides = results[1] as List<SharedRide>;
       events = results[2] as List<RideEvent>;
       rideRequests = results[3] as List<Booking>;
+      eventBuses = results[4] as List<EventBus>;
       // After the bookings: settling a ride that has left can change the balance.
       wallet = await backend.fetchWallet();
       _notify();
@@ -398,8 +416,8 @@ class AppState extends ChangeNotifier {
   RideEvent? eventById(String? id) => id == null ? null : events.where((e) => e.id == id).firstOrNull;
   List<SharedRide> ridesForEvent(String eventId) => [for (final r in rides) if (r.eventId == eventId) r];
 
-  Future<RideEvent> createEvent({required String title, required String venue, required String area, required DateTime startsAt, DateTime? endsAt, required EventCategory category, String description = '', double? lat, double? lng}) async {
-    final event = await backend.createEvent(title: title, venue: venue, area: area, startsAt: startsAt, endsAt: endsAt, category: category, description: description, lat: lat, lng: lng);
+  Future<RideEvent> createEvent({required String title, required String venue, required String area, required DateTime startsAt, DateTime? endsAt, required EventCategory category, String description = '', double? lat, double? lng, int ticketPrice = 0, int ticketsTotal = 0, String? ticketLink}) async {
+    final event = await backend.createEvent(title: title, venue: venue, area: area, startsAt: startsAt, endsAt: endsAt, category: category, description: description, lat: lat, lng: lng, ticketPrice: ticketPrice, ticketsTotal: ticketsTotal, ticketLink: ticketLink);
     events = [...events, event]..sort((a, b) => a.startsAt.compareTo(b.startsAt));
     _notify();
     return event;
@@ -408,7 +426,89 @@ class AppState extends ChangeNotifier {
   Future<void> removeEvent(RideEvent event) async {
     await backend.removeEvent(event.id);
     events = [for (final e in events) if (e.id != event.id) e];
+    eventBuses = [for (final b in eventBuses) if (b.eventId != event.id) b];
     _notify();
+  }
+
+  Future<Booking> buyEventTicket(RideEvent event, PaymentMethod method) async {
+    final booking = await backend.buyEventTicket(event.id, method);
+    myBookings = [booking, ...myBookings];
+    events = [for (final e in events) e.id == event.id ? e.copyWith(ticketsSold: e.ticketsSold + 1) : e];
+    wallet = await backend.fetchWallet();
+    _notify();
+    return booking;
+  }
+
+  // ------------------------------------------------------------ event buses
+
+  List<EventBus> busesForEvent(String eventId) => [for (final b in eventBuses) if (b.eventId == eventId && b.status != EventBusStatus.cancelled) b];
+  EventBus? eventBusById(String? id) => id == null ? null : eventBuses.where((b) => b.id == id).firstOrNull;
+  Booking? myEventBusSeat(String busId) => myBookings.where((b) => b.eventBusId == busId && b.status.isOpen).firstOrNull;
+
+  Future<EventBus> offerEventBus({required RideEvent event, required String origin, required int fare, required int capacity, required int minRiders, required List<DateTime> slots, String? vehicleId}) async {
+    final bus = await backend.offerEventBus(eventId: event.id, origin: origin, fare: fare, capacity: capacity, minRiders: minRiders, slots: slots, vehicleId: vehicleId);
+    eventBuses = [...eventBuses, bus];
+    _notify();
+    return bus;
+  }
+
+  Future<Booking> bookEventBus(EventBus bus, DateTime slot, PaymentMethod method) async {
+    final booking = await backend.bookEventBus(bus.id, slot, method);
+    myBookings = [booking, ...myBookings];
+    final results = await Future.wait<Object>([backend.fetchEventBuses(), backend.fetchWallet()]);
+    eventBuses = results[0] as List<EventBus>;
+    wallet = results[1] as Wallet;
+    _notify();
+    return booking;
+  }
+
+  Future<void> confirmEventBus(EventBus bus, DateTime slot) async {
+    final updated = await backend.confirmEventBus(bus.id, slot);
+    eventBuses = [for (final b in eventBuses) b.id == bus.id ? updated : b];
+    _notify();
+    unawaited(refresh());
+  }
+
+  Future<void> cancelEventBus(EventBus bus) async {
+    await backend.cancelEventBus(bus.id);
+    eventBuses = [for (final b in eventBuses) if (b.id != bus.id) b];
+    _notify();
+    unawaited(refresh());
+  }
+
+  // ------------------------------------------------------------ header ads
+
+  Future<AdView> startAdView(PromoAd ad) => backend.startAdView(ad.id);
+
+  Future<AdReward> claimAdReward(AdView view) async {
+    final reward = await backend.claimAdReward(view.id);
+    adRewardsLeft = reward.left;
+    final w = wallet;
+    if (w != null) wallet = Wallet(cardNumber: w.cardNumber, balance: reward.balance);
+    _notify();
+    return reward;
+  }
+
+  void countAdImpressions(List<PromoAd> shown) => unawaited(backend.countAdImpressions([for (final a in shown) a.id]));
+
+  // ------------------------------------------------------------ rider location
+
+  /// Finds the rider's position once (precise GPS on phones) and names the nearest known place.
+  Future<LatLng?> locate({bool force = false}) async {
+    if (locating || (here != null && !force)) return here;
+    locating = true;
+    _notify();
+    try {
+      final p = await currentLocation(precise: true);
+      if (p != null) {
+        here = p;
+        hereName = nearestPlaceName(p, routes: routes);
+      }
+    } finally {
+      locating = false;
+      _notify();
+    }
+    return here;
   }
 
   // ------------------------------------------------------------ share my ride

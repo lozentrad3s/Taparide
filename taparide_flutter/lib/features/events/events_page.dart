@@ -4,13 +4,14 @@ import 'package:provider/provider.dart';
 
 import '../../app/theme.dart';
 import '../../core/app_state.dart';
-import '../../core/backend/backend.dart';
 import '../../core/format.dart';
 import '../../core/live_models.dart';
+import '../../core/models.dart';
 import '../../shared/ui.dart';
-import '../tag_along/tag_along_page.dart';
 
-/// Event rides: what's on in Abuja, and shared rides going there.
+/// Events in Abuja from verified event partners, with tickets and event buses.
+/// Riders cannot list events or offer rides here: partners post events, registered
+/// operators run the buses, and riders book a seat at the time that suits them.
 class EventsPage extends StatefulWidget {
   const EventsPage({super.key});
 
@@ -32,31 +33,26 @@ class _EventsPageState extends State<EventsPage> {
     final state = context.watch<AppState>();
     final text = Theme.of(context).textTheme;
     final wide = isWide(context, 980);
-    final all = state.events;
+    final all = [for (final e in state.events) if (e.startsAt.isAfter(state.now.subtract(const Duration(hours: 3)))) e];
     final events = [for (final e in all) if (_filter == null || e.category == _filter) e];
     final categories = {for (final e in all) e.category}.toList()..sort((a, b) => a.index.compareTo(b.index));
 
     return Scaffold(
-      appBar: AppBar(leading: const AppBackButton(), title: const Text('Event rides')),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, builder: (_) => const _ListEventSheet()),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('List an event'),
-      ),
+      appBar: AppBar(leading: const AppBackButton(), title: const Text('Events')),
       body: DataGate(
         builder: (context) => RefreshIndicator(
           color: AppColors.forest,
           onRefresh: state.refreshRider,
           child: ListView(
-            padding: const EdgeInsets.only(bottom: 96),
+            padding: const EdgeInsets.only(bottom: 40),
             children: [
               MaxWidth(
                 width: 1080,
                 padding: EdgeInsets.fromLTRB(wide ? 32 : 18, 8, wide ? 32 : 18, 0),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                  Text('Going out? Go together.', style: wide ? text.displaySmall : text.headlineLarge),
+                  Text('What\'s on in Abuja', style: wide ? text.displaySmall : text.headlineLarge),
                   const SizedBox(height: 8),
-                  Text('Pick an event, then join a shared ride there or offer your empty seats. Everyone pays their share through the app.', style: text.bodyLarge),
+                  Text('Events from verified partners. Get your ticket, then book a seat on a bus from your area and pick the time that suits you.', style: text.bodyLarge),
                   const SizedBox(height: 16),
                   if (categories.length > 1)
                     Wrap(spacing: 8, runSpacing: 8, children: [
@@ -69,7 +65,9 @@ class _EventsPageState extends State<EventsPage> {
                     EmptyState(
                       icon: Icons.event_available_rounded,
                       title: all.isEmpty ? 'No events listed yet' : 'Nothing in this category',
-                      message: 'Hosting something? List it so people can share rides to it.',
+                      message: 'Events appear here when our event partners post them. Organising one? Become an event partner.',
+                      action: 'Become an event partner',
+                      onAction: () => context.push('/partner/apply'),
                     )
                   else
                     for (var i = 0; i < events.length; i += wide ? 2 : 1)
@@ -79,7 +77,7 @@ class _EventsPageState extends State<EventsPage> {
                           child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                             for (var j = i; j < i + (wide ? 2 : 1); j++) ...[
                               if (j > i) const SizedBox(width: 14),
-                              Expanded(child: j < events.length ? _EventCard(event: events[j], rides: state.ridesForEvent(events[j].id).length) : const SizedBox.shrink()),
+                              Expanded(child: j < events.length ? EventCard(event: events[j], buses: state.busesForEvent(events[j].id)) : const SizedBox.shrink()),
                             ],
                           ]),
                         ),
@@ -95,8 +93,8 @@ class _EventsPageState extends State<EventsPage> {
 }
 
 /// The date block shown on event cards and the detail page.
-class _DateBlock extends StatelessWidget {
-  const _DateBlock(this.date);
+class EventDateBlock extends StatelessWidget {
+  const EventDateBlock(this.date, {super.key});
   final DateTime date;
 
   static const _months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
@@ -117,36 +115,43 @@ class _DateBlock extends StatelessWidget {
   }
 }
 
-class _EventCard extends StatelessWidget {
-  const _EventCard({required this.event, required this.rides});
+String _priceLabel(RideEvent e) => !e.sellsTickets ? 'Free entry' : (e.ticketPrice == 0 ? 'Free ticket' : Fmt.naira(e.ticketPrice));
+
+class EventCard extends StatelessWidget {
+  const EventCard({super.key, required this.event, required this.buses});
   final RideEvent event;
-  final int rides;
+  final List<EventBus> buses;
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final origins = {for (final b in buses) b.origin}.toList();
     return Panel(
       onTap: () => context.push('/events/${event.id}'),
-      semanticLabel: '${event.title}, ${Fmt.dayTime(event.startsAt)} at ${event.venue}',
+      semanticLabel: '${event.title}, ${Fmt.dayTime(event.startsAt)} at ${event.venue}. ${buses.length} buses.',
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        _DateBlock(event.startsAt),
+        EventDateBlock(event.startsAt),
         const SizedBox(width: 14),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
               Icon(event.category.icon, size: 15, color: AppColors.muted),
               const SizedBox(width: 5),
-              Text(event.category.label, style: text.labelSmall),
+              Flexible(child: Text(event.category.label, style: text.labelSmall)),
+              if (event.sponsored) ...[const SizedBox(width: 8), const StatusPill('Sponsored', tone: Tone.info)],
             ]),
             const SizedBox(height: 2),
             Text(event.title, style: text.titleMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
             const SizedBox(height: 4),
             Text('${Fmt.time(event.startsAt)} · ${event.venue}, ${event.area}', style: text.bodySmall, maxLines: 2, overflow: TextOverflow.ellipsis),
             const SizedBox(height: 10),
-            Row(children: [
-              StatusPill(rides == 0 ? 'No rides yet' : '$rides ride${rides == 1 ? '' : 's'} going', tone: rides == 0 ? Tone.neutral : Tone.success, icon: Icons.directions_car_rounded),
-              const Spacer(),
-              const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+            Wrap(spacing: 8, runSpacing: 6, crossAxisAlignment: WrapCrossAlignment.center, children: [
+              StatusPill(_priceLabel(event), tone: Tone.brand, icon: Icons.local_activity_rounded),
+              StatusPill(
+                buses.isEmpty ? 'Buses coming soon' : '${buses.length} bus${buses.length == 1 ? '' : 'es'} · ${origins.take(3).join(', ')}',
+                tone: buses.isEmpty ? Tone.neutral : Tone.success,
+                icon: Icons.directions_bus_rounded,
+              ),
             ]),
           ]),
         ),
@@ -155,7 +160,7 @@ class _EventCard extends StatelessWidget {
   }
 }
 
-/// One event: details and the shared rides going there.
+/// One event: tickets and the buses going there.
 class EventDetailPage extends StatelessWidget {
   const EventDetailPage({super.key, required this.eventId});
   final String eventId;
@@ -173,43 +178,16 @@ class EventDetailPage extends StatelessWidget {
         ),
       );
     }
-    final me = state.user!;
-    final rides = state.ridesForEvent(event.id);
-    final mine = event.organiserId == me.id;
+    final buses = state.busesForEvent(event.id)..sort((a, b) => a.origin.compareTo(b.origin));
+    final myTickets = [for (final b in state.myBookings) if (b.eventId == event.id && b.kind == BookingKind.eventTicket && b.status.isOpen) b];
 
     return Scaffold(
-      appBar: AppBar(
-        leading: const AppBackButton(fallback: '/events'),
-        title: const Text('Event rides'),
-        actions: [
-          if (mine)
-            IconButton(
-              tooltip: 'Remove this event',
-              icon: const Icon(Icons.delete_outline_rounded),
-              onPressed: () async {
-                final ok = await showDialog<bool>(
-                  context: context,
-                  builder: (d) => AlertDialog(
-                    title: const Text('Remove this event?'),
-                    content: const Text('It leaves the list. Rides already offered to it stay open for their riders.'),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('Keep')),
-                      FilledButton(onPressed: () => Navigator.pop(d, true), child: const Text('Remove')),
-                    ],
-                  ),
-                );
-                if (ok != true || !context.mounted) return;
-                final done = await attemptOk(context, () => state.removeEvent(event), success: 'Event removed');
-                if (done && context.mounted) context.go('/events');
-              },
-            ),
-        ],
-      ),
+      appBar: AppBar(leading: const AppBackButton(fallback: '/events'), title: const Text('Event')),
       body: RefreshIndicator(
         color: AppColors.forest,
         onRefresh: state.refreshRider,
         child: ListView(
-          padding: const EdgeInsets.only(bottom: 32),
+          padding: const EdgeInsets.only(bottom: 40),
           children: [
             MaxWidth(
               width: 760,
@@ -218,11 +196,14 @@ class EventDetailPage extends StatelessWidget {
                 Panel(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      _DateBlock(event.startsAt),
+                      EventDateBlock(event.startsAt),
                       const SizedBox(width: 14),
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          StatusPill(event.category.label, tone: Tone.brand, icon: event.category.icon),
+                          Wrap(spacing: 6, runSpacing: 6, children: [
+                            StatusPill(event.category.label, tone: Tone.brand, icon: event.category.icon),
+                            if (event.sponsored) const StatusPill('Sponsored', tone: Tone.info),
+                          ]),
                           const SizedBox(height: 6),
                           Text(event.title, style: text.headlineSmall),
                         ]),
@@ -231,38 +212,211 @@ class EventDetailPage extends StatelessWidget {
                     const SizedBox(height: 14),
                     _Line(icon: Icons.schedule_rounded, text: event.endsAt == null ? Fmt.dayTime(event.startsAt) : '${Fmt.dayTime(event.startsAt)} – ${Fmt.time(event.endsAt!)}'),
                     _Line(icon: Icons.place_rounded, text: '${event.venue}, ${event.area}'),
-                    _Line(icon: Icons.campaign_rounded, text: 'Listed by ${event.organiserName}'),
+                    _Line(icon: Icons.verified_rounded, text: 'Listed by ${event.organiserName}, a verified event partner'),
                     if (event.description.isNotEmpty) ...[const SizedBox(height: 8), Text(event.description, style: text.bodyMedium)],
-                    const SizedBox(height: 14),
-                    Wrap(spacing: 10, runSpacing: 10, children: [
-                      FilledButton.icon(onPressed: () => showOfferRideSheet(context, event: event), icon: const Icon(Icons.add_rounded, size: 18), label: const Text('Offer a ride there')),
-                      OutlinedButton.icon(
-                        onPressed: () => context.push(Uri(path: '/app/routes', queryParameters: {'q': event.area}).toString()),
-                        icon: const Icon(Icons.directions_bus_rounded, size: 18),
-                        label: Text('Buses to ${event.area}'),
-                      ),
-                    ]),
                   ]),
                 ),
+                const SizedBox(height: 14),
+                _TicketPanel(event: event, held: myTickets.length),
                 const SizedBox(height: 22),
-                SectionHeader(title: 'Rides to this event', subtitle: rides.isEmpty ? 'Be the first to offer one' : '${rides.length} shared ride${rides.length == 1 ? '' : 's'} from verified members'),
-                if (rides.any((r) => r.hostId == me.id)) ...[
-                  HostRequestsPanel(rides: [for (final r in rides) if (r.hostId == me.id) r]),
-                  const SizedBox(height: 14),
-                ],
-                if (rides.isEmpty)
-                  const EmptyState(icon: Icons.groups_rounded, title: 'No rides yet', message: 'Driving there? Offer your empty seats and split the cost.')
+                SectionHeader(
+                  title: 'Buses to this event',
+                  subtitle: buses.isEmpty ? 'Registered operators add buses here' : 'Book a seat and pick your time. The operator confirms the most popular time.',
+                ),
+                if (buses.isEmpty)
+                  EmptyState(
+                    icon: Icons.directions_bus_rounded,
+                    title: 'No buses yet',
+                    message: 'Operators usually add buses in the days before an event. Meanwhile, regular routes go to ${event.area}.',
+                    action: 'Routes to ${event.area}',
+                    onAction: () => context.push(Uri(path: '/app/routes', queryParameters: {'q': event.area}).toString()),
+                  )
                 else
-                  for (final r in rides)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 14),
-                      child: RideCard(ride: r, mine: r.hostId == me.id, request: state.bookingForRide(r.id)),
-                    ),
+                  for (final b in buses)
+                    Padding(padding: const EdgeInsets.only(bottom: 14), child: EventBusCard(bus: b, event: event)),
               ]),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _TicketPanel extends StatelessWidget {
+  const _TicketPanel({required this.event, required this.held});
+  final RideEvent event;
+  final int held;
+
+  Future<void> _buy(BuildContext context) async {
+    final state = context.read<AppState>();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (d) => AlertDialog(
+        title: Text(event.ticketPrice == 0 ? 'Get a free ticket?' : 'Buy a ticket for ${Fmt.naira(event.ticketPrice)}?'),
+        content: Text(event.ticketPrice == 0
+            ? 'Your ticket appears in My Trips with a QR code for the gate.'
+            : 'Paid from your Tap A Ride wallet (balance ${Fmt.naira(state.wallet?.balance ?? 0)}). Refunded if you cancel before the event or it is called off.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('Not now')),
+          FilledButton(onPressed: () => Navigator.pop(d, true), child: Text(event.ticketPrice == 0 ? 'Get ticket' : 'Pay ${Fmt.naira(event.ticketPrice)}')),
+        ],
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+    final booking = await attempt(context, () => state.buyEventTicket(event, PaymentMethod.tapCard), success: 'Ticket booked. It\'s in My Trips.');
+    if (booking != null && context.mounted) context.push('/ticket/${booking.id}');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    if (!event.sellsTickets) {
+      return Panel(
+        color: AppColors.mint,
+        border: false,
+        shadow: false,
+        child: Row(children: [
+          const Icon(Icons.local_activity_rounded, color: AppColors.forest),
+          const SizedBox(width: 12),
+          Expanded(child: Text(event.ticketLink == null ? 'Free entry, or tickets sold by the organiser. Book your bus below.' : 'Tickets are sold by the organiser. Book your bus below.', style: text.bodyMedium)),
+        ]),
+      );
+    }
+    final soldOut = event.ticketsLeft <= 0;
+    return Panel(
+      child: Row(children: [
+        const IconBadge(Icons.local_activity_rounded, size: 44),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(event.ticketPrice == 0 ? 'Free ticket' : '${Fmt.naira(event.ticketPrice)} per ticket', style: text.titleMedium),
+            Text(
+              [soldOut ? 'Sold out' : '${Fmt.count(event.ticketsLeft)} left', if (held > 0) 'You have $held'].join(' · '),
+              style: text.bodySmall,
+            ),
+          ]),
+        ),
+        FilledButton(onPressed: soldOut ? null : () => _buy(context), child: Text(held > 0 ? 'Buy another' : 'Get ticket')),
+      ]),
+    );
+  }
+}
+
+/// A bus to an event: departure times with how many riders picked each, and the rider's seat.
+class EventBusCard extends StatefulWidget {
+  const EventBusCard({super.key, required this.bus, required this.event});
+  final EventBus bus;
+  final RideEvent event;
+
+  @override
+  State<EventBusCard> createState() => _EventBusCardState();
+}
+
+class _EventBusCardState extends State<EventBusCard> {
+  DateTime? _slot;
+  bool _busy = false;
+
+  Future<void> _book() async {
+    final bus = widget.bus;
+    final slot = bus.status == EventBusStatus.confirmed ? bus.confirmedAt! : (_slot ?? bus.popularSlot!);
+    final state = context.read<AppState>();
+    final confirmed = bus.status == EventBusStatus.confirmed;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (d) => AlertDialog(
+        title: Text('Book a seat from ${bus.origin}?'),
+        content: Text(confirmed
+            ? 'Leaves ${Fmt.dayTime(slot)}. ${Fmt.naira(bus.fare)} is paid from your wallet now.'
+            : 'You picked ${Fmt.time(slot)}. ${Fmt.naira(bus.fare)} is held from your wallet. The operator confirms the time most riders pick; if the bus doesn\'t run, you get it back.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('Not now')),
+          FilledButton(onPressed: () => Navigator.pop(d, true), child: Text('Pay ${Fmt.naira(bus.fare)}')),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    setState(() => _busy = true);
+    await attempt(context, () => state.bookEventBus(bus, slot, PaymentMethod.tapCard), success: confirmed ? 'Seat booked. Your ticket is in My Trips.' : 'Seat held. We\'ll tell you when the time is confirmed.');
+    if (mounted) setState(() => _busy = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<AppState>();
+    final text = Theme.of(context).textTheme;
+    final bus = widget.bus;
+    final mine = state.myEventBusSeat(bus.id);
+    final confirmed = bus.status == EventBusStatus.confirmed;
+    final riders = bus.riders;
+    final progress = (riders / bus.minRiders).clamp(0.0, 1.0);
+    final chosen = _slot ?? bus.popularSlot;
+
+    return Panel(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const IconBadge(Icons.directions_bus_filled_rounded, size: 42),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('${bus.origin} → ${widget.event.venue}', style: text.titleMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
+              Text([bus.providerName, if (bus.vehicleLabel.isNotEmpty) bus.vehicleLabel].join(' · '), style: text.bodySmall),
+            ]),
+          ),
+          const SizedBox(width: 8),
+          Text(Fmt.naira(bus.fare), style: text.titleLarge?.copyWith(color: AppColors.forest, fontWeight: FontWeight.w800)),
+        ]),
+        const SizedBox(height: 14),
+        if (confirmed)
+          StatusPill('Confirmed · leaves ${Fmt.time(bus.confirmedAt!)}', tone: Tone.success, icon: Icons.check_circle_rounded)
+        else ...[
+          Row(children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(99),
+                child: LinearProgressIndicator(value: progress, minHeight: 8, backgroundColor: AppColors.surfaceSunk, color: AppColors.leaf),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Text(riders >= bus.minRiders ? '$riders riders · goal met' : '$riders of ${bus.minRiders} riders', style: text.labelMedium),
+          ]),
+          const SizedBox(height: 4),
+          Text(riders >= bus.minRiders ? 'Enough riders: the operator will confirm a time soon.' : 'Goes ahead once ${bus.minRiders} riders book. ${bus.capacity} seats.', style: text.bodySmall),
+          const SizedBox(height: 12),
+          Text('Pick your departure time', style: text.labelLarge),
+          const SizedBox(height: 8),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            for (final s in bus.slots)
+              ChoiceChip(
+                label: Text('${Fmt.time(s)} · ${bus.seatsAt(s)} going'),
+                selected: chosen != null && s.isAtSameMomentAs(chosen),
+                onSelected: mine == null ? (_) => setState(() => _slot = s) : null,
+              ),
+          ]),
+        ],
+        const SizedBox(height: 14),
+        if (mine != null)
+          Row(children: [
+            const Icon(Icons.event_seat_rounded, color: AppColors.forest, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                mine.status == BookingStatus.confirmed ? 'Your seat ${mine.seat ?? ''} · leaves ${Fmt.time(mine.departureAt)}' : 'Seat held for ${Fmt.time(mine.departureAt)} · waiting for the operator',
+                style: text.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+              ),
+            ),
+            TextButton(onPressed: () => context.push('/ticket/${mine.id}'), child: const Text('Ticket')),
+          ])
+        else
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: _busy ? null : _book,
+              icon: const Icon(Icons.event_seat_rounded, size: 18),
+              label: Text(confirmed ? 'Book a seat · ${Fmt.time(bus.confirmedAt!)}' : 'Book a seat · ${chosen == null ? '' : Fmt.time(chosen)}'),
+            ),
+          ),
+      ]),
     );
   }
 }
@@ -283,138 +437,6 @@ class _Line extends StatelessWidget {
       );
 }
 
-class _ListEventSheet extends StatefulWidget {
-  const _ListEventSheet();
-
-  @override
-  State<_ListEventSheet> createState() => _ListEventSheetState();
-}
-
-class _ListEventSheetState extends State<_ListEventSheet> {
-  final _form = GlobalKey<FormState>();
-  final _title = TextEditingController();
-  final _venue = TextEditingController();
-  final _area = TextEditingController();
-  final _description = TextEditingController();
-  EventCategory _category = EventCategory.community;
-  late DateTime _date = DateTime.now().add(const Duration(days: 1));
-  TimeOfDay _time = const TimeOfDay(hour: 16, minute: 0);
-  bool _busy = false;
-  String? _error;
-
-  @override
-  void dispose() {
-    for (final c in [_title, _venue, _area, _description]) {
-      c.dispose();
-    }
-    super.dispose();
-  }
-
-  DateTime get _startsAt => DateTime(_date.year, _date.month, _date.day, _time.hour, _time.minute);
-
-  Future<void> _submit() async {
-    if (!_form.currentState!.validate()) return;
-    setState(() {
-      _busy = true;
-      _error = null;
-    });
-    final state = context.read<AppState>();
-    try {
-      // Pin the venue when the place search knows it, so rides and maps can use it.
-      final found = await state.api.geocode('${_venue.text.trim()} ${_area.text.trim()}');
-      final point = found.firstOrNull?.point;
-      final event = await state.createEvent(
-        title: _title.text,
-        venue: _venue.text,
-        area: _area.text,
-        startsAt: _startsAt,
-        category: _category,
-        description: _description.text,
-        lat: point?.latitude,
-        lng: point?.longitude,
-      );
-      if (!mounted) return;
-      Navigator.of(context).pop();
-      context.push('/events/${event.id}');
-      showMessage(context, 'Your event is listed. Offer a ride or share it with guests.');
-    } on BackendException catch (e) {
-      if (mounted) setState(() => _error = e.message);
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    String? required(String? v) => (v == null || v.trim().length < 2) ? 'Required' : null;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(24, 0, 24, 24 + MediaQuery.viewInsetsOf(context).bottom),
-      child: Form(
-        key: _form,
-        child: SingleChildScrollView(
-          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Text('List an event', style: text.headlineSmall),
-            const SizedBox(height: 4),
-            Text('Guests can then share rides to it. Events are public to signed-in riders.', style: text.bodySmall),
-            const SizedBox(height: 18),
-            TextFormField(controller: _title, decoration: const InputDecoration(labelText: 'Event name', hintText: 'Graduation party'), validator: (v) => (v == null || v.trim().length < 3) ? 'At least 3 letters' : null, maxLength: 120, buildCounter: _noCounter),
-            const SizedBox(height: 12),
-            Row(children: [
-              Expanded(flex: 3, child: TextFormField(controller: _venue, decoration: const InputDecoration(labelText: 'Venue', hintText: 'Millennium Park'), validator: required)),
-              const SizedBox(width: 10),
-              Expanded(flex: 2, child: TextFormField(controller: _area, decoration: const InputDecoration(labelText: 'Area', hintText: 'Maitama'), validator: required)),
-            ]),
-            const SizedBox(height: 12),
-            Row(children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () async {
-                    final now = DateTime.now();
-                    final picked = await showDatePicker(context: context, initialDate: _date, firstDate: now, lastDate: now.add(const Duration(days: 365)));
-                    if (picked != null) setState(() => _date = picked);
-                  },
-                  icon: const Icon(Icons.calendar_today_rounded, size: 18),
-                  label: Text('${Fmt.weekday(_date)} ${_date.day}/${_date.month}'),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () async {
-                    final picked = await showTimePicker(context: context, initialTime: _time);
-                    if (picked != null) setState(() => _time = picked);
-                  },
-                  icon: const Icon(Icons.schedule_rounded, size: 18),
-                  label: Text('Starts ${Fmt.time(_startsAt)}'),
-                ),
-              ),
-            ]),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<EventCategory>(
-              initialValue: _category,
-              decoration: const InputDecoration(labelText: 'Type'),
-              items: [for (final c in EventCategory.values) DropdownMenuItem(value: c, child: Text(c.label))],
-              onChanged: (v) => setState(() => _category = v ?? EventCategory.community),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(controller: _description, decoration: const InputDecoration(labelText: 'Details (optional)', hintText: 'Gate opens at 3 pm'), maxLines: 2, maxLength: 400, buildCounter: _noCounter),
-            if (_error != null) Padding(padding: const EdgeInsets.only(top: 10), child: Text(_error!, style: const TextStyle(color: AppColors.red, fontWeight: FontWeight.w600))),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: _busy ? null : _submit,
-              style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
-              child: _busy ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white)) : const Text('List my event'),
-            ),
-          ]),
-        ),
-      ),
-    );
-  }
-
-  static Widget? _noCounter(BuildContext context, {required int currentLength, required bool isFocused, required int? maxLength}) => null;
-}
-
 /// Home-screen entry point: the next few events.
 class EventsBanner extends StatelessWidget {
   const EventsBanner({super.key});
@@ -426,15 +448,15 @@ class EventsBanner extends StatelessWidget {
     final next = state.events.where((e) => e.startsAt.isAfter(state.now)).take(2).toList();
     return Panel(
       onTap: () => context.push('/events'),
-      semanticLabel: 'Event rides. Share a ride to events in Abuja.',
+      semanticLabel: 'Events and event buses in Abuja.',
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           const IconBadge(Icons.celebration_rounded, size: 40, radius: 12),
           const SizedBox(width: 12),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Event rides', style: text.titleLarge),
-              Text('Going out? Share the ride there and back.', style: text.bodySmall),
+              Text('Events & event buses', style: text.titleLarge),
+              Text('Tickets and a bus seat from your area.', style: text.bodySmall),
             ]),
           ),
           const Icon(Icons.chevron_right_rounded, color: AppColors.muted),

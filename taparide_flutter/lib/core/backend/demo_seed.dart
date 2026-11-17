@@ -25,6 +25,7 @@ abstract final class DemoSeed {
   static const pNyanya = 'p_nyanya';
   static const pKeke = 'p_keke';
   static const pGrace = 'p_grace';
+  static const pEvents = 'p_events';
 
   static const uAisha = 'u_aisha';
 
@@ -36,6 +37,7 @@ abstract final class DemoSeed {
     ('Chiamaka Obi · GreenFleet Logistics', 'fleet@greenfleet.demo', UserRole.fleetOwner),
     ('Tunde Bello · NaviRide Electric', 'ev@naviride.demo', UserRole.operator),
     ('Fatima Lawal · FCTA Transport', 'transport@fcta.demo', UserRole.government),
+    ('Halima Sani · sample event partner', 'events@taparide.demo', UserRole.eventPartner),
     ('Grace Okafor · private driver', 'grace@taparide.demo', UserRole.operator),
     ('Musa Abdullahi · driver applicant', 'musa@taparide.demo', UserRole.passenger),
     ('Ngozi Eze · company applicant', 'ngozi@capitalcabs.demo', UserRole.passenger),
@@ -52,6 +54,7 @@ abstract final class DemoSeed {
           AppUser(id: 'u_demo_admin', fullName: 'Daniel Adeyemi', email: demoAdminEmail, phone: '+234 701 000 3434', role: UserRole.admin, createdAt: DateTime(2026, 6, 1)),
         AppUser(id: 'u_emeka', fullName: 'Emeka Nwosu', email: 'emeka@taparide.demo', role: UserRole.passenger, organisation: 'Banex Plaza offices', createdAt: DateTime(2026, 9, 2)),
         AppUser(id: 'u_zainab', fullName: 'Zainab Yusuf', email: 'zainab@taparide.demo', role: UserRole.passenger, organisation: 'Jabi tech hub', createdAt: DateTime(2026, 9, 11)),
+        AppUser(id: 'u_events', fullName: 'Halima Sani', email: 'events@taparide.demo', phone: '+234 807 555 0606', role: UserRole.eventPartner, providerId: pEvents, organisation: 'Capital Events Hub (sample)', createdAt: DateTime(2026, 10, 1)),
         AppUser(id: 'u_grace', fullName: 'Grace Okafor', email: 'grace@taparide.demo', phone: '+234 805 555 0404', role: UserRole.operator, providerId: pGrace, createdAt: DateTime(2026, 9, 28)),
         AppUser(id: 'u_musa', fullName: 'Musa Abdullahi', email: 'musa@taparide.demo', phone: '+234 803 555 0101', role: UserRole.passenger, createdAt: DateTime(2026, 10, 10)),
         AppUser(id: 'u_ngozi', fullName: 'Ngozi Eze', email: 'ngozi@capitalcabs.demo', phone: '+234 802 555 0202', role: UserRole.passenger, organisation: 'Capital City Cabs Ltd', createdAt: DateTime(2026, 10, 11)),
@@ -66,6 +69,7 @@ abstract final class DemoSeed {
         TransportProvider(id: pKubwa, name: 'Kubwa Express Shuttles', kind: ProviderKind.shuttle, status: Verification.pending, area: 'Kubwa', contactName: 'Peter Ojo', contactEmail: 'hello@kubwaexpress.demo', joinedAt: DateTime(2026, 10, 9), description: 'Minibus commuter service applying to join the platform.'),
         TransportProvider(id: pNyanya, name: 'Nyanya Commuter Union', kind: ProviderKind.busOperator, status: Verification.pending, area: 'Nyanya · AYA', contactName: 'Musa Danjuma', contactEmail: 'office@nyanyacommuters.demo', joinedAt: DateTime(2026, 10, 12), description: 'Union of minibus owners on the Nyanya corridor.'),
         TransportProvider(id: pGrace, name: 'Grace Okafor', kind: ProviderKind.privateDriver, status: Verification.verified, area: 'Wuse 2', contactName: 'Grace Okafor', contactEmail: 'grace@taparide.demo', joinedAt: DateTime(2026, 9, 28), description: 'Private driver approved through partner registration (Toyota Camry).'),
+        TransportProvider(id: pEvents, name: 'Capital Events Hub (sample)', kind: ProviderKind.eventOrganiser, status: Verification.verified, area: 'Central Area', contactName: 'Halima Sani', contactEmail: 'events@taparide.demo', joinedAt: DateTime(2026, 10, 1), description: 'Sample event partner: lists events, sells tickets and books event buses.'),
         TransportProvider(id: pKeke, name: 'City Keke Cooperative', kind: ProviderKind.tricycle, status: Verification.suspended, area: 'Garki', contactName: 'Blessing Udo', contactEmail: 'coop@citykeke.demo', joinedAt: DateTime(2026, 8, 25), description: 'Electric tricycle pilot. Suspended pending permit renewal.'),
       ];
 

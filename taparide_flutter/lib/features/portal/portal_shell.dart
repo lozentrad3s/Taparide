@@ -40,7 +40,9 @@ class PortalSection {
   static const insights = PortalSection('/portal/insights', 'AI insights', Icons.insights_rounded, _partners, short: 'Insights');
   static const applications = PortalSection('/portal/applications', 'Partner applications', Icons.how_to_reg_rounded, {UserRole.government, UserRole.admin}, short: 'Applications');
 
-  static const all = [overview, insights, fcta, operator, fleet, applications, providers, evs, routes, vehicles, bookings, verification, users, audit];
+  static const events = PortalSection('/portal/events', 'Events & event buses', Icons.celebration_rounded, {UserRole.eventPartner, UserRole.operator, UserRole.government, UserRole.admin}, short: 'Events');
+
+  static const all = [overview, insights, fcta, operator, fleet, events, applications, providers, evs, routes, vehicles, bookings, verification, users, audit];
 
   /// The operator dashboard as private drivers see it (same page, driver wording).
   static const driver = PortalSection('/portal/operator', 'Driver dashboard', Icons.directions_car_rounded, {UserRole.operator, UserRole.government, UserRole.admin}, short: 'Driver');
@@ -60,8 +62,9 @@ class PortalSection {
       : switch (role) {
         UserRole.admin => all,
         UserRole.government => [fcta, insights, applications, providers, verification, vehicles, routes, evs, operator, bookings, audit],
-        UserRole.operator => [operator, insights, routes, vehicles, bookings, evs],
+        UserRole.operator => [operator, insights, routes, vehicles, events, bookings, evs],
         UserRole.fleetOwner => [fleet, insights, vehicles, bookings],
+        UserRole.eventPartner => [events, bookings],
         UserRole.passenger => const [],
       };
 }

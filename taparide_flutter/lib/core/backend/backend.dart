@@ -62,8 +62,29 @@ abstract class Backend {
 
   // ---- events
   Future<List<RideEvent>> fetchEvents();
-  Future<RideEvent> createEvent({required String title, required String venue, required String area, required DateTime startsAt, DateTime? endsAt, required EventCategory category, String description, double? lat, double? lng});
+  /// Event partners (and admins) only. Tickets are sold in the app when [ticketsTotal] > 0.
+  Future<RideEvent> createEvent({required String title, required String venue, required String area, required DateTime startsAt, DateTime? endsAt, required EventCategory category, String description, double? lat, double? lng, int ticketPrice, int ticketsTotal, String? ticketLink});
   Future<void> removeEvent(String eventId);
+  Future<Booking> buyEventTicket(String eventId, PaymentMethod method);
+
+  // ---- event buses (registered operators run them; riders pick a departure time)
+  Future<List<EventBus>> fetchEventBuses();
+  Future<EventBus> offerEventBus({required String eventId, required String origin, required int fare, required int capacity, required int minRiders, required List<DateTime> slots, String? vehicleId});
+
+  /// The fare is held; the seat is confirmed when the operator fixes the departure time.
+  Future<Booking> bookEventBus(String busId, DateTime slot, PaymentMethod method);
+  Future<EventBus> confirmEventBus(String busId, DateTime slot);
+  Future<EventBus> cancelEventBus(String busId);
+
+  // ---- header ads
+  Future<List<PromoAd>> fetchAds();
+  Future<void> countAdImpressions(List<String> adIds);
+
+  /// Starts the server clock for a full ad view.
+  Future<AdView> startAdView(String adId);
+
+  /// Pays the ride credit once the ad has played in full (server-checked, daily cap).
+  Future<AdReward> claimAdReward(String viewId);
 
   // ---- share my ride
   /// A private link token for one upcoming trip (the same one while it is still valid).

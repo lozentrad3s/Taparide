@@ -8,11 +8,13 @@ import 'package:taparide_flutter/app/app.dart';
 import 'package:taparide_flutter/core/app_state.dart';
 import 'package:taparide_flutter/core/backend/demo_backend.dart';
 import 'package:taparide_flutter/shared/route_map.dart';
+import 'package:taparide_flutter/shared/ticking.dart';
 
 /// Fresh demo backend + app state with no artificial latency.
 Future<(AppState, DemoBackend)> freshState() async {
   SharedPreferences.setMockInitialValues({});
   MapTiles.enabled = false;
+  LiveTicking.enabled = false;
   final backend = await DemoBackend.create(latency: Duration.zero);
   final state = AppState(backend);
   await state.init();

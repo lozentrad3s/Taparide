@@ -715,7 +715,7 @@ class _EvAndTagAlong extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ev = _PhotoFeature(
-      photo: AppPhoto.evSuv,
+      photo: AppPhoto.evCharging,
       alt: 'A white electric SUV',
       title: 'Book an electric ride',
       body: 'Quiet, zero-emission cars from verified EV operators, with the battery level and pickup time shown before you book.',

@@ -7,6 +7,7 @@ import '../features/auth/login_page.dart';
 import '../features/common/credits_page.dart';
 import '../features/ev/ev_page.dart';
 import '../features/landing/landing_page.dart';
+import '../features/live/live_map_page.dart';
 import '../features/nearby/nearby_page.dart';
 import '../features/partner/partner_apply_page.dart';
 import '../features/partner/partner_status_page.dart';
@@ -30,10 +31,11 @@ String homeFor(AppUser user) => switch (user.role) {
       UserRole.fleetOwner => '/portal/fleet',
       UserRole.government => '/portal/fcta',
       UserRole.admin => '/portal/overview',
+      UserRole.eventPartner => '/portal/events',
     };
 
 bool _riderPath(String path) =>
-    path.startsWith('/app') || path.startsWith('/ride') || path.startsWith('/ticket') || path == '/ev' || path == '/tag-along' || path.startsWith('/events');
+    path.startsWith('/app') || path.startsWith('/ride') || path.startsWith('/ticket') || path == '/ev' || path == '/tag-along' || path == '/live' || path.startsWith('/events');
 
 final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 
@@ -109,6 +111,7 @@ GoRouter buildRouter(AppState state) {
       ),
       GoRoute(path: '/ticket/:bookingId', parentNavigatorKey: _rootKey, builder: (context, s) => TicketPage(bookingId: s.pathParameters['bookingId']!)),
       GoRoute(path: '/ev', parentNavigatorKey: _rootKey, builder: (context, s) => const EvPage()),
+      GoRoute(path: '/live', parentNavigatorKey: _rootKey, builder: (context, s) => const LiveMapPage()),
       GoRoute(path: '/tag-along', parentNavigatorKey: _rootKey, builder: (context, s) => const TagAlongPage()),
       GoRoute(
         path: '/events',

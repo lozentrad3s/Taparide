@@ -245,7 +245,7 @@ class SupabaseBackend implements Backend {
       });
 
   @override
-  Future<RideEvent> createEvent({required String title, required String venue, required String area, required DateTime startsAt, DateTime? endsAt, required EventCategory category, String description = '', double? lat, double? lng}) =>
+  Future<RideEvent> createEvent({required String title, required String venue, required String area, required DateTime startsAt, DateTime? endsAt, required EventCategory category, String description = '', double? lat, double? lng, int ticketPrice = 0, int ticketsTotal = 0, String? ticketLink}) =>
       _guard(() async => RideEvent.fromJson(_row(await _client.rpc('create_event', params: {
             'p_title': title,
             'p_venue': venue,
@@ -256,10 +256,88 @@ class SupabaseBackend implements Backend {
             'p_description': description,
             'p_lat': lat,
             'p_lng': lng,
+            'p_ticket_price': ticketPrice,
+            'p_tickets_total': ticketsTotal,
+            'p_ticket_link': ticketLink,
           }))));
 
   @override
   Future<void> removeEvent(String eventId) => _guard(() => _client.rpc('remove_event', params: {'p_event_id': eventId}));
+
+  @override
+  Future<Booking> buyEventTicket(String eventId, PaymentMethod method) =>
+      _guard(() async => Booking.fromJson(_row(await _client.rpc('buy_event_ticket', params: {'p_event_id': eventId, 'p_method': method.wire}))));
+
+  // ------------------------------------------------------------ event buses
+
+  @override
+  Future<List<EventBus>> fetchEventBuses() => _optional(() async {
+        final rows = _rows(await _client.from('event_buses').select().neq('status', 'cancelled').order('created_at').limit(500));
+        return [for (final r in rows) EventBus.fromJson(r)];
+      });
+
+  /// Reads for newer tables: an empty list (not a failed screen) if the database hasn't been migrated yet.
+  Future<List<T>> _optional<T>(Future<List<T>> Function() run) async {
+    try {
+      return await _guard(run);
+    } on BackendException catch (e) {
+      if (e.kind == BackendErrorKind.auth) rethrow;
+      return const [];
+    }
+  }
+
+  @override
+  Future<EventBus> offerEventBus({required String eventId, required String origin, required int fare, required int capacity, required int minRiders, required List<DateTime> slots, String? vehicleId}) =>
+      _guard(() async => EventBus.fromJson(_row(await _client.rpc('offer_event_bus', params: {
+            'p_event_id': eventId,
+            'p_origin': origin,
+            'p_fare': fare,
+            'p_capacity': capacity,
+            'p_min_riders': minRiders,
+            'p_slots': [for (final t in slots) t.toUtc().toIso8601String()],
+            'p_vehicle_id': vehicleId,
+          }))));
+
+  @override
+  Future<Booking> bookEventBus(String busId, DateTime slot, PaymentMethod method) => _guard(() async => Booking.fromJson(
+      _row(await _client.rpc('book_event_bus', params: {'p_bus_id': busId, 'p_slot': slot.toUtc().toIso8601String(), 'p_method': method.wire}))));
+
+  @override
+  Future<EventBus> confirmEventBus(String busId, DateTime slot) => _guard(
+      () async => EventBus.fromJson(_row(await _client.rpc('confirm_event_bus', params: {'p_bus_id': busId, 'p_slot': slot.toUtc().toIso8601String()}))));
+
+  @override
+  Future<EventBus> cancelEventBus(String busId) => _guard(() async => EventBus.fromJson(_row(await _client.rpc('cancel_event_bus', params: {'p_bus_id': busId}))));
+
+  // ------------------------------------------------------------ header ads
+
+  @override
+  Future<List<PromoAd>> fetchAds() => _optional(() async {
+        final rows = _rows(await _client.from('ads').select().eq('active', true).order('created_at').limit(20));
+        return [for (final r in rows) PromoAd.fromJson(r)];
+      });
+
+  @override
+  Future<void> countAdImpressions(List<String> adIds) async {
+    if (adIds.isEmpty) return;
+    try {
+      await _client.rpc('count_ad_impressions', params: {'p_ids': adIds});
+    } catch (_) {
+      // Counting is best effort.
+    }
+  }
+
+  @override
+  Future<AdView> startAdView(String adId) => _guard(() async {
+        final r = _row(await _client.rpc('start_ad_view', params: {'p_ad_id': adId}));
+        return AdView(id: r['id'] as String, adId: r['ad_id'] as String);
+      });
+
+  @override
+  Future<AdReward> claimAdReward(String viewId) => _guard(() async {
+        final r = _row(await _client.rpc('claim_ad_reward', params: {'p_view_id': viewId}));
+        return AdReward(reward: (r['reward'] as num).toInt(), balance: (r['balance'] as num).toInt(), left: (r['left'] as num).toInt());
+      });
 
   // ------------------------------------------------------------ share my ride
 

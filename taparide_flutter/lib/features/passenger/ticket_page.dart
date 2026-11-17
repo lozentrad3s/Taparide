@@ -98,7 +98,7 @@ class TicketPage extends StatelessWidget {
                         const SizedBox(width: 8),
                         Text(booking.title ?? booking.kind.label, style: text.labelLarge?.copyWith(color: Colors.white)),
                         const Spacer(),
-                        StatusPill(booking.status.label,
+                        StatusPill(booking.statusLabel,
                             tone: open ? (booking.status == BookingStatus.requested ? Tone.warning : Tone.success) : BookingTile.toneFor(booking.status)),
                       ]),
                       const SizedBox(height: 16),

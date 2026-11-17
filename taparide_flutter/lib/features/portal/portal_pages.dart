@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'admin_dashboard.dart';
 import 'applications_page.dart';
 import 'dashboard_pages.dart';
+import 'events_portal_page.dart';
 import 'insights_page.dart';
 import 'manage_pages.dart';
 import 'portal_shell.dart';
@@ -25,5 +26,6 @@ Widget portalPageFor(PortalSection section, Map<String, String> query) => switch
       '/portal/audit' => const AuditPage(),
       '/portal/insights' => InsightsPage(providerId: query['provider']),
       '/portal/applications' => const ApplicationsPage(),
+      '/portal/events' => const EventsPortalPage(),
       _ => const OverviewPage(),
     };

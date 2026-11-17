@@ -63,6 +63,57 @@ String _norm(String s) => s.toLowerCase().replaceAll(RegExp(r'[^a-z0-9 ]'), '').
   return null;
 }
 
+/// The closest known place or route stop to [p] (for "You're near Wuse 2").
+String nearestPlaceName(LatLng p, {List<TransitRoute> routes = const []}) {
+  var best = 'Abuja';
+  var bestKm = double.infinity;
+  void consider(String name, LatLng q) {
+    final d = straightKm(p, q);
+    if (d < bestKm) {
+      bestKm = d;
+      best = name;
+    }
+  }
+
+  for (final e in abujaPlaces.entries) {
+    consider(e.key, LatLng(e.value.$1, e.value.$2));
+  }
+  for (final r in routes) {
+    for (final s in r.stops) {
+      consider(s.name, LatLng(s.lat, s.lng));
+    }
+  }
+  return bestKm > 25 ? 'Abuja' : best;
+}
+
+/// Place names matching what the rider has typed (known places and route stops), best first.
+List<({String name, LatLng point})> suggestPlaces(String query, {List<TransitRoute> routes = const [], int limit = 6}) {
+  final q = _norm(query);
+  if (q.isEmpty) return const [];
+  final seen = <String>{};
+  final starts = <({String name, LatLng point})>[];
+  final contains = <({String name, LatLng point})>[];
+  void add(String name, LatLng point) {
+    final n = _norm(name);
+    if (!seen.add(n)) return;
+    if (n.startsWith(q) || n.split(' ').any((w) => w.startsWith(q))) {
+      starts.add((name: name, point: point));
+    } else if (n.contains(q)) {
+      contains.add((name: name, point: point));
+    }
+  }
+
+  for (final e in abujaPlaces.entries) {
+    add(e.key, LatLng(e.value.$1, e.value.$2));
+  }
+  for (final r in routes) {
+    for (final s in r.stops) {
+      add(s.name, LatLng(s.lat, s.lng));
+    }
+  }
+  return [...starts, ...contains].take(limit).toList();
+}
+
 /// Road distance estimate between two named places (straight line × typical detour).
 double roadKm(String a, String b) {
   final p = resolvePlace(a)?.point, q = resolvePlace(b)?.point;

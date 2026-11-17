@@ -266,7 +266,7 @@ class BookingTile extends StatelessWidget {
     return Panel(
       padding: const EdgeInsets.all(14),
       onTap: onTap,
-      semanticLabel: '${booking.kind.label} ${booking.origin} to ${booking.destination}, ${booking.status.label}',
+      semanticLabel: '${booking.kind.label} ${booking.origin} to ${booking.destination}, ${booking.statusLabel}',
       child: Row(children: [
         IconBadge(booking.kind.icon, size: 42, color: booking.status.isOpen ? AppColors.mint : AppColors.surfaceSunk, iconColor: booking.status.isOpen ? AppColors.forest : AppColors.muted),
         const SizedBox(width: 12),
@@ -281,7 +281,7 @@ class BookingTile extends StatelessWidget {
         Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
           Text(Fmt.naira(booking.fare), style: text.titleSmall?.copyWith(fontWeight: FontWeight.w800, fontFeatures: tabular)),
           const SizedBox(height: 6),
-          StatusPill(booking.status.label, tone: toneFor(booking.status)),
+          StatusPill(booking.statusLabel, tone: toneFor(booking.status)),
         ]),
       ]),
     );

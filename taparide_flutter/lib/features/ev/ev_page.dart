@@ -143,7 +143,7 @@ class _EvCard extends StatelessWidget {
       padding: EdgeInsets.zero,
       child: LayoutBuilder(builder: (context, c) {
         final row = c.maxWidth > 560;
-        final photo = SizedBox(width: row ? 220 : double.infinity, height: row ? 168 : 150, child: const PhotoView(AppPhoto.evSuv, alignment: Alignment(0, 0.25)));
+        final photo = SizedBox(width: row ? 220 : double.infinity, height: row ? 168 : 150, child: const PhotoView(AppPhoto.evCharging, alignment: Alignment(0.2, 0.3)));
         final body = Padding(
           padding: const EdgeInsets.all(16),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

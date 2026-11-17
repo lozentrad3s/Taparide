@@ -43,6 +43,12 @@ class RideEvent {
     this.organiserId,
     this.lat,
     this.lng,
+    this.providerId,
+    this.ticketPrice = 0,
+    this.ticketsTotal = 0,
+    this.ticketsSold = 0,
+    this.sponsored = false,
+    this.ticketLink,
   });
 
   final String id;
@@ -58,7 +64,40 @@ class RideEvent {
   final double? lat;
   final double? lng;
 
+  /// The event partner organisation that listed it.
+  final String? providerId;
+
+  /// Entry price in naira (0 = free entry). Tickets are sold in the app when [ticketsTotal] > 0.
+  final int ticketPrice;
+  final int ticketsTotal;
+  final int ticketsSold;
+  final bool sponsored;
+  final String? ticketLink;
+
   LatLng? get point => lat == null || lng == null ? null : LatLng(lat!, lng!);
+  bool get sellsTickets => ticketsTotal > 0;
+  int get ticketsLeft => (ticketsTotal - ticketsSold).clamp(0, ticketsTotal);
+
+  RideEvent copyWith({int? ticketsSold}) => RideEvent(
+        id: id,
+        title: title,
+        venue: venue,
+        area: area,
+        startsAt: startsAt,
+        endsAt: endsAt,
+        category: category,
+        description: description,
+        organiserId: organiserId,
+        organiserName: organiserName,
+        lat: lat,
+        lng: lng,
+        providerId: providerId,
+        ticketPrice: ticketPrice,
+        ticketsTotal: ticketsTotal,
+        ticketsSold: ticketsSold ?? this.ticketsSold,
+        sponsored: sponsored,
+        ticketLink: ticketLink,
+      );
 
   Map<String, Object?> toJson() => {
         'id': id,
@@ -73,6 +112,12 @@ class RideEvent {
         'organiser_name': organiserName,
         'lat': lat,
         'lng': lng,
+        'provider_id': providerId,
+        'ticket_price': ticketPrice,
+        'tickets_total': ticketsTotal,
+        'tickets_sold': ticketsSold,
+        'sponsored': sponsored,
+        'ticket_link': ticketLink,
       };
 
   factory RideEvent.fromJson(Map<String, dynamic> json) => RideEvent(
@@ -88,7 +133,188 @@ class RideEvent {
         organiserName: (json['organiser_name'] as String?) ?? '',
         lat: (json['lat'] as num?)?.toDouble(),
         lng: (json['lng'] as num?)?.toDouble(),
+        providerId: json['provider_id'] as String?,
+        ticketPrice: (json['ticket_price'] as num?)?.toInt() ?? 0,
+        ticketsTotal: (json['tickets_total'] as num?)?.toInt() ?? 0,
+        ticketsSold: (json['tickets_sold'] as num?)?.toInt() ?? 0,
+        sponsored: json['sponsored'] == true,
+        ticketLink: json['ticket_link'] as String?,
       );
+}
+
+enum EventBusStatus { open, confirmed, cancelled }
+
+/// A bus a registered operator runs to an event. Riders book a seat and pick a departure
+/// time; the operator then confirms the time most riders chose (matchmaking).
+class EventBus {
+  const EventBus({
+    required this.id,
+    required this.eventId,
+    required this.providerId,
+    required this.providerName,
+    required this.origin,
+    required this.fare,
+    required this.capacity,
+    required this.minRiders,
+    required this.slots,
+    required this.seatsBySlot,
+    required this.status,
+    this.vehicleId,
+    this.vehicleLabel = '',
+    this.confirmedAt,
+  });
+
+  final String id;
+  final String eventId;
+  final String providerId;
+  final String providerName;
+  final String? vehicleId;
+  final String vehicleLabel;
+  final String origin;
+  final int fare;
+  final int capacity;
+
+  /// Riders needed before the operator commits to a time.
+  final int minRiders;
+  final List<DateTime> slots;
+
+  /// Seats booked per departure time (keyed by UTC ISO time).
+  final Map<String, int> seatsBySlot;
+  final EventBusStatus status;
+  final DateTime? confirmedAt;
+
+  static String slotKey(DateTime t) {
+    final u = t.toUtc();
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${u.year}-${two(u.month)}-${two(u.day)}T${two(u.hour)}:${two(u.minute)}:${two(u.second)}Z';
+  }
+
+  int seatsAt(DateTime slot) => seatsBySlot[slotKey(slot)] ?? 0;
+  int get riders => seatsBySlot.values.fold(0, (a, b) => a + b);
+
+  /// The time most riders picked (the earliest on a tie).
+  DateTime? get popularSlot {
+    DateTime? best;
+    for (final s in slots) {
+      if (best == null || seatsAt(s) > seatsAt(best)) best = s;
+    }
+    return best;
+  }
+
+  bool get open => status == EventBusStatus.open;
+
+  EventBus copyWith({Map<String, int>? seatsBySlot, EventBusStatus? status, DateTime? confirmedAt}) => EventBus(
+        id: id,
+        eventId: eventId,
+        providerId: providerId,
+        providerName: providerName,
+        vehicleId: vehicleId,
+        vehicleLabel: vehicleLabel,
+        origin: origin,
+        fare: fare,
+        capacity: capacity,
+        minRiders: minRiders,
+        slots: slots,
+        seatsBySlot: seatsBySlot ?? this.seatsBySlot,
+        status: status ?? this.status,
+        confirmedAt: confirmedAt ?? this.confirmedAt,
+      );
+
+  factory EventBus.fromJson(Map<String, dynamic> json) {
+    final raw = json['seats_by_slot'];
+    return EventBus(
+      id: json['id'] as String,
+      eventId: json['event_id'] as String,
+      providerId: json['provider_id'] as String,
+      providerName: (json['provider_name'] as String?) ?? '',
+      vehicleId: json['vehicle_id'] as String?,
+      vehicleLabel: (json['vehicle_label'] as String?) ?? '',
+      origin: (json['origin'] as String?) ?? '',
+      fare: (json['fare'] as num?)?.toInt() ?? 0,
+      capacity: (json['capacity'] as num?)?.toInt() ?? 0,
+      minRiders: (json['min_riders'] as num?)?.toInt() ?? 1,
+      slots: [for (final s in (json['slots'] as List? ?? const [])) DateTime.parse(s as String).toLocal()]..sort(),
+      seatsBySlot: {
+        if (raw is Map)
+          for (final e in raw.entries) slotKey(DateTime.parse(e.key as String)): (e.value as num).toInt(),
+      },
+      status: EventBusStatus.values.where((s) => s.name == json['status']).firstOrNull ?? EventBusStatus.open,
+      confirmedAt: json['confirmed_at'] == null ? null : DateTime.parse(json['confirmed_at'] as String).toLocal(),
+    );
+  }
+}
+
+/// A sponsored message in the rider header. Watching it in full earns ride credit.
+class PromoAd {
+  const PromoAd({
+    required this.id,
+    required this.sponsor,
+    required this.headline,
+    required this.body,
+    required this.ctaLabel,
+    required this.colour,
+    required this.icon,
+    required this.reward,
+    required this.seconds,
+    this.ctaLink,
+    this.house = false,
+  });
+
+  final String id;
+  final String sponsor;
+  final String headline;
+  final String body;
+  final String ctaLabel;
+  final String? ctaLink;
+  final Color colour;
+  final String icon;
+  final int reward;
+  final int seconds;
+
+  /// Tap A Ride's own promotion, not a paying advertiser.
+  final bool house;
+
+  IconData get iconData => switch (icon) {
+        'electric_car' => Icons.electric_car_rounded,
+        'celebration' => Icons.celebration_rounded,
+        'directions_bus' => Icons.directions_bus_rounded,
+        'local_offer' => Icons.local_offer_rounded,
+        _ => Icons.campaign_rounded,
+      };
+
+  factory PromoAd.fromJson(Map<String, dynamic> json) {
+    final hex = ((json['colour'] as String?) ?? '#0B5D3B').replaceAll('#', '');
+    return PromoAd(
+      id: json['id'] as String,
+      sponsor: (json['sponsor'] as String?) ?? '',
+      headline: (json['headline'] as String?) ?? '',
+      body: (json['body'] as String?) ?? '',
+      ctaLabel: (json['cta_label'] as String?) ?? 'Learn more',
+      ctaLink: json['cta_link'] as String?,
+      colour: Color(int.tryParse('FF$hex', radix: 16) ?? 0xFF0B5D3B),
+      icon: (json['icon'] as String?) ?? 'campaign',
+      reward: (json['reward'] as num?)?.toInt() ?? 0,
+      seconds: (json['seconds'] as num?)?.toInt() ?? 15,
+      house: json['house'] == true,
+    );
+  }
+}
+
+/// A started ad view; the server times it.
+class AdView {
+  const AdView({required this.id, required this.adId});
+  final String id;
+  final String adId;
+}
+
+/// Ride credit earned for watching an ad.
+class AdReward {
+  const AdReward({required this.reward, required this.balance, required this.left});
+  final int reward;
+  final int balance;
+
+  /// Rewards still available today.
+  final int left;
 }
 
 /// A private link to one trip, for a trusted contact.

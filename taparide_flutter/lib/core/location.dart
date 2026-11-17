@@ -2,13 +2,14 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
 /// The rider's position, if they allow it. Never throws; null means "unknown".
-Future<LatLng?> currentLocation({Duration timeout = const Duration(seconds: 8)}) async {
+Future<LatLng?> currentLocation({Duration timeout = const Duration(seconds: 8), bool precise = false}) async {
   try {
     if (!await Geolocator.isLocationServiceEnabled()) return null;
     var permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) permission = await Geolocator.requestPermission();
     if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) return null;
-    final p = await Geolocator.getCurrentPosition(locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium)).timeout(timeout);
+    final p = await Geolocator.getCurrentPosition(locationSettings: LocationSettings(accuracy: precise ? LocationAccuracy.best : LocationAccuracy.medium))
+        .timeout(precise ? const Duration(seconds: 12) : timeout);
     return LatLng(p.latitude, p.longitude);
   } catch (_) {
     return null;
