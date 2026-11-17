@@ -29,14 +29,17 @@ All images are in `public/img`:
 
 | File | Used for |
 |---|---|
-| `photos/brt-berger.jpg` | Hero background |
-| `photos/abuja-light-rail.jpg` | City buses story |
-| `photos/abuja-taxis.jpg` | Tag Along story |
-| `photos/ev-charging.jpg` | Electric story (full-width background) |
-| `app/*.jpg` | App screens inside the phone frames (786 × 1704) |
+| `photos/back-seat.jpg` | Hero (full-width photo) |
+| `photos/friends-bus.jpg` | Bus rides story |
+| `photos/tagalong.jpg` | Tagalong story and the "Drive with us" card |
+| `photos/tap-to-pay.jpg` | Tap to Pay story |
+| `photos/rider-in-car.jpg` | Safety story |
+| `photos/bus.jpg`, `photos/festival.jpg` | Partner cards (operators, event organisers) |
+| `flyers/tech-week.jpg` | Abuja Tech Week section |
+| `flyers/*.jpg` | "Smarter travel. Together." campaign gallery and the advertise banner |
 | `og.jpg` | Preview image when the link is shared (1200 × 630) |
 
-Replace a file with your own under the same name, or change the `src` in `index.html`. When you change a photo, update its credit line on the page and in `privacy.html`. Wikimedia photos need their credit; your own photos don't.
+All of these come from Tap A Ride's own artwork in `../website image and app onbaording images/`; some are crops of the flyers without their text. The Electric card uses a drawn illustration until there is an electric-car photo. To swap an image, save yours under the same name, or change the `src` in `index.html`.
 
 ## Safety notes
 

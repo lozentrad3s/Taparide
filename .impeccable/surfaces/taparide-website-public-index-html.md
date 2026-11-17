@@ -9,20 +9,22 @@ related_targets: []
 
 Scope: the public marketing site (home, privacy), separate from the Flutter web app. Mode: Persuade.
 
-Audience: Abuja commuters on mid-range Android phones (mostly mobile data), plus operators, EV owners and event organisers. Job: understand fixed fares + verified rides, join the waitlist, reserve an event-bus seat, invite friends. Proof: real Abuja photos (Wikimedia, credited), real app screens. The user will supply their own photos and flyers later; image slots must be easy to swap. No invented partners, numbers or endorsements; Abuja Tech Week buses are demand collection, not an official partnership.
+Audience: Abuja commuters on mid-range Android phones, plus drivers, operators, event organisers and advertisers. Job: understand the offer in seconds, join the waitlist (free ₦1,000 first ride), reserve a free Abuja Tech Week bus seat, invite friends.
 
-User decisions (2026-11-17): inDrive-style site where every section tells one story (event rides, Tag Along, electric, city buses); free ticket = ₦1,000 ride credit usable on a city bus or a Tech Week/event bus seat; Tech Week = reserve by area and time, free, confirmed once demand is met; local preview first.
+Assets: the user's own photos and campaign flyers in `website image and app onbaording images/` (lime + forest green, yellow and teal accents). Wikimedia only for the EV photo.
+
+User decisions (2026-11-17, redesign round): "more professional, standard, tells a story, professional images, must look different from the app"; closest to inDrive; keep green everywhere, other colours allowed; keep the waitlist + ₦1,000 ride, Tech Week seat booking and story sections. No loud italic headlines, fewer dark-green blocks, no phone screenshots, less text. Tap A Ride is the official ride partner of Abuja Tech Week and the event buses are free (user-confirmed).
 
 ## Direction contract
 
-THESIS: A reel of ride stories, one per section, each a full-bleed real Abuja photo beside the real app screen doing that job. Refuses the headline + three equal feature cards template.
+THESIS: A calm, white, photo-led company site in the inDrive mould: big rounded photographs of real people, short upright headlines, one idea per section. Refuses the poster look (italic shouting, dark slabs, app screenshots).
 
-OWN-WORLD: Alternating forest-deep (#06331F) and white grounds, leaf green (#4DB52A) only on actions and live states; Barlow 800 italic display echoing the wordmark, Fira Sans for the naira sign; 28px-radius photo panels; phone frames holding real app screenshots; route-line motif (stops as dots) linking stories.
+OWN-WORLD: White ground with a soft green-grey surface (#F3F7F1); ink #0D1A12; forest #0B5A3A for text accents and the footer; brand lime #8CE01F for every action with ink text; lime tint for highlights; sun yellow #FFC72C for events; teal #0B6E6A for payments. Barlow upright 700 headlines with tight tracking, 400 body; 24-32px radius photo cards; thin green icons.
 
-STORY: Visitor sees fixed fares and verified vehicles, takes the free ₦1,000 first ride by joining, reserves a Tech Week bus seat by area and time, then gets an invite link and moves up the list.
+STORY: A rider sees "Move more. Worry less.", joins in one field, then scrolls one story per service (bus, event ride, Tagalong, Tap to Pay, safety), sees the campaign flyers, and ends on the free-ride ticket.
 
-FIRST VIEWPORT: Full-bleed Berger bus-park photo under a deep green scrim. Left two-thirds: headline "Fixed fares. Verified rides. All of Abuja." at display scale; one-line offer; inline email + Join button (primary action). Right: phone frame with the live app home screen. Bottom edge: story tab rail (City buses, Event rides, Tag Along, Electric, Tap & Pay) with a Tech Week 24-26 Nov chip.
+FIRST VIEWPORT: Left: headline, one-line promise, email + Join button, three trust ticks. Right: tall rounded photo of a rider in a car with a floating "Free first ride, up to ₦1,000" card and a lime "Verified driver" chip. Below the fold edge: service tabs.
 
-FORM: user-pinned inDrive-style story reel (overrode the dealt structures); seed:14e3fb8c840a045a. Signature interaction: sticky story rail that tracks the section in view; joining prints your free-ride ticket with your name, place in line and invite link.
+FORM: user-pinned inDrive-closer structure (pinned beats the roll); seed:14e3fb8c840a045a. Signature interaction: service tabs that swap the photo and copy in place; the ticket prints on joining.
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance

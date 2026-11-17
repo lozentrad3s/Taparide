@@ -24,8 +24,7 @@
 
   // ---------------------------------------------------------------- header + menu
   const top = $("[data-top]");
-  const hero = $(".hero");
-  const solid = () => top.classList.toggle("solid", !hero || hero.getBoundingClientRect().bottom < 90);
+  const solid = () => top.classList.toggle("solid", scrollY > 8);
   solid();
   addEventListener("scroll", solid, { passive: true });
 
@@ -35,7 +34,6 @@
     menu.hidden = !open;
     menuBtn.setAttribute("aria-expanded", String(open));
     menuBtn.querySelector("use").setAttribute("href", open ? "#i-close" : "#i-menu");
-    top.classList.toggle("solid", open || !hero || hero.getBoundingClientRect().bottom < 90);
   };
   menuBtn?.addEventListener("click", () => setMenu(menu.hidden));
   menu?.addEventListener("click", (e) => { if (e.target.closest("a")) setMenu(false); });
@@ -124,7 +122,7 @@
     const seat = (me.seats || []).find((s) => s.event === EVENT);
     const seatEl = $("[data-t-seat]", ticket);
     seatEl.hidden = !seat;
-    if (seat) seatEl.textContent = `Tech Week seat requested: ${seat.area} → Velodrome, ${dayLabel(seat.day)}, ${timeLabel(seat.slot)}`;
+    if (seat) seatEl.textContent = `Free Tech Week seat: ${seat.area} → Velodrome, ${dayLabel(seat.day)}, ${timeLabel(seat.slot)}`;
 
     const link = inviteLink(me.code);
     $("[data-t-link]", ticket).value = link;
@@ -223,6 +221,21 @@
     a.addEventListener("click", () => { if (fullForm?.role) fullForm.role.value = a.dataset.roleLink; });
   }
 
+  // ---------------------------------------------------------------- campaign gallery arrows
+  const track = $("[data-gallery]");
+  if (track) {
+    const btns = $$("[data-gal]");
+    const step = () => (track.querySelector("img")?.getBoundingClientRect().width || 300) + 20;
+    const sync = () => {
+      btns[0].disabled = track.scrollLeft < 8;
+      btns[1].disabled = track.scrollLeft + track.clientWidth > track.scrollWidth - 8;
+    };
+    for (const b of btns) b.addEventListener("click", () => track.scrollBy({ left: Number(b.dataset.gal) * step(), behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }));
+    track.addEventListener("scroll", sync, { passive: true });
+    addEventListener("resize", sync);
+    sync();
+  }
+
   // ---------------------------------------------------------------- Tech Week seats
   const dayLabel = (d) => new Date(d + "T12:00:00+01:00").toLocaleDateString("en-NG", { weekday: "short", day: "numeric", month: "short", timeZone: "Africa/Lagos" });
   const timeLabel = (t) => { const [h, m] = t.split(":").map(Number); return `${((h + 11) % 12) + 1}:${String(m).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
@@ -238,7 +251,7 @@
     if (!rows.length) {
       const li = document.createElement("li");
       li.className = "demand-empty";
-      li.textContent = "No seats requested yet. Be the first from your area and share the link with your colleagues.";
+      li.textContent = "No seats reserved yet. Be the first from your area, then share your link with colleagues.";
       demandList.append(li);
       return;
     }
@@ -257,7 +270,7 @@
       $(".demand-bar i", li).style.transform = `scaleX(${Math.min(1, r.riders / per)})`;
       demandList.append(li);
     }
-    $("[data-demand-sub]").textContent = `${d.total} seat${d.total === 1 ? "" : "s"} requested so far. A bus runs when ${per} people from one area pick the same day and time.`;
+    $("[data-demand-sub]").textContent = `${d.total} free seat${d.total === 1 ? "" : "s"} reserved. A bus leaves when ${per} people from one area pick the same day and time.`;
   }
 
   const loadDemand = () => api("GET", null, "?event=" + EVENT).then(renderDemand).catch(() => {
@@ -290,8 +303,8 @@
       mineKey = `${r.day}|${r.area}|${r.slot}`;
       renderTicket(r.summary);
       const left = Math.max(0, r.seats_per_bus - r.riders);
-      say(f, `Seat requested: ${area} → Velodrome, ${dayLabel(day)}, ${timeLabel(slot)}. ` +
-        (left ? `${r.riders} of ${r.seats_per_bus} riders so far: ${left} more and the bus runs. Share your link to fill it.` : "This bus has enough riders. We'll confirm it with you soon."), "ok");
+      say(f, `Free seat reserved: ${area} → Velodrome, ${dayLabel(day)}, ${timeLabel(slot)}. ` +
+        (left ? `${r.riders} of ${r.seats_per_bus} riders so far. Share your invite link to fill the bus.` : "This bus is full enough to run. We'll confirm it by email."), "ok");
       loadDemand();
     } catch (err) {
       say(f, err.message, "err");
