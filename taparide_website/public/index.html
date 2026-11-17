@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="en-NG">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Tap A Ride · Fixed fares, verified rides in Abuja</title>
+  <meta name="description" content="Book city buses, event buses, Tag Along rides and electric cars in Abuja with fixed fares and verified drivers. Join the waitlist for a free first ride up to ₦1,000.">
+  <meta name="theme-color" content="#06331F">
+  <link rel="canonical" href="https://taparide.com/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Tap A Ride · Fixed fares, verified rides in Abuja">
+  <meta property="og:description" content="Join the waitlist and get your first ride free, up to ₦1,000. Going to Abuja Tech Week? Reserve a free seat on a shared bus.">
+  <meta property="og:image" content="https://taparide.com/img/og.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/img/brand/favicon.png" type="image/png">
+  <link rel="preload" href="/fonts/Barlow-ExtraBoldItalic.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/Barlow-Medium.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/css/site.css">
+  <script src="/js/site.js" defer></script>
+</head>
+<body>
+<svg width="0" height="0" class="sprite" aria-hidden="true">
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5.5c0 4.6-3 8.3-7 9.5-4-1.2-7-4.9-7-9.5V6l7-3z"/><path d="M9 12l2 2 4-4"/></symbol>
+  <symbol id="i-bus" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="15" rx="3"/><path d="M4 11h16M8 18v3M16 18v3M8 14.5h.01M16 14.5h.01"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M16 4.8a3.5 3.5 0 010 6.4M18 14.8c1.8.7 3 2.5 3.5 5.2"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2L4.5 13.5H12L11 22l8.5-11.5H12L13 2z"/></symbol>
+  <symbol id="i-map" viewBox="0 0 24 24"><path d="M9 4L3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4z"/><path d="M9 4v14M15 6v14"/></symbol>
+  <symbol id="i-tap" viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 9.5h19M6 15h4"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0114 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="M8.2 10.8l7.6-4.1M8.2 13.2l7.6 4.1"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="12" height="12" rx="2.5"/><path d="M15.5 8.5V6A2.5 2.5 0 0013 3.5H6A2.5 2.5 0 003.5 6v7A2.5 2.5 0 006 15.5h2.5"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 19.5l1.3-3.8A8 8 0 1112 20a8 8 0 01-3.9-1L4 19.5z"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M11 18.5h2"/></symbol>
+  <symbol id="i-car" viewBox="0 0 24 24"><path d="M5 16.5V12l2-5h10l2 5v4.5"/><path d="M3.5 12h17v4.5h-17zM7 19.5v-3M17 19.5v-3M7 14h.01M17 14h.01"/></symbol>
+  <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M3.5 7.5A1.5 1.5 0 015 6h14a1.5 1.5 0 011.5 1.5V10a2 2 0 000 4v2.5A1.5 1.5 0 0119 18H5a1.5 1.5 0 01-1.5-1.5V14a2 2 0 000-4V7.5z"/><path d="M14 6v12" stroke-dasharray="2 2"/></symbol>
+</svg>
+
+<a class="skip" href="#main">Skip to content</a>
+
+<div class="notice">
+  <a href="#tech-week">
+    <span>Going to <strong>Abuja Tech Week</strong>, 24–26 Nov? Reserve a free seat on a shared bus from your area.</span>
+    <svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg>
+  </a>
+</div>
+
+<header class="top" data-top>
+  <div class="top-in">
+    <a class="brand" href="/" aria-label="Tap A Ride home">
+      <img class="brand-mark on-dark" src="/img/brand/taparide_mark_white.png" width="92" height="32" alt="">
+      <img class="brand-mark on-light" src="/img/brand/taparide_mark.png" width="92" height="32" alt="">
+      <img class="brand-word on-dark" src="/img/brand/taparide_wordmark_white.png" width="120" height="18" alt="Tap A Ride">
+      <img class="brand-word on-light" src="/img/brand/taparide_wordmark.png" width="120" height="18" alt="">
+    </a>
+    <nav class="nav" aria-label="Main" data-nav>
+      <a href="#buses">City buses</a>
+      <a href="#tech-week">Event buses</a>
+      <a href="#tag-along">Tag Along</a>
+      <a href="#electric">Electric</a>
+      <a href="#safety">Safety</a>
+      <a href="#partners">Partners</a>
+      <a class="nav-app" href="/app" data-app="/#/app">Open the app</a>
+    </nav>
+    <div class="top-cta">
+      <a class="btn btn-ghost hide-sm" href="/app" data-app="/#/app">Open the app</a>
+      <a class="btn btn-go" href="#join">Get ₦1,000 free</a>
+      <button class="menu-btn" type="button" aria-expanded="false" aria-controls="menu" data-menu-btn>
+        <svg class="ic" aria-hidden="true"><use href="#i-menu"/></svg><span class="sr">Menu</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="menu" id="menu" hidden data-menu>
+  <nav aria-label="Menu">
+    <a href="#buses">City buses</a>
+    <a href="#tech-week">Event buses · Tech Week</a>
+    <a href="#tag-along">Tag Along</a>
+    <a href="#electric">Electric cars</a>
+    <a href="#live-map">Live map</a>
+    <a href="#tap-pay">Tap &amp; Pay</a>
+    <a href="#safety">Safety</a>
+    <a href="#partners">Drive or partner with us</a>
+    <a href="#faq">Questions</a>
+  </nav>
+  <a class="btn btn-go btn-lg" href="#join">Get your free ride</a>
+  <a class="btn btn-ghost btn-lg" href="/app" data-app="/#/app">Open the app</a>
+</div>
+
+<main id="main">
+
+<!-- ======================================================== HERO -->
+<section class="hero" aria-labelledby="hero-title">
+  <img class="hero-bg" src="/img/photos/brt-berger.jpg" alt="" width="1200" height="900" fetchpriority="high">
+  <div class="hero-in">
+    <div class="hero-copy">
+      <h1 id="hero-title">Fixed fares.<br>Verified rides.<br><span>All of Abuja.</span></h1>
+      <p class="hero-lede">Book a seat on a city bus, an event bus or an electric car. See the fare, the plate number and the driver before you go, then pay with a tap.</p>
+      <form class="quick" data-join="hero" novalidate>
+        <p class="quick-offer"><svg class="ic" aria-hidden="true"><use href="#i-ticket"/></svg><span>Join the waitlist and your <strong>first ride is free, up to ₦1,000.</strong></span></p>
+        <div class="quick-row">
+          <label class="sr" for="hero-email">Email address</label>
+          <input id="hero-email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="Your email address" required>
+          <input class="hp" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <button class="btn btn-go btn-lg" type="submit"><span>Join free</span><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+        </div>
+        <p class="form-msg" role="status" aria-live="polite" data-msg></p>
+        <p class="quick-note">Free to join. We only email you about your ride and our launch. <a href="/app" data-app="/#/app">Already riding? Open the app</a></p>
+      </form>
+    </div>
+    <figure class="hero-phone">
+      <div class="phone"><img src="/img/app/home.jpg" width="393" height="852" alt="The Tap A Ride app home screen: where-to search near Wuse 2, and buttons for buses, the live map, electric cars, Tag Along, events and Tap & Pay."></div>
+      <figcaption>The Tap A Ride app (sample data)</figcaption>
+    </figure>
+  </div>
+  <p class="photo-credit">Photo: BRT park at Berger, Abuja · Dike Chukwuma, CC BY-SA 4.0</p>
+</section>
+
+<!-- ======================================================== STORY RAIL -->
+<nav class="rail" aria-label="Ride stories" data-rail>
+  <div class="rail-in">
+    <a href="#buses" data-rail-link="buses"><svg class="ic" aria-hidden="true"><use href="#i-bus"/></svg>City buses</a>
+    <a href="#tech-week" data-rail-link="tech-week"><svg class="ic" aria-hidden="true"><use href="#i-calendar"/></svg>Event buses <em>Tech Week</em></a>
+    <a href="#tag-along" data-rail-link="tag-along"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg>Tag Along</a>
+    <a href="#electric" data-rail-link="electric"><svg class="ic" aria-hidden="true"><use href="#i-bolt"/></svg>Electric</a>
+    <a href="#live-map" data-rail-link="live-map"><svg class="ic" aria-hidden="true"><use href="#i-map"/></svg>Live map</a>
+    <a href="#tap-pay" data-rail-link="tap-pay"><svg class="ic" aria-hidden="true"><use href="#i-tap"/></svg>Tap &amp; Pay</a>
+    <a href="#safety" data-rail-link="safety"><svg class="ic" aria-hidden="true"><use href="#i-shield"/></svg>Safety</a>
+  </div>
+</nav>
+
+<!-- ======================================================== CITY BUSES -->
+<section class="story story-buses" id="buses" data-story aria-labelledby="buses-title">
+  <div class="wrap story-grid">
+    <div class="story-copy">
+      <h2 id="buses-title">Know the fare before you board.</h2>
+      <p class="lede">Every route on Tap A Ride has a fixed fare and published departure times from verified operators. No bargaining at the park, and no new price when it starts to rain.</p>
+      <ul class="ticks">
+        <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Search a stop or area and book a seat in seconds.</li>
+        <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Your ticket shows the vehicle, plate number and departure time.</li>
+        <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Buses, shuttles and the Abuja light rail in one place.</li>
+      </ul>
+      <a class="link-go" href="/app" data-app="/#/app/routes">See routes in the app<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+    </div>
+    <figure class="story-media">
+      <div class="photo"><img src="/img/photos/abuja-light-rail.jpg" width="1280" height="720" alt="An Abuja light rail train at a station." loading="lazy"></div>
+      <div class="phone phone-float"><img src="/img/app/routes.jpg" width="393" height="852" alt="The Routes screen listing Wuse to Maitama, Central Area to Gwarinpa and Kubwa to Central Area, each with a fixed fare and departure times." loading="lazy"></div>
+      <figcaption>Photo: VLT de Abuja · Paz e concórdia, CC BY-SA 4.0. App screen shows sample routes.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ======================================================== TECH WEEK -->
+<section class="story story-event" id="tech-week" data-story aria-labelledby="tw-title">
+  <div class="wrap">
+    <div class="event-head">
+      <div>
+        <h2 id="tw-title">Going to Abuja Tech Week? <span>Ride there together.</span></h2>
+        <p class="lede">Pick your area, the day and a departure time. When enough people from your area pick the same bus, we confirm it with a verified operator and send you the fare before you pay anything.</p>
+      </div>
+      <dl class="event-facts">
+        <div><dt><svg class="ic" aria-hidden="true"><use href="#i-calendar"/></svg>When</dt><dd>Tue 24 – Thu 26 November 2026</dd></div>
+        <div><dt><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg>Where</dt><dd>Velodrome, National Stadium, Abuja</dd></div>
+        <div><dt><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg>Starts in</dt><dd data-countdown>a few days</dd></div>
+      </dl>
+    </div>
+
+    <div class="event-grid">
+      <form class="seat" data-seat novalidate>
+        <h3>Reserve a free seat</h3>
+        <fieldset>
+          <legend>Day</legend>
+          <div class="chips" data-days>
+            <label><input type="radio" name="day" value="2026-11-24" checked><span>Tue 24</span></label>
+            <label><input type="radio" name="day" value="2026-11-25"><span>Wed 25</span></label>
+            <label><input type="radio" name="day" value="2026-11-26"><span>Thu 26</span></label>
+          </div>
+        </fieldset>
+        <div class="field">
+          <label for="seat-area">Leaving from</label>
+          <select id="seat-area" name="area" required data-areas>
+            <option value="">Choose your area</option>
+            <option>Kubwa</option><option>Gwarinpa</option><option>Lugbe</option><option>Nyanya</option><option>Karu</option>
+            <option>Lokogoma</option><option>Life Camp</option><option>Jabi</option><option>Wuse</option><option>Maitama</option>
+            <option>Garki</option><option>Gwagwalada</option><option>Bwari</option><option>Kuje</option>
+          </select>
+        </div>
+        <fieldset>
+          <legend>Departure time</legend>
+          <div class="chips" data-slots>
+            <label><input type="radio" name="slot" value="07:00"><span>7:00 AM</span></label>
+            <label><input type="radio" name="slot" value="08:00" checked><span>8:00 AM</span></label>
+            <label><input type="radio" name="slot" value="09:00"><span>9:00 AM</span></label>
+          </div>
+        </fieldset>
+        <div class="field" data-seat-email>
+          <label for="seat-email">Email, so we can confirm your bus</label>
+          <input id="seat-email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com">
+        </div>
+        <div class="field" data-seat-phone>
+          <label for="seat-phone">WhatsApp number <span class="opt">(optional, for bus updates)</span></label>
+          <input id="seat-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="0803 123 4567">
+        </div>
+        <input class="hp" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <button class="btn btn-go btn-lg btn-block" type="submit"><span>Reserve my seat</span><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+        <p class="form-msg" role="status" aria-live="polite" data-msg></p>
+        <p class="fine">Reserving is free. Your ₦1,000 free ride can pay for this seat.</p>
+      </form>
+
+      <div class="demand" aria-live="polite">
+        <h3>Buses filling up</h3>
+        <p class="demand-sub" data-demand-sub>A bus runs when 14 people from one area pick the same day and time.</p>
+        <ol class="demand-list" data-demand>
+          <li class="demand-empty">Loading seat requests…</li>
+        </ol>
+        <figure class="event-phone">
+          <div class="phone phone-sm"><img src="/img/app/event.jpg" width="393" height="852" alt="An event screen in the app: a bus from Kubwa to the National Stadium at ₦1,200, with riders choosing 5, 6 or 7 PM departures." loading="lazy"></div>
+          <figcaption>How event buses look in the app (sample event).</figcaption>
+        </figure>
+      </div>
+    </div>
+    <p class="event-disclaimer">Tap A Ride runs these shared buses for attendees. We are not the organiser of Abuja Tech Week; check the programme with the organisers. <a href="#partners">Organising an event? Bring your guests by bus.</a></p>
+  </div>
+</section>
+
+<!-- ======================================================== TAG ALONG -->
+<section class="story story-tag" id="tag-along" data-story aria-labelledby="tag-title">
+  <div class="wrap story-grid flip">
+    <div class="story-copy">
+      <h2 id="tag-title">Share the ride home with people you work with.</h2>
+      <p class="lede">Tag Along matches verified professionals going the same way after work. The host sets the seat price, approves who joins, and everyone shares the trip live with family.</p>
+      <ul class="ticks">
+        <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Only verified users can offer or join a ride.</li>
+        <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>See the car, the colour and the pickup point before you go.</li>
+        <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Split the fuel cost instead of paying for a whole drop.</li>
+      </ul>
+      <a class="link-go" href="/app" data-app="/#/tag-along">Find a ride in the app<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+    </div>
+    <figure class="story-media">
+      <div class="photo"><img src="/img/photos/abuja-taxis.jpg" width="1200" height="900" alt="Green and white cars on an Abuja road." loading="lazy"></div>
+      <div class="phone phone-float"><img src="/img/app/tag-along.jpg" width="393" height="852" alt="The Tag Along screen: share rides with colleagues, verified users only, and a ride from Wuse 2 to Gwarinpa at ₦1,200 a seat." loading="lazy"></div>
+      <figcaption>Photo: Abuja painted taxis · Dike Chukwuma, CC BY-SA 4.0. App screen shows a sample ride.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ======================================================== ELECTRIC -->
+<section class="story story-ev" id="electric" data-story aria-labelledby="ev-title">
+  <img class="ev-bg" src="/img/photos/ev-charging.jpg" width="1600" height="1067" alt="" loading="lazy">
+  <div class="wrap ev-in">
+    <div class="story-copy">
+      <h2 id="ev-title">Quiet, clean and booked in seconds.</h2>
+      <p class="lede">Book a verified electric car door to door. You see its battery level and the fare before you confirm, and nothing changes on the way.</p>
+      <a class="link-go" href="/app" data-app="/#/ev">Book an electric ride<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+      <p class="photo-credit">Photo: Hyundai Ioniq 5 charging · 4300streetcar, CC BY 4.0</p>
+    </div>
+    <div class="phone"><img src="/img/app/electric.jpg" width="393" height="852" alt="The Electric vehicles screen: a verified Hyundai Kona Electric with 82% battery, from ₦1,200, with a Book button." loading="lazy"></div>
+  </div>
+</section>
+
+<!-- ======================================================== LIVE MAP -->
+<section class="story story-map" id="live-map" data-story aria-labelledby="map-title">
+  <div class="wrap story-grid flip">
+    <div class="story-copy">
+      <h2 id="map-title">See your bus before it reaches you.</h2>
+      <p class="lede">Buses, electric cars and your own ride on one map, each with its distance and minutes away. Where a driver shares GPS you see them move; where not, we estimate from the timetable and say so on the screen.</p>
+      <a class="link-go" href="/app" data-app="/#/live">Open the live map<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+    </div>
+    <figure class="map-stage">
+      <div class="phone"><img src="/img/app/live-map.jpg" width="393" height="852" alt="The live map near Wuse 2: bus and car markers around the rider, with a list showing R01 Wuse to Maitama 3 minutes away." loading="lazy"></div>
+      <figcaption>Map data © OpenStreetMap contributors. Vehicles shown are sample data.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ======================================================== TAP & PAY -->
+<section class="story story-pay" id="tap-pay" data-story aria-labelledby="pay-title">
+  <div class="wrap pay-grid">
+    <div class="tapcard" aria-hidden="true">
+      <img src="/img/brand/taparide_mark_white.png" width="92" height="32" alt="">
+      <span class="tapcard-chip"></span>
+      <span class="tapcard-num">5061 0042 •••• ••••</span>
+      <span class="tapcard-name">Tap A Ride card</span>
+    </div>
+    <div class="story-copy">
+      <h2 id="pay-title">One wallet, every ride.</h2>
+      <p class="lede">Top up once, then pay for buses, event seats and electric cars with a tap of your card or a QR code at the door. No change to hunt for, and every payment has a receipt.</p>
+      <ul class="ticks">
+        <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Your free first ride lands in this wallet when you sign up.</li>
+        <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Watch a short sponsored ad to earn ride credit, up to three a day.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================== SAFETY -->
+<section class="safety" id="safety" data-story aria-labelledby="safety-title">
+  <div class="wrap">
+    <h2 id="safety-title">Built against “one chance”.</h2>
+    <p class="lede">Getting into the wrong car should not be a risk you take to get to work. Safety is in the way the app works, not in a menu.</p>
+    <ul class="safety-list">
+      <li>
+        <svg class="ic" aria-hidden="true"><use href="#i-shield"/></svg>
+        <h3>Checked before they drive</h3>
+        <p>Operators, drivers and vehicles must be verified with their documents before they can take a single booking.</p>
+      </li>
+      <li>
+        <svg class="ic" aria-hidden="true"><use href="#i-car"/></svg>
+        <h3>You know which car to enter</h3>
+        <p>Your ticket names the plate number, the vehicle and the driver, so you can check before you get in.</p>
+      </li>
+      <li>
+        <svg class="ic" aria-hidden="true"><use href="#i-share"/></svg>
+        <h3>Someone always knows</h3>
+        <p>Share your trip with a person you trust. They follow it live from a link, no app needed.</p>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- ======================================================== PARTNERS -->
+<section class="partners" id="partners" aria-labelledby="partners-title">
+  <div class="wrap partners-grid">
+    <div>
+      <h2 id="partners-title">Drive, run buses or bring your event.</h2>
+      <p class="lede">Tap A Ride is the shared system for transport in Abuja. Operators, drivers and organisers get bookings, cashless payment and a clear view of every trip.</p>
+    </div>
+    <ul class="partner-list">
+      <li><a href="/partners/apply" data-app="/#/partner/apply?type=busOperator"><svg class="ic" aria-hidden="true"><use href="#i-bus"/></svg><span><strong>Bus and shuttle operators</strong>Put your routes, fares and timetable online and fill seats before you leave the park.</span><svg class="ic go" aria-hidden="true"><use href="#i-arrow"/></svg></a></li>
+      <li><a href="/partners/apply" data-app="/#/partner/apply?type=evOperator"><svg class="ic" aria-hidden="true"><use href="#i-bolt"/></svg><span><strong>Electric car owners and fleets</strong>List your verified EVs, set fares and see what each car earns.</span><svg class="ic go" aria-hidden="true"><use href="#i-arrow"/></svg></a></li>
+      <li><a href="/partners/apply" data-app="/#/partner/apply?type=privateDriver"><svg class="ic" aria-hidden="true"><use href="#i-car"/></svg><span><strong>Drivers</strong>Drive your own car or minibus on fixed routes, or host Tag Along rides home.</span><svg class="ic go" aria-hidden="true"><use href="#i-arrow"/></svg></a></li>
+      <li><a href="#join" data-role-link="event_organiser"><svg class="ic" aria-hidden="true"><use href="#i-calendar"/></svg><span><strong>Event organisers</strong>Sell tickets and get your guests there on buses booked by area and time. Tell us about your event.</span><svg class="ic go" aria-hidden="true"><use href="#i-arrow"/></svg></a></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ======================================================== JOIN -->
+<section class="join" id="join" aria-labelledby="join-title">
+  <div class="wrap join-grid">
+    <div class="join-copy">
+      <h2 id="join-title">Your free ride is waiting.</h2>
+      <p class="lede">Join the waitlist and we save a free ride of up to ₦1,000 for you, for a city bus or an event-bus seat such as Abuja Tech Week. It lands in your wallet when you open your Tap A Ride account with the same email.</p>
+      <p class="join-invite"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg>Every friend who joins with your invite link moves you up the list.</p>
+    </div>
+
+    <div class="join-card" data-join-card>
+      <form class="join-form" data-join="full" novalidate>
+        <div class="field">
+          <label for="j-name">Your name</label>
+          <input id="j-name" name="name" autocomplete="name" placeholder="Aisha Bello">
+        </div>
+        <div class="field">
+          <label for="j-email">Email</label>
+          <input id="j-email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" required>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="j-phone">Phone <span class="opt">(optional)</span></label>
+            <input id="j-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="0803 123 4567">
+          </div>
+          <div class="field">
+            <label for="j-area">Where you live</label>
+            <select id="j-area" name="area" data-areas>
+              <option value="">Choose your area</option>
+              <option>Kubwa</option><option>Gwarinpa</option><option>Lugbe</option><option>Nyanya</option><option>Karu</option>
+              <option>Lokogoma</option><option>Life Camp</option><option>Jabi</option><option>Wuse</option><option>Maitama</option>
+              <option>Garki</option><option>Gwagwalada</option><option>Bwari</option><option>Kuje</option><option value="Other">Somewhere else</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="j-role">I want to</label>
+          <select id="j-role" name="role">
+            <option value="rider">Ride with Tap A Ride</option>
+            <option value="driver">Drive with Tap A Ride</option>
+            <option value="operator">Run buses or shuttles</option>
+            <option value="ev_owner">List electric cars</option>
+            <option value="event_organiser">Bring guests to my event</option>
+          </select>
+        </div>
+        <input class="hp" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <button class="btn btn-go btn-lg btn-block" type="submit"><span>Claim my free ride</span><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+        <p class="form-msg" role="status" aria-live="polite" data-msg></p>
+        <p class="fine">By joining you agree we can contact you about Tap A Ride. See our <a href="/privacy">privacy notice</a>.</p>
+      </form>
+
+      <div class="ticket" hidden data-ticket tabindex="-1">
+        <div class="ticket-main">
+          <div class="ticket-top">
+            <img src="/img/brand/taparide_wordmark.png" width="120" height="18" alt="Tap A Ride">
+            <span>Free ride</span>
+          </div>
+          <p class="ticket-value">₦1,000</p>
+          <p class="ticket-for">For <strong data-t-name>you</strong></p>
+          <dl class="ticket-meta">
+            <div><dt>Place in line</dt><dd data-t-pos>–</dd></div>
+            <div><dt>Invited</dt><dd data-t-refs>0</dd></div>
+            <div><dt>Code</dt><dd data-t-code>––––––</dd></div>
+          </dl>
+          <p class="ticket-seat" data-t-seat hidden></p>
+          <p class="ticket-note" data-t-note>Open your account with this email to use it.</p>
+        </div>
+        <div class="ticket-stub">
+          <p class="stub-title">Invite friends, move up</p>
+          <div class="invite">
+            <label class="sr" for="invite-link">Your invite link</label>
+            <input id="invite-link" readonly data-t-link>
+            <button class="btn btn-ink" type="button" data-copy><svg class="ic" aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button>
+          </div>
+          <div class="share">
+            <a class="btn btn-wa" href="#" target="_blank" rel="noopener" data-wa><svg class="ic" aria-hidden="true"><use href="#i-chat"/></svg>WhatsApp</a>
+            <a class="btn btn-ink" href="#" target="_blank" rel="noopener" data-x><span aria-hidden="true" class="x-mark">X</span>Post</a>
+            <button class="btn btn-ink" type="button" data-share hidden><svg class="ic" aria-hidden="true"><use href="#i-share"/></svg>Share</button>
+          </div>
+          <div class="stub-actions">
+            <a class="btn btn-go" href="/register" data-app="/#/register">Open my account</a>
+            <button class="link-plain" type="button" data-forget>Not you? Use another email</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================== FAQ -->
+<section class="faq" id="faq" aria-labelledby="faq-title">
+  <div class="wrap faq-grid">
+    <h2 id="faq-title">Questions</h2>
+    <div class="faq-list">
+      <details>
+        <summary>How do I get my free ride?</summary>
+        <p>Join the waitlist on this page, then create your Tap A Ride account with the same email and confirm it. ₦1,000 of ride credit lands in your wallet once, and you can use it on any city bus or event-bus seat. It is for the first 5,000 people to join.</p>
+      </details>
+      <details>
+        <summary>Is the Abuja Tech Week bus free?</summary>
+        <p>Reserving a seat is free and you pay nothing until your bus is confirmed. We then send you the fare, and your free ride covers up to ₦1,000 of it. If your bus doesn't fill, nobody is charged.</p>
+      </details>
+      <details>
+        <summary>When does a bus get confirmed?</summary>
+        <p>When 14 people from the same area pick the same day and departure time. The more people you invite from your area, the sooner it happens. We confirm by email, and on WhatsApp if you gave us your number.</p>
+      </details>
+      <details>
+        <summary>Who checks the drivers and vehicles?</summary>
+        <p>Every operator, driver and vehicle is checked against their documents before they can take bookings on Tap A Ride. Your ticket shows the plate number so you can match it before you get in.</p>
+      </details>
+      <details>
+        <summary>Which areas do you cover?</summary>
+        <p>We are starting with routes across the FCT, including Kubwa, Gwarinpa, Nyanya, Lugbe, Wuse, Maitama, Jabi and the Central Area. Tell us where you live when you join: it decides where buses run next.</p>
+      </details>
+      <details>
+        <summary>What do you do with my details?</summary>
+        <p>We use them to save your place, confirm your seat and tell you when your ride is ready. We don't sell them. Read the <a href="/privacy">privacy notice</a>.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-grid">
+    <div class="foot-brand">
+      <img src="/img/brand/taparide_mark_white.png" width="92" height="32" alt="">
+      <img src="/img/brand/taparide_wordmark_white.png" width="150" height="22" alt="Tap A Ride">
+      <p>Abuja Smart Mobility Platform<br><span>Ride • Connect • Go</span></p>
+    </div>
+    <nav class="foot-links" aria-label="Footer">
+      <div>
+        <h3>Ride</h3>
+        <a href="#buses">City buses</a><a href="#tech-week">Event buses</a><a href="#tag-along">Tag Along</a><a href="#electric">Electric cars</a>
+      </div>
+      <div>
+        <h3>Partners</h3>
+        <a href="/partners/apply" data-app="/#/partner/apply?type=busOperator">Operators</a><a href="/partners/apply" data-app="/#/partner/apply?type=privateDriver">Drivers</a><a href="/partners/apply" data-app="/#/partner/apply?type=evOperator">Electric fleets</a><a href="#partners">Event organisers</a>
+      </div>
+      <div>
+        <h3>Tap A Ride</h3>
+        <a href="/app" data-app="/#/app">Open the app</a><a href="#safety">Safety</a><a href="#faq">Questions</a><a href="/privacy">Privacy</a>
+      </div>
+    </nav>
+  </div>
+  <div class="wrap foot-base">
+    <p>© 2026 Tap A Ride. App screens on this page show sample data.</p>
+    <p>Photos from Wikimedia Commons: Dike Chukwuma (CC BY-SA 4.0), Paz e concórdia (CC BY-SA 4.0), 4300streetcar (CC BY 4.0). <a href="/privacy#credits">Full credits</a></p>
+  </div>
+</footer>
+
+<p class="preview-flag" hidden data-preview-flag>Preview mode: sign-ups are saved on this computer only.</p>
+</body>
+</html>

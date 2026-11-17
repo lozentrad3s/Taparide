@@ -1,0 +1,38 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": "",
+  "outputDirectory": "public",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "functions": {
+    "api/waitlist.js": { "maxDuration": 10 }
+  },
+  "redirects": [
+    { "source": "/app", "destination": "https://taparide.vercel.app/#/app", "permanent": false },
+    { "source": "/login", "destination": "https://taparide.vercel.app/#/login", "permanent": false },
+    { "source": "/signup", "destination": "https://taparide.vercel.app/#/register", "permanent": false },
+    { "source": "/register", "destination": "https://taparide.vercel.app/#/register", "permanent": false },
+    { "source": "/partners/apply", "destination": "https://taparide.vercel.app/#/partner/apply", "permanent": false },
+    { "source": "/r/:code", "destination": "/?ref=:code#join", "permanent": false },
+    { "source": "/tech-week", "destination": "/#tech-week", "permanent": false },
+    { "source": "/events", "destination": "/#tech-week", "permanent": false }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; img-src 'self' data:; script-src 'self'; style-src 'self'; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), payment=()" },
+        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains" },
+        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" }
+      ]
+    },
+    {
+      "source": "/(img|fonts)/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=2592000" }]
+    }
+  ]
+}

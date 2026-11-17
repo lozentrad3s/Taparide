@@ -52,3 +52,6 @@ app.*.map.json
 
 # Generated review screenshots
 .impeccable/review/
+
+# Browser automation snapshots
+.playwright-cli/

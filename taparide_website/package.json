@@ -1,0 +1,12 @@
+{
+  "name": "taparide-website",
+  "private": true,
+  "type": "module",
+  "description": "Tap A Ride official website: story pages, waitlist with invite links, free first ride and event-bus seat requests.",
+  "scripts": {
+    "dev": "node scripts/dev.mjs 8090"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
