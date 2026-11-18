@@ -451,7 +451,8 @@ abstract final class DemoSeed {
           fare: event ? 1200 : route.fare,
           paymentMethod: PaymentMethod.tapCard,
           ticketCode: '${event ? 'EB' : 'TR'}-${id.substring(id.length - 4).toUpperCase()}',
-          createdAt: now.subtract(const Duration(hours: 3)),
+          // Booked the day before, so today's platform figures stay as the other seeds set them.
+          createdAt: now.subtract(const Duration(days: 1, hours: 2)),
           title: event ? 'Community Cup Final' : null,
           seat: seat,
           routeId: event ? null : route.id,

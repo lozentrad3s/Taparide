@@ -20,7 +20,7 @@ List<Vehicle> fleetVehiclesOf(AppState state, String providerId) => [for (final 
 /// Routes a vehicle can be put on: its operator's, or the company's own.
 List<TransitRoute> routesFor(AppState state, Vehicle? vehicle, String providerId) => vehicle == null
     ? const []
-    : [for (final r in state.routes) if (r.active && (r.providerId == vehicle.operatorId || r.providerId == providerId)) r]..sort((a, b) => a.code.compareTo(b.code));
+    : ([for (final r in state.routes) if (r.active && (r.providerId == vehicle.operatorId || r.providerId == providerId)) r]..sort((a, b) => a.code.compareTo(b.code)));
 
 /// Fleet owners and operators add the people who drive their vehicles, put each one on a
 /// vehicle (and route), and suspend or reactivate them. Admins see every company's drivers.
