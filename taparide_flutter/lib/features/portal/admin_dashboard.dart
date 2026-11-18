@@ -208,10 +208,9 @@ class _SystemStrip extends StatelessWidget {
       child: Wrap(spacing: 22, runSpacing: 10, crossAxisAlignment: WrapCrossAlignment.center, children: [
         Text('System', style: text.titleSmall),
         for (final (icon, label, status, tone) in items)
-          Row(mainAxisSize: MainAxisSize.min, children: [
+          Wrap(spacing: 6, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
             Icon(icon, size: 18, color: AppColors.muted),
-            const SizedBox(width: 6),
-            Text('$label ', style: text.labelLarge),
+            Text(label, style: text.labelLarge),
             StatusPill(status, tone: tone),
           ]),
       ]),
@@ -230,6 +229,7 @@ class _SecurityPanel extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final staff = [for (final u in users) if (u.role != UserRole.passenger) u]..sort((a, b) => b.role.index.compareTo(a.role.index));
     return Panel(
+      radius: AppRadius.md,
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         PanelTitle('Security & access', subtitle: '${staff.length} staff accounts · only admins see this page', trailing: PanelLink('Change roles', onPressed: () => context.go('/portal/users'))),
         for (final u in staff)
@@ -279,7 +279,8 @@ class _Metric extends StatelessWidget {
           Icon(icon, size: 18, color: AppColors.forest),
           const SizedBox(width: 10),
           Expanded(child: Text(label, style: text.bodyMedium)),
-          Text(value, style: text.titleSmall),
+          const SizedBox(width: 8),
+          Flexible(child: Text(value, style: text.titleSmall, textAlign: TextAlign.right)),
         ]),
       ),
     );

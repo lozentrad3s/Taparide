@@ -216,12 +216,12 @@ class _AnalystPanel extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(colors: [Color(0xFF0E6B45), AppColors.forestDeep], begin: Alignment.topLeft, end: Alignment.bottomRight),
-        borderRadius: BorderRadius.circular(AppRadius.xl),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       child: LayoutBuilder(builder: (context, c) {
         final wide = c.maxWidth >= 760;
         final intro = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('AI analyst', style: text.labelLarge?.copyWith(color: AppColors.leaf, letterSpacing: 0.6)),
+          Text('AI ANALYST', style: text.labelMedium?.copyWith(color: AppLime.lime, letterSpacing: 1.0, fontWeight: FontWeight.w800)),
           const SizedBox(height: 4),
           Text(
             ai?.headline ?? (thinking ? 'Reading your routes, fleet, demand and traffic…' : 'Get a plain-English reading of these numbers and what to do next.'),
@@ -230,7 +230,7 @@ class _AnalystPanel extends StatelessWidget {
           if (error != null) ...[const SizedBox(height: 8), Text(error!, style: onDark?.copyWith(color: const Color(0xFFFFD7A8)))],
           const SizedBox(height: 14),
           FilledButton.icon(
-            style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppColors.forest),
+            style: FilledButton.styleFrom(backgroundColor: AppLime.lime, foregroundColor: AppLime.onLime),
             onPressed: thinking ? null : onRun,
             icon: thinking
                 ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
@@ -258,8 +258,8 @@ class _AnalystPanel extends StatelessWidget {
                         width: 26,
                         height: 26,
                         alignment: Alignment.center,
-                        decoration: const BoxDecoration(color: AppColors.leaf, shape: BoxShape.circle),
-                        child: Text('${i + 1}', style: text.labelLarge?.copyWith(color: Colors.white)),
+                        decoration: const BoxDecoration(color: AppLime.lime, shape: BoxShape.circle),
+                        child: Text('${i + 1}', style: text.labelLarge?.copyWith(color: AppLime.onLime)),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -314,7 +314,7 @@ class _GlassCard extends StatelessWidget {
         border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Icon(icon, color: AppColors.leaf, size: 20),
+        Icon(icon, color: AppLime.lime, size: 20),
         const SizedBox(height: 6),
         Text(title, style: text.titleSmall?.copyWith(color: Colors.white)),
         const SizedBox(height: 2),
@@ -331,7 +331,7 @@ class _ImpactTag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (bg, fg) = switch (impact) {
-      'high' => (AppColors.leaf, Colors.white),
+      'high' => (AppLime.lime, AppLime.onLime),
       'low' => (Colors.white24, Colors.white),
       _ => (Colors.white, AppColors.forest),
     };
@@ -353,6 +353,7 @@ class _IncomePanel extends StatelessWidget {
     final rows = report.routeIncome.take(6).toList();
     final top = rows.isEmpty ? 1 : math.max(1, rows.first.monthlyRevenue);
     return Panel(
+      radius: AppRadius.md,
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         const PanelTitle('Income by route', subtitle: 'Trips in the last 30 days × fare'),
         if (rows.isEmpty) Text('No routes yet. Fleet income shows on the right.', style: text.bodyMedium),
@@ -394,6 +395,7 @@ class _FleetPanel extends StatelessWidget {
       (VehicleStatus.inactive, AppColors.red),
     ];
     return Panel(
+      radius: AppRadius.md,
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         PanelTitle('Vehicle status', subtitle: '${report.vehicles.length} vehicles · ${(report.utilisation * 100).round()}% working'),
         ShareBar(parts: [for (final p in parts) (count(p.$1), p.$2)], height: 12),
@@ -460,6 +462,7 @@ class DemandPanel extends StatelessWidget {
     final peak = areas.isEmpty ? 1 : math.max(1, areas.map((a) => a.trips).reduce(math.max));
     final points = [for (final a in areas) LatLng(a.lat, a.lng)];
     return Panel(
+      radius: AppRadius.md,
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         const PanelTitle('High-demand areas', subtitle: 'Where trips start and end · bigger circle, more riders'),
         ClipRRect(
@@ -521,6 +524,7 @@ class _TrafficPanel extends StatelessWidget {
     final list = checks ?? const [];
     final late = list.where((c) => c.delayMin >= 5).toList();
     return Panel(
+      radius: AppRadius.md,
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         PanelTitle(
           'Traffic & smart routing',

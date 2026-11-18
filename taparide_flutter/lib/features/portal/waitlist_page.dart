@@ -103,6 +103,7 @@ class _WaitlistPageState extends State<WaitlistPage> {
         final list = _filtered(all);
         return PortalScaffold(
           title: 'Website sign-ups',
+          icon: Icons.how_to_reg_rounded,
           subtitle: 'Waitlist, invites and Abuja Tech Week seats from taparide.com',
           actions: [
             OutlinedButton.icon(onPressed: _reload, icon: const Icon(Icons.refresh_rounded, size: 18), label: const Text('Refresh')),
@@ -126,10 +127,15 @@ class _WaitlistPageState extends State<WaitlistPage> {
               ]),
               const SizedBox(height: PortalSpace.gap),
               Panel(
+                radius: AppRadius.md,
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                   Wrap(spacing: 12, runSpacing: 10, crossAxisAlignment: WrapCrossAlignment.center, alignment: WrapAlignment.spaceBetween, children: [
-                    Text('Tech Week boarding lists · 7:00 AM', style: text.titleLarge),
-                    Wrap(spacing: 8, children: [
+                    Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                      Text('Tech Week boarding lists', style: text.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                      Text('Pick-ups at 7:00 AM · tap a point to copy its list', style: text.bodySmall),
+                    ]),
+                    Wrap(spacing: 8, runSpacing: 8, children: [
                       for (final d in _days)
                         ChoiceChip(label: Text('${Fmt.weekday(d)} ${d.day} Nov'), selected: _sameDay(d, _day), onSelected: (_) => setState(() => _day = d)),
                     ]),
@@ -156,10 +162,13 @@ class _WaitlistPageState extends State<WaitlistPage> {
               ),
               const SizedBox(height: PortalSpace.gap),
               Panel(
+                radius: AppRadius.md,
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  PanelTitle('Everyone who signed up', subtitle: 'Newest first'),
                   Wrap(spacing: 12, runSpacing: 10, crossAxisAlignment: WrapCrossAlignment.center, children: [
-                    SizedBox(
-                      width: 320,
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 320),
                       child: TextField(
                         controller: _search,
                         onChanged: (_) => setState(() {}),
@@ -196,26 +205,44 @@ class _PickupRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppRadius.md),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(color: selected ? AppColors.mint : null, borderRadius: BorderRadius.circular(AppRadius.md)),
-        child: Row(children: [
-          const Icon(Icons.place_rounded, size: 20, color: AppColors.forest),
-          const SizedBox(width: 10),
-          SizedBox(width: 260, child: Text(name, style: text.titleSmall, maxLines: 1, overflow: TextOverflow.ellipsis)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(value: max == 0 ? 0 : count / max, minHeight: 8, color: AppColors.forest, backgroundColor: AppColors.line),
-            ),
+    final bar = ClipRRect(
+      borderRadius: BorderRadius.circular(4),
+      child: LinearProgressIndicator(value: max == 0 ? 0 : count / max, minHeight: 8, color: AppColors.forest, backgroundColor: AppColors.line),
+    );
+    final seats = Text('$count ${count == 1 ? 'seat' : 'seats'}', textAlign: TextAlign.right, style: text.titleSmall?.copyWith(fontFeatures: tabular));
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(color: selected ? AppColors.mint : null, borderRadius: BorderRadius.circular(AppRadius.sm)),
+          child: LayoutBuilder(
+            builder: (context, c) => c.maxWidth >= 560
+                ? Row(children: [
+                    const Icon(Icons.place_rounded, size: 20, color: AppColors.forest),
+                    const SizedBox(width: 10),
+                    SizedBox(width: 260, child: Text(name, style: text.titleSmall, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                    const SizedBox(width: 12),
+                    Expanded(child: bar),
+                    const SizedBox(width: 12),
+                    SizedBox(width: 72, child: seats),
+                  ])
+                : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                    Row(children: [
+                      const Icon(Icons.place_rounded, size: 18, color: AppColors.forest),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(name, style: text.titleSmall, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                      const SizedBox(width: 8),
+                      seats,
+                    ]),
+                    const SizedBox(height: 6),
+                    bar,
+                  ]),
           ),
-          const SizedBox(width: 12),
-          SizedBox(width: 72, child: Text('$count ${count == 1 ? 'seat' : 'seats'}', textAlign: TextAlign.right, style: text.titleSmall?.copyWith(fontFeatures: tabular))),
-        ]),
+        ),
       ),
     );
   }
@@ -229,16 +256,23 @@ class _EntryRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final e = entry;
+    final meta = Wrap(spacing: 8, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
+      Text('Joined ${Fmt.day(e.joinedAt)}', style: text.bodySmall),
+      Text('Code ${e.code} · ${e.referrals} invited', style: text.bodySmall),
+      if (e.creditedAt != null) const StatusPill('Free ride paid', tone: Tone.success),
+    ]);
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppColors.line))),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Avatar(initials: _initials(e.name ?? e.email)),
+        Avatar(initials: _initials(e.name ?? e.email), size: 36),
         const SizedBox(width: 12),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(e.name ?? 'No name given', style: text.titleSmall),
             Text([e.email, if (e.phone != null) e.phone!, if (e.area != null) e.area!].join(' · '), style: text.bodySmall),
+            const SizedBox(height: 4),
+            meta,
             if (e.seats.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 6),
@@ -248,12 +282,6 @@ class _EntryRow extends StatelessWidget {
               ),
           ]),
         ),
-        const SizedBox(width: 12),
-        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Text(Fmt.day(e.joinedAt), style: text.bodySmall),
-          Text('Code ${e.code} · ${e.referrals} invited', style: text.bodySmall),
-          if (e.creditedAt != null) const StatusPill('Free ride paid', tone: Tone.success),
-        ]),
       ]),
     );
   }

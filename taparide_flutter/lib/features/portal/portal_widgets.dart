@@ -259,17 +259,22 @@ class PanelTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final heading = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(title, style: text.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+      if (subtitle != null) ...[const SizedBox(height: 2), Text(subtitle!, style: text.bodySmall)],
+    ]);
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: text.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-            if (subtitle != null) ...[const SizedBox(height: 2), Text(subtitle!, style: text.bodySmall)],
-          ]),
-        ),
-        if (trailing != null) ...[const SizedBox(width: 8), trailing!],
-      ]),
+      // Links and icon buttons sit beside the title; bigger controls (tabs, pills) wrap under it when space is tight.
+      // (No LayoutBuilder: panels are measured intrinsically inside Cols.)
+      child: trailing == null
+          ? heading
+          : (trailing is PanelLink || trailing is IconButton || trailing is TextButton)
+              ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(child: heading), const SizedBox(width: 8), trailing!])
+              : SizedBox(
+                  width: double.infinity,
+                  child: Wrap(alignment: WrapAlignment.spaceBetween, crossAxisAlignment: WrapCrossAlignment.start, spacing: 12, runSpacing: 10, children: [heading, trailing!]),
+                ),
     );
   }
 }
@@ -392,10 +397,11 @@ class DataList<T> extends StatelessWidget {
       if (c.maxWidth >= 760) {
         return Panel(
           padding: EdgeInsets.zero,
+          radius: AppRadius.md,
           child: Column(children: [
             Container(
-              color: AppColors.surfaceSunk,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: const BoxDecoration(color: AppColors.surfaceSunk, border: Border(bottom: BorderSide(color: AppColors.line))),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
               child: Row(children: [
                 for (final col in columns)
                   Expanded(
@@ -403,7 +409,7 @@ class DataList<T> extends StatelessWidget {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       child: Text(col.label.toUpperCase(),
-                          style: text.labelSmall?.copyWith(letterSpacing: 0.6), textAlign: col.numeric ? TextAlign.right : TextAlign.left),
+                          style: text.labelSmall?.copyWith(fontSize: 11.5, letterSpacing: 0.7, fontWeight: FontWeight.w700), textAlign: col.numeric ? TextAlign.right : TextAlign.left),
                     ),
                   ),
                 if (trailing != null) const SizedBox(width: 160),
@@ -413,8 +419,9 @@ class DataList<T> extends StatelessWidget {
               if (i > 0) const Divider(),
               InkWell(
                 onTap: onTap == null ? null : () => onTap!(items[i]),
+                hoverColor: AppColors.surfaceSunk,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(minHeight: 36),
                     child: Row(children: [
@@ -441,6 +448,7 @@ class DataList<T> extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 10),
             child: Panel(
               onTap: onTap == null ? null : () => onTap!(item),
+              radius: AppRadius.md,
               padding: const EdgeInsets.all(14),
               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 DefaultTextStyle.merge(style: text.titleSmall, child: (titleOf ?? columns.first.cell)(item)),

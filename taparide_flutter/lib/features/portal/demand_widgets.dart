@@ -62,10 +62,14 @@ class _DemandHeatmapState extends State<DemandHeatmap> {
     return DashPanel(
       title: 'Demand by corridor and hour',
       subtitle: subtitle,
-      trailing: r.isEmpty
-          ? null
-          : PillTabs<DemandMode>(values: DemandMode.values, labelOf: (m) => m == DemandMode.estimated ? 'Estimated' : 'App bookings', selected: _mode, onChanged: (m) => setState(() => _mode = m)),
       children: [
+        if (!r.isEmpty) ...[
+          Align(
+            alignment: Alignment.centerLeft,
+            child: PillTabs<DemandMode>(values: DemandMode.values, labelOf: (m) => m == DemandMode.estimated ? 'Estimated riders' : 'App bookings', selected: _mode, onChanged: (m) => setState(() => _mode = m)),
+          ),
+          const SizedBox(height: 14),
+        ],
         if (r.isEmpty)
           const EmptyState(icon: Icons.grid_on_rounded, title: 'No corridor demand yet', message: 'Demand appears here once routes are published and riders start booking.')
         else ...[
@@ -136,7 +140,7 @@ class _DemandHeatmapState extends State<DemandHeatmap> {
               Text('Fewer', style: text.labelSmall),
               const SizedBox(width: 6),
               Container(
-                width: 120,
+                width: 88,
                 height: 8,
                 decoration: BoxDecoration(borderRadius: BorderRadius.circular(4), gradient: LinearGradient(colors: [for (var i = 0; i <= 4; i++) demandColor(0.02 + i * 0.245)])),
               ),
@@ -144,14 +148,16 @@ class _DemandHeatmapState extends State<DemandHeatmap> {
               Text('More riders', style: text.labelSmall),
             ]),
             if (hottest != null && peak > 0)
-              Row(mainAxisSize: MainAxisSize.min, children: [
-                Container(width: 12, height: 12, decoration: BoxDecoration(border: Border.all(color: AppLime.lime, width: 2.5), borderRadius: BorderRadius.circular(3))),
-                const SizedBox(width: 6),
-                Text(
-                  'Busiest: ${hottest.$1.route.code} at ${hourLabel(hottest.$2)} · ${_mode == DemandMode.estimated ? '~${_riders(peak)} riders' : '${peak.round()} booked'}',
-                  style: text.labelMedium,
-                ),
-              ]),
+              Text.rich(
+                TextSpan(children: [
+                  WidgetSpan(
+                    alignment: PlaceholderAlignment.middle,
+                    child: Container(width: 12, height: 12, margin: const EdgeInsets.only(right: 6), decoration: BoxDecoration(border: Border.all(color: AppLime.lime, width: 2.5), borderRadius: BorderRadius.circular(3))),
+                  ),
+                  TextSpan(text: 'Busiest: ${hottest.$1.route.code} at ${hourLabel(hottest.$2)} · ${_mode == DemandMode.estimated ? '~${_riders(peak)} riders' : '${peak.round()} booked'}'),
+                ]),
+                style: text.labelMedium,
+              ),
             if (r.corridors.length > widget.limit)
               TextButton(onPressed: () => setState(() => _all = !_all), child: Text(_all ? 'Show top ${widget.limit}' : 'Show all ${r.corridors.length} corridors')),
           ]),
@@ -288,9 +294,11 @@ class _Fact extends StatelessWidget {
       decoration: BoxDecoration(color: AppColors.surfaceSunk, borderRadius: BorderRadius.circular(AppRadius.sm), border: Border.all(color: AppColors.line)),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(icon, size: 15, color: AppColors.forest),
-        const SizedBox(width: 6),
-        Text('$label ', style: text.bodySmall),
-        Text(value, style: text.labelMedium?.copyWith(fontFeatures: tabular)),
+        const SizedBox(width: 8),
+        Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+          Text(label, style: text.bodySmall?.copyWith(fontSize: 11.5, height: 1.2)),
+          Text(value, style: text.labelLarge?.copyWith(fontFeatures: tabular, height: 1.2)),
+        ]),
       ]),
     );
   }

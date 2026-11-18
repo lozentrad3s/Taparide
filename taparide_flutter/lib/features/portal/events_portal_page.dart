@@ -102,6 +102,7 @@ class _EventAnalytics extends StatelessWidget {
     final peak = byTime.values.fold<int>(1, (a, b) => a > b ? a : b);
 
     return Panel(
+      radius: AppRadius.md,
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           EventDateBlock(event.startsAt),
@@ -369,24 +370,30 @@ class _OperatorEventPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final add = FilledButton.icon(
+      onPressed: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, builder: (_) => _OfferBusSheet(event: event)),
+      icon: const Icon(Icons.add_rounded, size: 18),
+      label: const Text('Add a bus'),
+    );
     return Panel(
+      radius: AppRadius.md,
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          EventDateBlock(event.startsAt),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(event.title, style: text.titleLarge),
-              Text('${Fmt.dayTime(event.startsAt)} · ${event.venue}, ${event.area}', style: text.bodySmall),
-              Text('By ${event.organiserName}${others > 0 ? ' · $others bus${others == 1 ? '' : 'es'} from other operators' : ''}', style: text.bodySmall),
-            ]),
-          ),
-          FilledButton.icon(
-            onPressed: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, builder: (_) => _OfferBusSheet(event: event)),
-            icon: const Icon(Icons.add_rounded, size: 18),
-            label: const Text('Add a bus'),
-          ),
-        ]),
+        LayoutBuilder(builder: (context, c) {
+          final head = Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            EventDateBlock(event.startsAt),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(event.title, style: text.titleLarge),
+                Text('${Fmt.dayTime(event.startsAt)} · ${event.venue}, ${event.area}', style: text.bodySmall),
+                Text('By ${event.organiserName}${others > 0 ? ' · $others bus${others == 1 ? '' : 'es'} from other operators' : ''}', style: text.bodySmall),
+              ]),
+            ),
+          ]);
+          return c.maxWidth >= 560
+              ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(child: head), const SizedBox(width: 12), add])
+              : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [head, const SizedBox(height: 12), add]);
+        }),
         for (final b in buses) ...[const Divider(height: 28), _OperatorBusRow(bus: b)],
       ]),
     );
@@ -416,6 +423,7 @@ class _OperatorBusRowState extends State<_OperatorBusRow> {
         const Icon(Icons.directions_bus_filled_rounded, color: AppColors.forest),
         const SizedBox(width: 10),
         Expanded(child: Text('From ${bus.origin} · ${Fmt.naira(bus.fare)} · ${bus.capacity} seats${bus.vehicleLabel.isEmpty ? '' : ' · ${bus.vehicleLabel}'}', style: text.titleSmall)),
+        const SizedBox(width: 8),
         StatusPill(confirmed ? 'Confirmed ${Fmt.time(bus.confirmedAt!)}' : '${bus.riders}/${bus.minRiders} riders', tone: confirmed ? Tone.success : (bus.riders >= bus.minRiders ? Tone.info : Tone.warning)),
       ]),
       const SizedBox(height: 10),

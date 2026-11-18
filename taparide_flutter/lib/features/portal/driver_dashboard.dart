@@ -11,6 +11,7 @@ import '../../shared/mascot/mascot.dart';
 import '../../shared/ui.dart';
 import '../assistant/assistant_sheet.dart';
 import 'partner_widgets.dart' show LiveTrackerPanel;
+import 'demand_widgets.dart';
 import 'portal_widgets.dart';
 
 /// Dashboard for an approved private driver: go online, run the current ride,
@@ -31,7 +32,8 @@ class DriverDashboard extends StatelessWidget {
     final doneToday = rides.where((b) => b.status == BookingStatus.completed && isToday(b.createdAt)).toList();
     final earnedToday = doneToday.fold<int>(0, (s, b) => s + b.fare);
     final online = car != null && (car.status == VehicleStatus.active || car.status == VehicleStatus.onTrip);
-    final hot = state.insightsFor(null).areas.take(3).toList();
+    final city = state.insightsFor(null);
+    final hot = city.areas.take(3).toList();
     final firstName = (state.user?.providerId == provider.id ? state.user!.firstName : provider.contactName.split(' ').first);
 
     return PortalScaffold(
@@ -80,7 +82,8 @@ class DriverDashboard extends StatelessWidget {
           FigureCard(label: 'Earned today', value: Fmt.naira(earnedToday), icon: Icons.payments_rounded, caption: '${doneToday.length} ride${doneToday.length == 1 ? '' : 's'} completed'),
           FigureCard(label: 'This month', value: Fmt.naira(car?.monthEarnings ?? 0), icon: Icons.calendar_month_rounded, caption: 'paid to your account'),
           FigureCard(label: 'Rides', value: '${rides.where((b) => b.status == BookingStatus.completed).length}', icon: Icons.route_rounded, caption: 'all time'),
-          FigureCard(label: 'Rating', value: '4.9', icon: Icons.star_rounded, caption: 'from riders'),
+          // Rider ratings are not collected yet, so show something real instead of a made-up score.
+          FigureCard(label: 'Your car', value: car?.status.label ?? 'Not added', icon: Icons.directions_car_rounded, caption: car == null ? 'being registered' : (car.verification == Verification.verified ? 'FCTA verified' : car.verification.label)),
         ]),
         const SizedBox(height: 16),
         LayoutBuilder(builder: (context, c) {
@@ -105,7 +108,8 @@ class DriverDashboard extends StatelessWidget {
               ]),
             ),
           const SizedBox(height: 6),
-          Text('Wait near the top area between 7–9 am and 5–7 pm for the most requests.', style: text.bodySmall),
+          Text(city.demand.isEmpty ? 'Wait near the top area at rush hour for the most requests.' : 'Riders across Abuja travel most at ${city.demand.peakWindow}. Wait near the top area then for the most requests.', style: text.bodySmall),
+          if (!city.demand.isEmpty) ...[const SizedBox(height: 14), HourChart(values: city.demand.estimateByHour, secondary: city.demand.bookedByHour, height: 120)],
         ])),
         const SizedBox(height: 16),
         Panel(radius: AppRadius.md, padding: const EdgeInsets.fromLTRB(20, 18, 20, 20), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -193,6 +197,7 @@ class _NoRide extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return Panel(
+      radius: AppRadius.md,
       child: Row(children: [
         IconBadge(online ? Icons.radar_rounded : Icons.power_settings_new_rounded, size: 48),
         const SizedBox(width: 14),
@@ -215,6 +220,7 @@ class _CarCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return Panel(
+      radius: AppRadius.md,
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Row(children: [
           const IconBadge(Icons.directions_car_rounded, size: 44),

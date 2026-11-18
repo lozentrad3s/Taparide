@@ -30,6 +30,7 @@ Future<AppState> _signedIn(WidgetTester tester, String email, Size size) async {
   tester.view.physicalSize = size;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
+  await tester.runAsync(loadAppFonts);
   final (state, _) = (await tester.runAsync(freshState))!;
   await tester.runAsync(() => state.signIn(email: email, password: DemoSeed.password, portal: Portal.partner));
   await tester.pumpWidget(TapARideApp(state: state, mode: AppMode.dashboard));
@@ -62,7 +63,12 @@ void main() {
         final problems = <String>[];
         final original = FlutterError.onError;
         var where = 'home';
-        FlutterError.onError = (details) => problems.add('$where: ${details.exceptionAsString().split('\n').first}');
+        FlutterError.onError = (details) {
+          // Name the widget (file:line) that overflowed, so failures point at the fix.
+          final full = details.toString();
+          final at = RegExp(r'lib[/\\]features[/\\][^\s:]+:\d+').firstMatch(full)?.group(0) ?? RegExp(r'lib[/\\][^\s:]+:\d+').firstMatch(full)?.group(0) ?? '';
+          problems.add('$where: ${details.exceptionAsString().split('\n').first} $at');
+        };
         try {
           final state = await _signedIn(tester, email, size);
           await _settle(tester, problems, where);
