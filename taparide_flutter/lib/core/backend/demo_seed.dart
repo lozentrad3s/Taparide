@@ -1,5 +1,6 @@
 import '../models.dart';
 import '../partner_models.dart';
+import '../route_operators.dart';
 
 /// Illustrative demo data for Abuja. Organisations, people and figures are fictional
 /// (labelled "Demo data" in the UI); places and coordinates are real.
@@ -61,16 +62,16 @@ abstract final class DemoSeed {
       ];
 
   static List<TransportProvider> providers() => [
-        TransportProvider(id: pMetro, name: 'Abuja Metro Bus Co.', kind: ProviderKind.busOperator, status: Verification.verified, area: 'Wuse · Central Area', contactName: 'Ibrahim Musa', contactEmail: 'ops@abujametro.demo', joinedAt: DateTime(2026, 7, 2), description: 'City bus operator running 12 fixed-fare routes across the FCT.'),
-        TransportProvider(id: pGreenFleet, name: 'GreenFleet Logistics', kind: ProviderKind.fleetOwner, status: Verification.verified, area: 'Jabi', contactName: 'Chiamaka Obi', contactEmail: 'fleet@greenfleet.demo', joinedAt: DateTime(2026, 7, 9), description: 'Owns 24 buses leased to Abuja Metro Bus Co.'),
-        TransportProvider(id: pNaviRide, name: 'NaviRide Electric', kind: ProviderKind.electric, status: Verification.verified, area: 'Maitama', contactName: 'Tunde Bello', contactEmail: 'ev@naviride.demo', joinedAt: DateTime(2026, 8, 3), description: 'On-demand electric cars with verified drivers.'),
-        TransportProvider(id: pRail, name: 'Capital Metro Rail Services', kind: ProviderKind.rail, status: Verification.verified, area: 'Central Area', contactName: 'Kemi Adebayo', contactEmail: 'rail@capitalmetro.demo', joinedAt: DateTime(2026, 7, 20), description: 'Operates metro rail services between Central Station and Idu.'),
-        TransportProvider(id: pAirport, name: 'FCT Airport E-Shuttle', kind: ProviderKind.shuttle, status: Verification.verified, area: 'Airport Road', contactName: 'Sani Garba', contactEmail: 'shuttle@airporteshuttle.demo', joinedAt: DateTime(2026, 8, 18), description: 'Electric airport shuttle to the city centre.'),
-        TransportProvider(id: pKubwa, name: 'Kubwa Express Shuttles', kind: ProviderKind.shuttle, status: Verification.pending, area: 'Kubwa', contactName: 'Peter Ojo', contactEmail: 'hello@kubwaexpress.demo', joinedAt: DateTime(2026, 10, 9), description: 'Minibus commuter service applying to join the platform.'),
-        TransportProvider(id: pNyanya, name: 'Nyanya Commuter Union', kind: ProviderKind.busOperator, status: Verification.pending, area: 'Nyanya · AYA', contactName: 'Musa Danjuma', contactEmail: 'office@nyanyacommuters.demo', joinedAt: DateTime(2026, 10, 12), description: 'Union of minibus owners on the Nyanya corridor.'),
+        TransportProvider(id: pMetro, name: 'Abuja Metro Bus Co. (sample)', kind: ProviderKind.busOperator, status: Verification.verified, area: 'Wuse · Central Area', contactName: 'Ibrahim Musa', contactEmail: 'ops@abujametro.demo', joinedAt: DateTime(2026, 7, 2), description: 'City bus operator running 12 fixed-fare routes across the FCT.'),
+        TransportProvider(id: pGreenFleet, name: 'GreenFleet Logistics (sample)', kind: ProviderKind.fleetOwner, status: Verification.verified, area: 'Jabi', contactName: 'Chiamaka Obi', contactEmail: 'fleet@greenfleet.demo', joinedAt: DateTime(2026, 7, 9), description: 'Owns 24 buses leased to Abuja Metro Bus Co.'),
+        TransportProvider(id: pNaviRide, name: 'NaviRide Electric (sample)', kind: ProviderKind.electric, status: Verification.verified, area: 'Maitama', contactName: 'Tunde Bello', contactEmail: 'ev@naviride.demo', joinedAt: DateTime(2026, 8, 3), description: 'On-demand electric cars with verified drivers.'),
+        TransportProvider(id: pRail, name: 'Capital Metro Rail Services (sample)', kind: ProviderKind.rail, status: Verification.verified, area: 'Central Area', contactName: 'Kemi Adebayo', contactEmail: 'rail@capitalmetro.demo', joinedAt: DateTime(2026, 7, 20), description: 'Operates metro rail services between Central Station and Idu.'),
+        TransportProvider(id: pAirport, name: 'FCT Airport E-Shuttle (sample)', kind: ProviderKind.shuttle, status: Verification.verified, area: 'Airport Road', contactName: 'Sani Garba', contactEmail: 'shuttle@airporteshuttle.demo', joinedAt: DateTime(2026, 8, 18), description: 'Electric airport shuttle to the city centre.'),
+        TransportProvider(id: pKubwa, name: 'Kubwa Express Shuttles (sample)', kind: ProviderKind.shuttle, status: Verification.pending, area: 'Kubwa', contactName: 'Peter Ojo', contactEmail: 'hello@kubwaexpress.demo', joinedAt: DateTime(2026, 10, 9), description: 'Minibus commuter service applying to join the platform.'),
+        TransportProvider(id: pNyanya, name: 'Nyanya Commuter Union (sample)', kind: ProviderKind.busOperator, status: Verification.pending, area: 'Nyanya · AYA', contactName: 'Musa Danjuma', contactEmail: 'office@nyanyacommuters.demo', joinedAt: DateTime(2026, 10, 12), description: 'Union of minibus owners on the Nyanya corridor.'),
         TransportProvider(id: pGrace, name: 'Grace Okafor', kind: ProviderKind.privateDriver, status: Verification.verified, area: 'Wuse 2', contactName: 'Grace Okafor', contactEmail: 'grace@taparide.demo', joinedAt: DateTime(2026, 9, 28), description: 'Private driver approved through partner registration (Toyota Camry).'),
         TransportProvider(id: pEvents, name: 'Capital Events Hub (sample)', kind: ProviderKind.eventOrganiser, status: Verification.verified, area: 'Central Area', contactName: 'Halima Sani', contactEmail: 'events@taparide.demo', joinedAt: DateTime(2026, 10, 1), description: 'Sample event partner: lists events, sells tickets and books event buses.'),
-        TransportProvider(id: pKeke, name: 'City Keke Cooperative', kind: ProviderKind.tricycle, status: Verification.suspended, area: 'Garki', contactName: 'Blessing Udo', contactEmail: 'coop@citykeke.demo', joinedAt: DateTime(2026, 8, 25), description: 'Electric tricycle pilot. Suspended pending permit renewal.'),
+        TransportProvider(id: pKeke, name: 'City Keke Cooperative (sample)', kind: ProviderKind.tricycle, status: Verification.suspended, area: 'Garki', contactName: 'Blessing Udo', contactEmail: 'coop@citykeke.demo', joinedAt: DateTime(2026, 8, 25), description: 'Electric tricycle pilot. Suspended pending permit renewal.'),
       ];
 
   static List<String> _every(int fromHour, int toHour, int stepMin) => [
@@ -106,7 +107,7 @@ abstract final class DemoSeed {
   static const _bassanjiwa = RouteStop('Bassanjiwa', 9.0270, 7.2950);
   static const _nnamdiAzikiweAirport = RouteStop('Nnamdi Azikiwe Airport', 9.0068, 7.2632);
 
-  static List<TransitRoute> routes() => [
+  static List<TransitRoute> routes() => withCorridorOperators([
         // CNG bus fare, FG statement
         TransitRoute(id: 'r01', providerId: pMetro, code: 'K01', stops: const [_kubwa, _dutseJunction, _gwarinpaJunction, _berger], fare: 500, durationMin: 35, mode: TransitMode.bus, departures: _every(5, 21, 15), monthlyTrips: 42800),
         // CNG bus fare, FG statement
@@ -137,7 +138,7 @@ abstract final class DemoSeed {
         TransitRoute(id: 'r14', providerId: pRail, code: 'MR2', name: 'Abuja Metro Rail · Airport Line', stops: const [_idu, _bassanjiwa, _nnamdiAzikiweAirport], fare: 500, durationMin: 20, mode: TransitMode.rail, departures: _every(6, 20, 60), monthlyTrips: 6200),
         // Diesel bus fare, FG statement
         TransitRoute(id: 'r15', providerId: pKubwa, code: 'K02', stops: const [_kubwa, _dutseJunction, _gwarinpaJunction, _berger], fare: 1000, durationMin: 40, mode: TransitMode.bus, departures: _every(6, 19, 30), monthlyTrips: 0),
-      ];
+      ]);
 
   static List<Vehicle> vehicles() {
     const earningsByPlate = {'ABJ 021': 540000, 'ABJ 015': 480000, 'ABJ 010': 520000, 'ABJ 007': 465000, 'ABJ 019': 498000};

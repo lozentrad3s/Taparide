@@ -258,6 +258,7 @@ class TransitRoute {
     required this.monthlyTrips,
     this.active = true,
     this.name,
+    this.servedBy = const [],
   });
 
   final String id;
@@ -278,11 +279,14 @@ class TransitRoute {
   /// Branded line name, e.g. "Abuja Metro Rail".
   final String? name;
 
+  /// Public information on who runs vehicles on this corridor today (not Tap A Ride partners).
+  final List<CorridorOperator> servedBy;
+
   String get origin => stops.first.name;
   String get destination => stops.last.name;
   String get title => name ?? '$origin – $destination';
 
-  TransitRoute copyWith({int? fare, bool? active}) => TransitRoute(
+  TransitRoute copyWith({int? fare, bool? active, List<CorridorOperator>? servedBy}) => TransitRoute(
         id: id,
         providerId: providerId,
         code: code,
@@ -294,6 +298,7 @@ class TransitRoute {
         monthlyTrips: monthlyTrips,
         active: active ?? this.active,
         name: name,
+        servedBy: servedBy ?? this.servedBy,
       );
 
   /// Next departures from [now] (wraps to tomorrow when the day is over).
@@ -327,6 +332,7 @@ class TransitRoute {
         'monthly_trips': monthlyTrips,
         'active': active,
         'name': name,
+        'served_by': [for (final o in servedBy) o.toJson()],
       };
 
   factory TransitRoute.fromJson(Map<String, dynamic> json) => TransitRoute(
@@ -341,6 +347,40 @@ class TransitRoute {
         monthlyTrips: _int(json['monthly_trips']),
         active: (json['active'] as bool?) ?? true,
         name: json['name'] as String?,
+        servedBy: [for (final o in (json['served_by'] as List? ?? const [])) CorridorOperator.fromJson(Map<String, dynamic>.from(o as Map))],
+      );
+}
+
+/// A real operator or service reported on a corridor, from public sources. Not a Tap A Ride partner.
+class CorridorOperator {
+  const CorridorOperator({required this.name, required this.type, required this.source, required this.publisher, required this.asOf, this.note, this.uncertain = false});
+
+  final String name;
+
+  /// Vehicle or service type, e.g. "CNG bus", "Diesel bus", "Light rail".
+  final String type;
+  final String? note;
+
+  /// Link to the report this entry is based on.
+  final String source;
+  final String publisher;
+
+  /// Month the source reported it, e.g. "Oct 2026".
+  final String asOf;
+
+  /// True when the report is older or does not confirm the service still runs this exact corridor.
+  final bool uncertain;
+
+  Map<String, Object?> toJson() => {'name': name, 'type': type, 'note': note, 'source': source, 'publisher': publisher, 'as_of': asOf, if (uncertain) 'uncertain': true};
+
+  factory CorridorOperator.fromJson(Map<String, dynamic> json) => CorridorOperator(
+        name: (json['name'] as String?) ?? '',
+        type: (json['type'] as String?) ?? '',
+        note: json['note'] as String?,
+        source: (json['source'] as String?) ?? '',
+        publisher: (json['publisher'] as String?) ?? '',
+        asOf: (json['as_of'] as String?) ?? '',
+        uncertain: (json['uncertain'] as bool?) ?? false,
       );
 }
 
