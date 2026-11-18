@@ -1,3 +1,4 @@
+import 'format.dart';
 import 'models.dart';
 
 /// Demand at one place (stop / area), from route volumes and live bookings.
@@ -149,6 +150,8 @@ abstract final class Analytics {
       byHour[b.departureAt.hour]++;
     }
 
+    final demand = Demand.build(scopeName: scopeName, routes: Demand.routesFor(providerId, routes, vehicles), bookings: bookings, now: now);
+
     // Opportunities: busy places this scope doesn't serve, and routes that need more departures.
     final served = {for (final r in myRoutes) for (final s in r.stops) s.name};
     final opportunities = <Opportunity>[];
@@ -160,8 +163,12 @@ abstract final class Analytics {
     for (final r in routeIncome.where((r) => r.tripsPerDeparture > 40).take(2)) {
       opportunities.add(Opportunity(title: 'Add departures on ${r.route.title}', detail: 'About ${r.tripsPerDeparture.round()} riders per departure. Adding peak-hour departures would cut crowding and lift revenue.'));
     }
+    final busiest = demand.corridors.where((c) => c.crowdedAtPeak).firstOrNull;
+    if (busiest != null) {
+      opportunities.add(Opportunity(title: 'Peak crowding on ${busiest.route.code} at ${hourLabel(busiest.peakHour)}', detail: 'About ${busiest.peakLoad.round()} riders per departure between ${hourLabel(busiest.peakHour)} and ${hourLabel(busiest.peakHour + 1)} on ${busiest.route.title} (estimated from trips and app bookings). An extra departure in that hour would ease it.'));
+    }
     if (idle.isNotEmpty && avgEarning > 0) {
-      opportunities.add(Opportunity(title: 'Bring ${idle.length} idle vehicle${idle.length == 1 ? '' : 's'} back', detail: 'Each working vehicle earns about ₦$avgEarning a month; idle vehicles cost about ₦${avgEarning * idle.length} a month in lost income.'));
+      opportunities.add(Opportunity(title: 'Bring ${idle.length} idle vehicle${idle.length == 1 ? '' : 's'} back', detail: 'Each working vehicle earns about ${Fmt.naira(avgEarning)} a month; idle vehicles cost about ${Fmt.naira(avgEarning * idle.length)} a month in lost income.'));
     }
 
     return InsightsReport(
@@ -180,7 +187,7 @@ abstract final class Analytics {
       lowEarners: earners.reversed.take(3).toList(),
       bookingsByHour: byHour,
       opportunities: opportunities,
-      demand: Demand.build(scopeName: scopeName, routes: Demand.routesFor(providerId, routes, vehicles), bookings: bookings, now: now),
+      demand: demand,
     );
   }
 }
@@ -242,6 +249,9 @@ class CorridorDemand {
 
   /// Riders per departure in the busiest hour.
   double get peakLoad => departuresByHour[peakHour] == 0 ? 0 : peakRiders / departuresByHour[peakHour];
+
+  /// More riders per departure than a city bus seats (42–48); trains carry hundreds, so rail never counts.
+  bool get crowdedAtPeak => route.mode != TransitMode.rail && peakLoad > 45;
 }
 
 /// One origin → destination pair riders booked.

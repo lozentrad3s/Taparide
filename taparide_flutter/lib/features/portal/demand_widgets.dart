@@ -336,7 +336,7 @@ class CorridorTable extends StatelessWidget {
             ])),
         Col('Riders / day', numeric: true, (c) => Text(_riders(c.dailyTrips), style: text.titleSmall?.copyWith(fontFeatures: tabular))),
         Col('Busiest hour', numeric: true, (c) => Text(hourLabel(c.peakHour), style: text.bodyMedium?.copyWith(fontFeatures: tabular))),
-        Col('Per departure', numeric: true, (c) => Text('~${c.peakLoad.round()}', style: text.bodyMedium?.copyWith(fontFeatures: tabular, color: c.peakLoad > 60 ? AppColors.red : AppColors.inkSoft, fontWeight: c.peakLoad > 60 ? FontWeight.w700 : null))),
+        Col('Per departure', numeric: true, (c) => Text('~${c.peakLoad.round()}', style: text.bodyMedium?.copyWith(fontFeatures: tabular, color: c.crowdedAtPeak ? AppColors.red : AppColors.inkSoft, fontWeight: c.crowdedAtPeak ? FontWeight.w700 : null))),
         Col('App bookings', numeric: true, (c) => Text('${c.booked}${c.bookedToday > 0 ? ' · ${c.bookedToday} today' : ''}', style: text.bodyMedium?.copyWith(fontFeatures: tabular))),
       ],
     );

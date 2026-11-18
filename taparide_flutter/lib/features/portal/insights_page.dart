@@ -154,7 +154,7 @@ class _InsightsPageState extends State<InsightsPage> {
           FigureCard(label: 'Idle cost / month', value: Fmt.naira(report.idleCostPerMonth), icon: Icons.build_circle_rounded, caption: '${report.idleVehicles.length} off the road'),
           FigureCard(label: 'Routes', value: '${report.routes.length}', icon: Icons.alt_route_rounded, caption: '${report.routes.fold<int>(0, (s, r) => s + r.departures.length)} departures a day'),
         ]),
-        DemandSection(report: report.demand, title: 'Demand by corridor and hour'),
+        DemandSection(report: report.demand, title: 'Where and when riders travel'),
         const SectionLabel('Income and fleet'),
         TwoUp(
           leftFlex: 1,

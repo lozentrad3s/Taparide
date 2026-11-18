@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -90,7 +92,9 @@ class Cols extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(builder: (context, c) {
-        final count = ((c.maxWidth + gap) / (min + gap)).floor().clamp(1, max);
+        // KPI tiles go two-up on phones rather than one long column.
+        final minWidth = children.isNotEmpty && children.every((w) => w is FigureCard) ? math.min(min, 150.0) : min;
+        final count = ((c.maxWidth + gap) / (minWidth + gap)).floor().clamp(1, max);
         // Rows of equal-height cells so figures and panels line up.
         final rows = <Widget>[];
         for (var start = 0; start < children.length; start += count) {
@@ -305,7 +309,7 @@ class PanelLink extends StatelessWidget {
   @override
   Widget build(BuildContext context) => TextButton(
         onPressed: onPressed,
-        style: TextButton.styleFrom(minimumSize: const Size(0, 34), padding: const EdgeInsets.symmetric(horizontal: 10), textStyle: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700)),
+        style: TextButton.styleFrom(minimumSize: const Size(0, 34), padding: const EdgeInsets.symmetric(horizontal: 10), textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(fontSize: 13.5, fontWeight: FontWeight.w700)),
         child: Row(mainAxisSize: MainAxisSize.min, children: [Text(label), const SizedBox(width: 2), const Icon(Icons.arrow_forward_rounded, size: 15)]),
       );
 }
