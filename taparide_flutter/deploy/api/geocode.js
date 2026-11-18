@@ -3,6 +3,7 @@
 // The key stays on the server.
 import { AiError, handleError, send } from "./_lib/ai.js";
 import { requireUser } from "./_lib/auth.js";
+import { cached } from "./_lib/redis.js";
 
 // Federal Capital Territory bounds (lon/lat).
 const FCT = { minLat: 8.4, maxLat: 9.45, minLng: 6.75, maxLng: 7.65 };
@@ -61,6 +62,15 @@ export default async function handler(req, res) {
     await requireUser(req, { perMinute: 30 });
     const q = String(new URL(req.url, "http://x").searchParams.get("q") || "").trim().slice(0, 120);
     if (q.length < 2) throw new AiError(400, "Enter a place name.");
+    const found = await cached(`geo:${q.toLowerCase()}`, 86400, () => lookup(q));
+    send(res, 200, { results: found });
+  } catch (error) {
+    handleError(res, error);
+  }
+}
+
+async function lookup(q) {
+  {
     let results = null;
     for (const provider of [maptiler, carto]) {
       if (results && results.length) break;
@@ -72,8 +82,6 @@ export default async function handler(req, res) {
     }
     if (!results || results.length === 0) results = await nominatim(q);
     results = results.filter(inFct).map((r) => ({ ...r, name: (r.name || q).split(",").slice(0, 3).join(",").trim() }));
-    send(res, 200, { results: results.slice(0, 5) });
-  } catch (error) {
-    handleError(res, error);
+    return results.slice(0, 5);
   }
 }

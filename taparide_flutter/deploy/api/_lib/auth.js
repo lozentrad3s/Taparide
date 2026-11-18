@@ -1,21 +1,26 @@
 // Confirms the caller is a signed-in Tap A Ride user (Supabase session) and applies a
 // small per-instance rate limit, so the public AI endpoints can't be used to burn quota.
 import { AiError } from "./ai.js";
+import { overLimit } from "./redis.js";
 
 const hits = new Map();
 
 // Browsers send Origin on cross-site requests; only our own site may call these endpoints from a page.
-const ALLOWED_ORIGINS = new Set(["https://taparide.vercel.app", ...(process.env.EXTRA_ORIGINS || "").split(",").map((o) => o.trim()).filter(Boolean)]);
+const ALLOWED_ORIGINS = new Set(["https://taparide.com", "https://www.taparide.com", "https://taparide.vercel.app", ...(process.env.EXTRA_ORIGINS || "").split(",").map((o) => o.trim()).filter(Boolean)]);
 const isAllowedOrigin = (origin) => !origin || ALLOWED_ORIGINS.has(origin) || /^https:\/\/taparide-[a-z0-9-]+-lozen-s-projects\.vercel\.app$/.test(origin) || /^http:\/\/localhost(:\d+)?$/.test(origin);
 
 export async function requireUser(req, { perMinute = 20 } = {}) {
   if (!isAllowedOrigin(req.headers.origin)) throw new AiError(403, "This service is only available from Tap A Ride.");
   const ip = (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "unknown";
-  const now = Date.now();
-  const recent = (hits.get(ip) || []).filter((t) => now - t < 60_000);
-  if (recent.length >= perMinute) throw new AiError(429, "Too many requests. Wait a minute and try again.");
-  recent.push(now);
-  hits.set(ip, recent);
+  const shared = await overLimit(`api:${new URL(req.url, "http://x").pathname}:${ip}`, perMinute);
+  if (shared === true) throw new AiError(429, "Too many requests. Wait a minute and try again.");
+  if (shared === null) {
+    const now = Date.now();
+    const recent = (hits.get(ip) || []).filter((t) => now - t < 60_000);
+    if (recent.length >= perMinute) throw new AiError(429, "Too many requests. Wait a minute and try again.");
+    recent.push(now);
+    hits.set(ip, recent);
+  }
 
   const url = process.env.SUPABASE_URL;
   const anon = process.env.SUPABASE_ANON_KEY;

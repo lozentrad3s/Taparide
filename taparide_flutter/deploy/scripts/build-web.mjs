@@ -56,6 +56,8 @@ const defines = {
   // Public by design (Supabase row-level security protects the data):
   ...(live ? { SUPABASE_URL: sbUrl, SUPABASE_ANON_KEY: env.SUPABASE_ANON_KEY } : {}),
   ...(target === 'all' ? {} : { APP_MODE: target }),
+  // Live builds never show the demo sign-in shortcuts (those accounts are locked on the live database).
+  ...(live && !process.env.SHOW_DEMO_ACCOUNTS ? { HIDE_DEMO_ACCOUNTS: 'true' } : {}),
 };
 
 const flutter = process.env.FLUTTER || 'C:/src/flutter/bin/flutter.bat';

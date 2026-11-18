@@ -4,13 +4,14 @@
 //   GET  ?code=XXXXXX                                                -> place in line
 //   GET  ?event=abuja-tech-week-2026                                 -> seat demand (counts only)
 import { call, isPreview, StoreError } from "./_lib/store.js";
+import { cached, overLimit } from "./_lib/redis.js";
 
 const hits = new Map();
 const ALLOWED = new Set(
-  ["https://taparide.com", "https://www.taparide.com", ...(process.env.SITE_ORIGINS || "").split(",")].map((o) => o.trim()).filter(Boolean),
+  ["https://taparide.com", "https://www.taparide.com", "https://taparide.vercel.app", ...(process.env.SITE_ORIGINS || "").split(",")].map((o) => o.trim()).filter(Boolean),
 );
 const allowedOrigin = (o) =>
-  !o || ALLOWED.has(o) || /^https:\/\/taparide-site[a-z0-9-]*\.vercel\.app$/.test(o) || /^http:\/\/localhost(:\d+)?$/.test(o);
+  !o || ALLOWED.has(o) || /^https:\/\/taparide-[a-z0-9-]+-lozen-s-projects\.vercel\.app$/.test(o) || /^http:\/\/localhost(:\d+)?$/.test(o);
 
 function send(res, status, body) {
   res.statusCode = status;
@@ -19,8 +20,11 @@ function send(res, status, body) {
   res.end(JSON.stringify(body));
 }
 
-function limited(req, perMinute) {
+// Shared across every server through Redis when configured; per-server memory otherwise.
+async function limited(req, perMinute, scope) {
   const ip = String(req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "unknown").split(",")[0].trim();
+  const shared = await overLimit(`waitlist:${scope}:${ip}`, perMinute);
+  if (shared !== null) return shared;
   const now = Date.now();
   const recent = (hits.get(ip) || []).filter((t) => now - t < 60_000);
   recent.push(now);
@@ -48,16 +52,19 @@ export default async function handler(req, res) {
     const url = new URL(req.url, "http://local");
 
     if (req.method === "GET") {
-      if (limited(req, 60)) return send(res, 429, { error: "Too many requests. Wait a minute and try again." });
+      if (await limited(req, 60, "read")) return send(res, 429, { error: "Too many requests. Wait a minute and try again." });
       const event = url.searchParams.get("event");
       const code = url.searchParams.get("code");
-      if (event) return send(res, 200, { ...(await call("event_seat_demand", { p_event: event.slice(0, 60) })), preview: isPreview() });
+      if (event) {
+        const p_event = event.slice(0, 60);
+        return send(res, 200, { ...(await cached(`demand:${p_event}`, 15, () => call("event_seat_demand", { p_event }))), preview: isPreview() });
+      }
       if (code) return send(res, 200, { ...(await call("waitlist_status", { p_code: code.slice(0, 12) })), preview: isPreview() });
       return send(res, 400, { error: "Missing code or event." });
     }
 
     if (req.method !== "POST") return send(res, 405, { error: "Use GET or POST." });
-    if (limited(req, 10)) return send(res, 429, { error: "Too many tries. Wait a minute and try again." });
+    if (await limited(req, 10, "write")) return send(res, 429, { error: "Too many tries. Wait a minute and try again." });
     const b = await readBody(req);
     // Bots fill every field; people never see this one.
     if (b.company) return send(res, 400, { error: "Something went wrong. Please try again." });

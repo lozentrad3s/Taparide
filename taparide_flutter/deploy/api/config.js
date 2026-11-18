@@ -11,6 +11,7 @@ export default function handler(req, res) {
     ai: aiReady ? ai : null,
     aiFallback: ai === "gemini" ? !!process.env.ANTHROPIC_API_KEY : !!process.env.GEMINI_API_KEY,
     backend: process.env.SUPABASE_URL ? "supabase" : "demo",
+    redis: !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN),
     // "paystack" once card and bank top-ups are switched on; until then wallet money is test money.
     payments: process.env.PAYSTACK_SECRET_KEY && process.env.TOPUP_SIGNING_SECRET ? "paystack" : "test",
   });
