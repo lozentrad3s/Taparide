@@ -223,7 +223,7 @@ class _ShiftHeroState extends State<_ShiftHero> {
       const SizedBox(height: 2),
       Text(next == null ? '—' : Fmt.time(next), style: const TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.w800, height: 1.1, fontFeatures: tabular)),
       Text(
-        next == null ? 'No timetable for today' : (minutes! <= 0 ? 'Now' : 'in ${Fmt.minutes(minutes)}${next.day != state.now.day ? ' (tomorrow)' : ''}'),
+        next == null ? 'No timetable for today' : (minutes! <= 0 ? 'Now' : 'in ${minutes == 1 ? '1 min' : Fmt.minutes(minutes)}${next.day != state.now.day ? ' (tomorrow)' : ''}'),
         style: text.bodySmall?.copyWith(color: AppColors.onForestMuted),
       ),
       const SizedBox(height: 12),
@@ -357,7 +357,7 @@ class _RidesPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final open = [for (final b in rides) if (b.status == BookingStatus.confirmed || b.status == BookingStatus.accepted) b]..sort((a, b) => a.departureAt.compareTo(b.departureAt));
-    final done = [for (final b in rides) if (b.status == BookingStatus.completed) b]..sort((a, b) => b.departureAt.compareTo(a.departureAt));
+    final done = [for (final b in rides) if (b.status == BookingStatus.completed && isSameDay(b.departureAt, now)) b]..sort((a, b) => b.departureAt.compareTo(a.departureAt));
     return Panel(
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         PanelTitle('Bookings & ride requests', subtitle: open.isEmpty ? 'Nobody waiting right now' : '${open.length} rider${open.length == 1 ? '' : 's'} booked on your vehicle'),
@@ -368,7 +368,7 @@ class _RidesPanel extends StatelessWidget {
         ],
         if (done.isNotEmpty) ...[
           const SizedBox(height: 10),
-          Text('Completed: ${done.take(4).map((b) => '${b.passengerName.split(' ').first} ${Fmt.time(b.departureAt)}').join(' · ')}${done.length > 4 ? ' and ${done.length - 4} more' : ''}', style: text.bodySmall),
+          Text('Completed today: ${done.take(4).map((b) => '${b.passengerName.split(' ').first} ${Fmt.time(b.departureAt)}').join(' · ')}${done.length > 4 ? ' and ${done.length - 4} more' : ''}', style: text.bodySmall),
         ],
       ]),
     );

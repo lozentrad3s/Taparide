@@ -86,7 +86,7 @@ class _FleetDriversPageState extends State<FleetDriversPage> {
           FigureCard(label: 'Drivers', value: '${drivers.length}', icon: Icons.groups_2_rounded, caption: admin && scope == null ? 'across all companies' : 'on your team'),
           FigureCard(label: 'On a vehicle', value: '$onVehicle', icon: Icons.directions_bus_rounded, caption: 'assigned and active'),
           FigureCard(label: 'Unassigned', value: '${drivers.where((d) => d.active && d.vehicleId == null).length}', icon: Icons.event_seat_rounded, caption: 'waiting for a vehicle'),
-          FigureCard(label: 'Suspended', value: '$suspended', icon: Icons.block_rounded, caption: 'cannot drive or sign in to rides'),
+          FigureCard(label: 'Suspended', value: '$suspended', icon: Icons.block_rounded, caption: 'no vehicle or rider access'),
         ]),
         const SizedBox(height: 16),
         Panel(

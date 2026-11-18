@@ -52,7 +52,7 @@ class FleetDriver {
   bool get hasLogin => userId != null;
   String get firstName => fullName.trim().split(RegExp(r'\s+')).first;
   String get initials {
-    final parts = fullName.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    final parts = fullName.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty && !p.startsWith('(')).toList();
     if (parts.isEmpty) return '?';
     return (parts.first[0] + (parts.length > 1 ? parts.last[0] : '')).toUpperCase();
   }
