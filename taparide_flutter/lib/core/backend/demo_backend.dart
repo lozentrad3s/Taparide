@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:latlong2/latlong.dart';
 
+import '../fleet_drivers.dart';
 import '../live_models.dart';
 import '../models.dart';
 import '../partner_models.dart';
@@ -43,6 +44,7 @@ class DemoBackend implements Backend {
   late Map<String, Wallet> _wallets;
   late List<AuditEntry> _audit;
   List<PartnerApplication> _applications = [];
+  List<FleetDriver> _drivers = [];
 
   /// Uploaded document bytes stay in memory in demo mode (too large for local storage).
   final Map<String, DocumentFile> _documents = {};
@@ -50,7 +52,7 @@ class DemoBackend implements Backend {
 
   // Events, trip links and vehicle positions live in memory in demo mode.
   late final List<RideEvent> _events = _seedEvents();
-  late final List<EventBus> _eventBuses = _seedEventBuses();
+  late final List<EventBus> _eventBuses = [for (final b in _seedEventBuses()) DemoSeed.withSeedVehicle(b)];
   final Map<String, ({String adId, String userId, DateTime startedAt, bool rewarded})> _adViews = {};
   final Map<String, List<DateTime>> _adRewards = {}; // user id -> reward times
   final Map<String, String> _shares = {}; // token -> booking id
@@ -87,6 +89,11 @@ class DemoBackend implements Backend {
       };
       _sessionUserId = json['session'] as String?;
       _applications = json['applications'] is List ? list('applications', PartnerApplication.fromJson) : [];
+      if (json['fleet_drivers'] is List) {
+        _drivers = list('fleet_drivers', FleetDriver.fromJson);
+      } else {
+        _seedFleetDrivers();
+      }
       _refreshSeedRides();
     } catch (_) {
       _seed();
@@ -104,10 +111,11 @@ class DemoBackend implements Backend {
     _routes = DemoSeed.routes();
     _vehicles = DemoSeed.vehicles();
     _rides = DemoSeed.sharedRides(now);
-    _bookings = DemoSeed.bookings(now);
+    _bookings = [...DemoSeed.bookings(now), ...DemoSeed.fleetDriverBookings(now)];
     _audit = DemoSeed.audit(now);
     _wallets = {DemoSeed.uAisha: const Wallet(cardNumber: '5061004219872500', balance: 2500)};
     _applications = DemoSeed.applications(now);
+    _drivers = DemoSeed.fleetDrivers();
     _sessionUserId = null;
     _save();
   }
@@ -136,6 +144,7 @@ class DemoBackend implements Backend {
         'wallets': {for (final e in _wallets.entries) e.key: {'card_number': e.value.cardNumber, 'balance': e.value.balance}},
         'session': _sessionUserId,
         'applications': [for (final a in _applications) a.toJson()],
+        'fleet_drivers': [for (final d in _drivers) d.toJson()],
       }),
     );
   }
@@ -326,7 +335,7 @@ class DemoBackend implements Backend {
     final verified = _verifiedProviderIds;
     return [
       for (final v in _vehicles)
-        if ((v.verification == Verification.verified && verified.contains(v.operatorId)) || v.operatorId == me.providerId || v.ownerId == me.providerId) v,
+        if ((v.verification == Verification.verified && verified.contains(v.operatorId)) || v.operatorId == me.providerId || v.ownerId == me.providerId || v.id == _driverVehicle(me)) v,
     ];
   }
 
@@ -1034,7 +1043,7 @@ class DemoBackend implements Backend {
     final me = _me;
     final v = _vehicles.where((x) => x.id == vehicleId).firstOrNull;
     if (v == null) throw const BackendException(BackendErrorKind.notFound, 'Vehicle not found.');
-    _require(_manages(me, v.operatorId) || (v.ownerId != null && _manages(me, v.ownerId!)), 'track this vehicle');
+    _require(_manages(me, v.operatorId) || (v.ownerId != null && _manages(me, v.ownerId!)) || _driverVehicle(me) == v.id, 'track this vehicle');
     _positions[vehicleId] = VehiclePosition(vehicleId: vehicleId, point: LatLng(lat, lng), updatedAt: _clock(), speedKmh: speedKmh);
   }
 
@@ -1057,6 +1066,8 @@ class DemoBackend implements Backend {
     } else if (me.role == UserRole.eventPartner) {
       final mine = {for (final e in _events) if (e.providerId == me.providerId) e.id};
       scoped = [for (final b in _bookings) if (mine.contains(b.eventId)) b];
+    } else if (me.role == UserRole.fleetDriver) {
+      scoped = _driverBookings(me);
     } else if (me.role == UserRole.fleetOwner) {
       final owned = {for (final v in _vehicles) if (v.ownerId == me.providerId) v.id};
       scoped = [for (final b in _bookings) if (owned.contains(b.vehicleId)) b];
@@ -1207,6 +1218,201 @@ class DemoBackend implements Backend {
     _log('Changed role to ${role.label}', updated.fullName);
     _save();
     return updated;
+  }
+
+  // ------------------------------------------------------------ fleet drivers
+
+  /// Saved demo states from before fleet drivers: add the sample driver, their login and riders.
+  void _seedFleetDrivers() {
+    _drivers = DemoSeed.fleetDrivers();
+    final login = DemoSeed.users().firstWhere((u) => u.id == DemoSeed.uFleetDriver);
+    if (!_accounts.any((a) => a.user.id == login.id || a.user.email == login.email)) _accounts.add(_Account.create(login, DemoSeed.password));
+    if (!_bookings.any((b) => b.id.startsWith('bk_fd_'))) _bookings.addAll(DemoSeed.fleetDriverBookings(_clock()));
+  }
+
+  /// The signed-in fleet driver's own record (null for everyone else).
+  FleetDriver? _driverRecord(AppUser me) => me.role == UserRole.fleetDriver ? _drivers.where((d) => d.userId == me.id).firstOrNull : null;
+
+  /// The vehicle the signed-in driver may work on right now (none while suspended).
+  String? _driverVehicle(AppUser me) {
+    final d = _driverRecord(me);
+    return d != null && d.active ? d.vehicleId : null;
+  }
+
+  /// Bookings on the driver's vehicle, including seats on event buses it runs.
+  List<Booking> _driverBookings(AppUser me) {
+    final vehicle = _driverVehicle(me);
+    if (vehicle == null) return [];
+    final buses = {for (final b in _eventBuses) if (b.vehicleId == vehicle) b.id};
+    return [for (final b in _bookings) if (b.vehicleId == vehicle || buses.contains(b.eventBusId)) b];
+  }
+
+  /// Drivers go only on the company's own vehicles, and on routes those vehicles run.
+  void _checkAssignment(String providerId, String? vehicleId, String? routeId) {
+    if (vehicleId == null) {
+      if (routeId != null) throw const BackendException(BackendErrorKind.validation, 'Pick a vehicle before choosing a route.');
+      return;
+    }
+    final v = _vehicles.where((x) => x.id == vehicleId).firstOrNull;
+    if (v == null) throw const BackendException(BackendErrorKind.notFound, 'Vehicle not found.');
+    if (v.operatorId != providerId && v.ownerId != providerId) throw const BackendException(BackendErrorKind.permission, 'You can only assign drivers to your own vehicles.');
+    if (v.verification == Verification.suspended) throw const BackendException(BackendErrorKind.validation, 'This vehicle is suspended from the register.');
+    if (routeId == null) return;
+    final r = _routes.where((x) => x.id == routeId).firstOrNull;
+    if (r == null) throw const BackendException(BackendErrorKind.notFound, 'Route not found.');
+    if (r.providerId != v.operatorId && r.providerId != providerId) throw const BackendException(BackendErrorKind.validation, 'Pick a route this vehicle runs on.');
+  }
+
+  /// The register shows who drives each vehicle.
+  void _setVehicleDriver(String? vehicleId, String name) {
+    final k = _vehicles.indexWhere((v) => v.id == vehicleId);
+    if (k >= 0) _vehicles[k] = Vehicle.fromJson({..._vehicles[k].toJson(), 'driver_name': name});
+  }
+
+  @override
+  Future<List<FleetDriver>> fetchFleetDrivers() async {
+    await _wait();
+    final me = _me;
+    if (me.role == UserRole.admin) return List.of(_drivers);
+    if (me.role == UserRole.operator || me.role == UserRole.fleetOwner) return [for (final d in _drivers) if (d.providerId == me.providerId) d];
+    return [for (final d in _drivers) if (d.userId == me.id) d];
+  }
+
+  @override
+  Future<FleetDriver> addFleetDriver({required String fullName, required String phone, required String email, required String licenceNumber, String? providerId, String? vehicleId, String? routeId}) async {
+    await _wait();
+    final me = _me;
+    final companyId = providerId ?? me.providerId;
+    _require(companyId != null && _manages(me, companyId), 'add drivers for this company');
+    final company = _providers.where((p) => p.id == companyId).firstOrNull;
+    if (company == null) throw const BackendException(BackendErrorKind.notFound, 'Company not found.');
+    _require(company.kind != ProviderKind.privateDriver && company.kind != ProviderKind.eventOrganiser, 'add drivers (only fleet owners and bus or EV operators can)');
+    final problem = FleetDriverRules.name(fullName) ?? FleetDriverRules.email(email) ?? FleetDriverRules.phone(phone) ?? FleetDriverRules.licence(licenceNumber);
+    if (problem != null) throw BackendException(BackendErrorKind.validation, problem);
+    final normalised = email.trim().toLowerCase();
+    if (_drivers.any((d) => d.email.toLowerCase() == normalised)) throw const BackendException(BackendErrorKind.validation, 'A driver with this email is already registered.');
+    _checkAssignment(company.id, vehicleId, routeId);
+    // Their login: an existing passenger account with this email, or a new one (demo password).
+    final i = _accounts.indexWhere((a) => a.user.email.toLowerCase() == normalised);
+    if (i >= 0 && _accounts[i].user.role != UserRole.passenger) {
+      throw const BackendException(BackendErrorKind.validation, "This email belongs to another partner account. Use the driver's personal email.");
+    }
+    final AppUser login;
+    if (i >= 0) {
+      login = _accounts[i].user.copyWith(role: UserRole.fleetDriver, clearProvider: true, organisation: company.name);
+      _accounts[i] = _accounts[i].withUser(login);
+    } else {
+      login = AppUser(id: _id('u'), fullName: fullName.trim(), email: normalised, phone: phone.trim(), role: UserRole.fleetDriver, organisation: company.name, createdAt: _clock());
+      _accounts.add(_Account.create(login, DemoSeed.password));
+    }
+    final driver = FleetDriver(
+      id: _id('fd'),
+      providerId: company.id,
+      userId: login.id,
+      fullName: fullName.trim(),
+      phone: phone.trim(),
+      email: normalised,
+      licenceNumber: licenceNumber.replaceAll(RegExp(r'\s+'), '').toUpperCase(),
+      vehicleId: vehicleId,
+      routeId: vehicleId == null ? null : routeId,
+      status: FleetDriverStatus.active,
+      createdAt: _clock(),
+    );
+    _drivers.add(driver);
+    if (vehicleId != null) _setVehicleDriver(vehicleId, driver.fullName);
+    _log('Added driver', '${driver.fullName} · ${company.name}');
+    _save();
+    return driver;
+  }
+
+  @override
+  Future<FleetDriver> assignFleetDriver(String driverId, {String? vehicleId, String? routeId}) async {
+    await _wait();
+    final me = _me;
+    final i = _drivers.indexWhere((d) => d.id == driverId);
+    if (i < 0) throw const BackendException(BackendErrorKind.notFound, 'Driver not found.');
+    _require(_manages(me, _drivers[i].providerId), 'manage this driver');
+    _checkAssignment(_drivers[i].providerId, vehicleId, routeId);
+    _drivers[i] = _drivers[i].copyWith(vehicleId: vehicleId, routeId: routeId, clearAssignment: vehicleId == null, clearRoute: routeId == null);
+    final v = _vehicles.where((x) => x.id == vehicleId).firstOrNull;
+    if (v != null) _setVehicleDriver(v.id, _drivers[i].fullName);
+    _log(v == null ? 'Unassigned driver' : 'Assigned driver', v == null ? _drivers[i].fullName : '${_drivers[i].fullName} → ${v.displayName}');
+    _save();
+    return _drivers[i];
+  }
+
+  @override
+  Future<FleetDriver> setFleetDriverStatus(String driverId, FleetDriverStatus status) async {
+    await _wait();
+    final me = _me;
+    final i = _drivers.indexWhere((d) => d.id == driverId);
+    if (i < 0) throw const BackendException(BackendErrorKind.notFound, 'Driver not found.');
+    _require(_manages(me, _drivers[i].providerId), 'suspend or reactivate this driver');
+    _drivers[i] = _drivers[i].copyWith(status: status);
+    // A suspended driver's vehicle drops off the live map.
+    if (status == FleetDriverStatus.suspended && _drivers[i].vehicleId != null) _positions.remove(_drivers[i].vehicleId);
+    _log(status == FleetDriverStatus.suspended ? 'Suspended driver' : 'Reactivated driver', _drivers[i].fullName);
+    _save();
+    return _drivers[i];
+  }
+
+  @override
+  Future<Booking> driverBookingAction(String bookingId, DriverBookingAction action) async {
+    await _wait();
+    final me = _me;
+    _require(me.role == UserRole.fleetDriver, 'update rides from the driver dashboard');
+    if (_driverVehicle(me) == null) throw const BackendException(BackendErrorKind.permission, 'You are not assigned to a vehicle right now. Ask your fleet manager.');
+    final i = _bookings.indexWhere((b) => b.id == bookingId);
+    if (i < 0) throw const BackendException(BackendErrorKind.notFound, 'Booking not found.');
+    final b = _bookings[i];
+    _require(_driverBookings(me).any((x) => x.id == b.id), 'update this booking (it is not on your vehicle)');
+    switch (action) {
+      case DriverBookingAction.accept:
+        if (b.kind == BookingKind.eventBus && b.status == BookingStatus.requested) {
+          throw const BackendException(BackendErrorKind.validation, 'This seat is confirmed once the operator fixes the departure time.');
+        }
+        if (b.status != BookingStatus.confirmed) throw const BackendException(BackendErrorKind.validation, 'This booking is not waiting for you.');
+        _bookings[i] = b.copyWith(status: BookingStatus.accepted);
+      case DriverBookingAction.complete:
+        if (b.status != BookingStatus.confirmed && b.status != BookingStatus.accepted) throw const BackendException(BackendErrorKind.validation, 'This booking is not in progress.');
+        _bookings[i] = b.copyWith(status: BookingStatus.completed);
+        if (b.kind == BookingKind.electric) {
+          final v = _vehicles.indexWhere((x) => x.id == b.vehicleId);
+          if (v >= 0) _vehicles[v] = _vehicles[v].copyWith(status: VehicleStatus.active, monthEarnings: _vehicles[v].monthEarnings + b.fare);
+        }
+        _log('Completed ride', '${b.passengerName} · ${b.origin} → ${b.destination}');
+    }
+    _save();
+    return _bookings[i];
+  }
+
+  @override
+  Future<Vehicle> driverSetTrip({required bool start}) async {
+    await _wait();
+    final me = _me;
+    _require(me.role == UserRole.fleetDriver, 'start or end trips');
+    final vehicle = _driverVehicle(me);
+    if (vehicle == null) throw const BackendException(BackendErrorKind.permission, 'You are not assigned to a vehicle right now. Ask your fleet manager.');
+    final k = _vehicles.indexWhere((v) => v.id == vehicle);
+    if (k < 0) throw const BackendException(BackendErrorKind.notFound, 'Vehicle not found.');
+    final v = _vehicles[k];
+    if (start) {
+      if (v.status == VehicleStatus.maintenance || v.status == VehicleStatus.inactive) {
+        throw BackendException(BackendErrorKind.validation, 'Your vehicle is marked ${v.status.label.toLowerCase()}. Ask your fleet manager before starting a trip.');
+      }
+      _vehicles[k] = v.copyWith(status: VehicleStatus.onTrip);
+    } else {
+      _vehicles[k] = v.copyWith(status: VehicleStatus.active);
+      // Riders who boarded for a departure that has left are dropped off.
+      final now = _clock().add(const Duration(minutes: 1));
+      for (var i = 0; i < _bookings.length; i++) {
+        final b = _bookings[i];
+        if (b.vehicleId == vehicle && b.status == BookingStatus.accepted && b.departureAt.isBefore(now)) _bookings[i] = b.copyWith(status: BookingStatus.completed);
+      }
+    }
+    _log(start ? 'Started trip' : 'Ended trip', v.displayName);
+    _save();
+    return _vehicles[k];
   }
 
   // ------------------------------------------------------------ partner registration

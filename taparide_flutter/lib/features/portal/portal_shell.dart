@@ -44,7 +44,11 @@ class PortalSection {
 
   static const events = PortalSection('/portal/events', 'Events & event buses', Icons.celebration_rounded, {UserRole.eventPartner, UserRole.operator, UserRole.government, UserRole.admin}, short: 'Events');
 
-  static const all = [overview, waitlist, insights, fcta, operator, fleet, events, applications, providers, evs, routes, vehicles, bookings, verification, users, audit];
+  /// Drivers employed by a fleet owner or operator: their dashboard, and the page their managers use.
+  static const driverShift = PortalSection('/portal/driver', 'Driver dashboard', Icons.badge_rounded, {UserRole.fleetDriver, UserRole.admin}, short: 'Dashboard');
+  static const drivers = PortalSection('/portal/drivers', 'Drivers', Icons.groups_2_rounded, {UserRole.operator, UserRole.fleetOwner, UserRole.admin});
+
+  static const all = [overview, waitlist, insights, fcta, operator, fleet, events, applications, providers, evs, routes, vehicles, drivers, driverShift, bookings, verification, users, audit];
 
   /// The operator dashboard as private drivers see it (same page, driver wording).
   static const driver = PortalSection('/portal/operator', 'Driver dashboard', Icons.directions_car_rounded, {UserRole.operator, UserRole.government, UserRole.admin}, short: 'Driver');
@@ -64,9 +68,10 @@ class PortalSection {
       : switch (role) {
         UserRole.admin => all,
         UserRole.government => [fcta, insights, applications, providers, verification, vehicles, routes, evs, operator, bookings, audit],
-        UserRole.operator => [operator, insights, routes, vehicles, events, bookings, evs],
-        UserRole.fleetOwner => [fleet, insights, vehicles, bookings],
+        UserRole.operator => [operator, insights, routes, vehicles, drivers, events, bookings, evs],
+        UserRole.fleetOwner => [fleet, insights, vehicles, drivers, bookings],
         UserRole.eventPartner => [events, bookings],
+        UserRole.fleetDriver => const [driverShift],
         UserRole.passenger => const [],
       };
 }

@@ -1,3 +1,4 @@
+import '../fleet_drivers.dart';
 import '../live_models.dart';
 import '../models.dart';
 import '../partner_models.dart';
@@ -120,6 +121,23 @@ abstract class Backend {
   Future<TransitRoute> updateRouteFare(String routeId, int fare);
   Future<Vehicle> registerVehicle({required String operatorId, required VehicleKind kind, required String plate, required String model, required int capacity, String? ownerId});
   Future<AppUser> setUserRole(String userId, UserRole role, {String? providerId});
+
+  // ---- fleet drivers (people who drive a fleet owner's or operator's vehicles)
+  /// Admins see every driver, fleet owners and operators their own, a driver only themself.
+  Future<List<FleetDriver>> fetchFleetDrivers();
+
+  /// Fleet owners and operators add drivers to their own company ([providerId] is for admins).
+  Future<FleetDriver> addFleetDriver({required String fullName, required String phone, required String email, required String licenceNumber, String? providerId, String? vehicleId, String? routeId});
+
+  /// Puts the driver on one of the company's own vehicles (and optionally a route); null vehicle unassigns.
+  Future<FleetDriver> assignFleetDriver(String driverId, {String? vehicleId, String? routeId});
+  Future<FleetDriver> setFleetDriverStatus(String driverId, FleetDriverStatus status);
+
+  /// A fleet driver accepts/boards or completes a booking on their assigned vehicle.
+  Future<Booking> driverBookingAction(String bookingId, DriverBookingAction action);
+
+  /// A fleet driver starts or ends a trip on their assigned vehicle (ending completes boarded riders).
+  Future<Vehicle> driverSetTrip({required bool start});
 
   // ---- partner registration
   /// Session token for calls to the Tap A Ride API (AI assistant, document checks). Null in demo mode.

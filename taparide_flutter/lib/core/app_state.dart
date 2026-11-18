@@ -9,6 +9,7 @@ import 'analytics.dart';
 import 'api_client.dart';
 import 'backend/backend.dart';
 import 'dashboards.dart';
+import 'fleet_drivers.dart';
 import 'format.dart';
 import 'house_ads.dart';
 import 'insights.dart';
@@ -87,6 +88,9 @@ class AppState extends ChangeNotifier {
   List<Booking> partnerBookings = const [];
   List<AuditEntry> audit = const [];
   List<AppUser> users = const [];
+
+  /// Drivers of the signed-in company (all for admins; a fleet driver gets only their own record).
+  List<FleetDriver> fleetDrivers = const [];
   Wallet? wallet;
   MetricBaselines? baselines;
 
@@ -193,6 +197,7 @@ class AppState extends ChangeNotifier {
     partnerBookings = const [];
     audit = const [];
     users = const [];
+    fleetDrivers = const [];
     myApplications = const [];
     partnerApplications = const [];
     leavePlans.clear();
@@ -234,6 +239,7 @@ class AppState extends ChangeNotifier {
         partnerBookings = await backend.fetchPartnerBookings();
         audit = me.role.canVerify ? await backend.fetchAuditLog() : const [];
         users = me.role == UserRole.admin ? await backend.fetchUsers() : const [];
+        fleetDrivers = const {UserRole.admin, UserRole.operator, UserRole.fleetOwner, UserRole.fleetDriver}.contains(me.role) ? await backend.fetchFleetDrivers() : const [];
         partnerApplications = me.role.canVerify ? await backend.fetchPartnerApplications() : const [];
       } else {
         final rider = await Future.wait<Object>([backend.fetchWallet(), backend.fetchMyBookings(), backend.fetchRideRequests(), backend.fetchAds()]);
@@ -704,6 +710,48 @@ class AppState extends ChangeNotifier {
     final updated = await backend.setUserRole(target.id, role, providerId: providerId);
     users = [for (final u in users) u.id == updated.id ? updated : u];
     audit = await backend.fetchAuditLog();
+    _notify();
+  }
+
+  // ------------------------------------------------------------ fleet drivers
+
+  FleetDriver? fleetDriverById(String? id) => id == null ? null : fleetDrivers.where((d) => d.id == id).firstOrNull;
+
+  /// The signed-in fleet driver's own record.
+  FleetDriver? get myDriverRecord => user?.role == UserRole.fleetDriver ? fleetDrivers.where((d) => d.userId == user!.id).firstOrNull : null;
+
+  void _putDriver(FleetDriver d) => fleetDrivers = [for (final x in fleetDrivers) if (x.id != d.id) x, d]..sort((a, b) => a.fullName.compareTo(b.fullName));
+
+  Future<FleetDriver> addFleetDriver({required String fullName, required String phone, required String email, required String licenceNumber, String? providerId, String? vehicleId, String? routeId}) async {
+    final driver = await backend.addFleetDriver(fullName: fullName, phone: phone, email: email, licenceNumber: licenceNumber, providerId: providerId, vehicleId: vehicleId, routeId: routeId);
+    _putDriver(driver);
+    vehicles = await backend.fetchVehicles();
+    _notify();
+    return driver;
+  }
+
+  Future<void> assignFleetDriver(FleetDriver driver, {String? vehicleId, String? routeId}) async {
+    _putDriver(await backend.assignFleetDriver(driver.id, vehicleId: vehicleId, routeId: routeId));
+    vehicles = await backend.fetchVehicles();
+    _notify();
+  }
+
+  Future<void> setFleetDriverStatus(FleetDriver driver, FleetDriverStatus status) async {
+    _putDriver(await backend.setFleetDriverStatus(driver.id, status));
+    _notify();
+  }
+
+  Future<void> driverBookingAction(Booking booking, DriverBookingAction action) async {
+    final updated = await backend.driverBookingAction(booking.id, action);
+    partnerBookings = [for (final b in partnerBookings) b.id == updated.id ? updated : b];
+    if (booking.kind == BookingKind.electric && action == DriverBookingAction.complete) vehicles = await backend.fetchVehicles();
+    _notify();
+  }
+
+  Future<void> driverSetTrip({required bool start}) async {
+    final v = await backend.driverSetTrip(start: start);
+    vehicles = [for (final x in vehicles) x.id == v.id ? v : x];
+    if (!start) partnerBookings = await backend.fetchPartnerBookings();
     _notify();
   }
 

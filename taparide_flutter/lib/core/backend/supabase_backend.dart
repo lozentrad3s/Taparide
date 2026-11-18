@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../fleet_drivers.dart';
 import '../live_models.dart';
 import '../models.dart';
 import '../partner_models.dart';
@@ -440,6 +441,42 @@ class SupabaseBackend implements Backend {
   @override
   Future<AppUser> setUserRole(String userId, UserRole role, {String? providerId}) => _guard(() async =>
       AppUser.fromJson(_row(await _client.rpc('set_user_role', params: {'p_user_id': userId, 'p_role': role.wire, 'p_provider_id': providerId}))));
+
+  // ------------------------------------------------------------ fleet drivers
+
+  @override
+  Future<List<FleetDriver>> fetchFleetDrivers() => _optional(() async {
+        // Row-level security: admins see all, owners/operators their company, a driver only themself.
+        final rows = _rows(await _client.from('fleet_drivers').select().order('full_name').limit(500));
+        return [for (final r in rows) FleetDriver.fromJson(r)];
+      });
+
+  @override
+  Future<FleetDriver> addFleetDriver({required String fullName, required String phone, required String email, required String licenceNumber, String? providerId, String? vehicleId, String? routeId}) =>
+      _guard(() async => FleetDriver.fromJson(_row(await _client.rpc('add_fleet_driver', params: {
+            'p_full_name': fullName,
+            'p_phone': phone,
+            'p_email': email,
+            'p_licence_number': licenceNumber,
+            'p_provider_id': providerId,
+            'p_vehicle_id': vehicleId,
+            'p_route_id': routeId,
+          }))));
+
+  @override
+  Future<FleetDriver> assignFleetDriver(String driverId, {String? vehicleId, String? routeId}) => _guard(() async =>
+      FleetDriver.fromJson(_row(await _client.rpc('assign_fleet_driver', params: {'p_driver_id': driverId, 'p_vehicle_id': vehicleId, 'p_route_id': routeId}))));
+
+  @override
+  Future<FleetDriver> setFleetDriverStatus(String driverId, FleetDriverStatus status) => _guard(() async =>
+      FleetDriver.fromJson(_row(await _client.rpc('set_fleet_driver_status', params: {'p_driver_id': driverId, 'p_status': status.wire}))));
+
+  @override
+  Future<Booking> driverBookingAction(String bookingId, DriverBookingAction action) => _guard(() async =>
+      Booking.fromJson(_row(await _client.rpc('driver_booking_action', params: {'p_booking_id': bookingId, 'p_action': action.wire}))));
+
+  @override
+  Future<Vehicle> driverSetTrip({required bool start}) => _guard(() async => Vehicle.fromJson(_row(await _client.rpc('driver_set_trip', params: {'p_start': start}))));
 
   // ------------------------------------------------------------ partner registration
 
