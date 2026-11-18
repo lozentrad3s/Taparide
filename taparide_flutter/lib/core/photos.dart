@@ -47,7 +47,7 @@ const photoCredits = <PhotoCredit>[
   PhotoCredit(photo: AppPhoto.asoRockExpressway, title: 'Central Business District Abuja', author: 'FaridhaSL', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Central_Business_District_Abuja.jpg'),
   PhotoCredit(photo: AppPhoto.expressway, title: 'Beautiful road network in Abuja Nigeria', author: 'Igboanude', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Beautiful_road_network_in_Abuja_Nigeria.jpg'),
   PhotoCredit(photo: AppPhoto.evSuv, title: 'Hyundai Kona Electric (SX2)', author: 'Alexander-93', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Hyundai_Kona_Electric_(SX2)_1X7A1554.jpg'),
-  PhotoCredit(photo: AppPhoto.evCharging, title: 'Hyundai Ioniq 5 charging at Davis Square, November 2025', author: '4300streetcar', license: 'CC BY 4.0', source: 'https://commons.wikimedia.org/wiki/File:Hyundai_Ioniq_5_charging_at_Davis_Square_November_2025_1.jpg'),
+  PhotoCredit(photo: AppPhoto.evCharging, title: 'Public EV Charging at V&A Waterfront', author: 'axxter99', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:Public_EV_Charging_at_V%26A_Waterfront.jpg'),
   PhotoCredit(photo: AppPhoto.evPlug, title: 'Close-up of an electric car charging', author: 'Ivan Radic', license: 'CC BY 2.0', source: 'https://commons.wikimedia.org/wiki/File:Close-up_of_an_electric_car_charging._Traffic_lights_in_a_blurry_background.jpg'),
   PhotoCredit(photo: AppPhoto.brtBerger, title: 'BRT park at Berger Bridge in Abuja', author: 'Dike Chukwuma', license: 'CC BY-SA 4.0', source: 'https://commons.wikimedia.org/wiki/File:BRT_park_at_Berger_Brigdge_in_Abuja_by_Dike_Chukwuma.jpg'),
 ];

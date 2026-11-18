@@ -343,7 +343,7 @@ class _EvSection extends StatelessWidget {
         onTap: () => context.push('/ev'),
         semanticLabel: 'Book an electric vehicle, ${vehicles.length} available nearby',
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const SizedBox(height: 150, child: PhotoView(evPhoto, alignment: Alignment(0.2, 0.3), semanticLabel: 'Electric car plugged in at a charging point')),
+          const SizedBox(height: 150, child: PhotoView(evPhoto, alignment: Alignment(0.5, 0.2), semanticLabel: 'Electric car plugged in at a charging point')),
           Padding(
             padding: const EdgeInsets.all(14),
             child: vehicles.isEmpty
