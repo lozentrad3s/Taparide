@@ -129,9 +129,37 @@ class AppState extends ChangeNotifier {
 
   // ------------------------------------------------------------ session
 
+  /// Admins and FCTA staff must pass the authenticator step before the dashboards open.
+  bool twoStepPending = false;
+
+  static const _twoStepRoles = {UserRole.admin, UserRole.government};
+
+  Future<void> _checkTwoStep() async {
+    twoStepPending = false;
+    final u = user;
+    if (u == null || !_twoStepRoles.contains(u.role)) return;
+    try {
+      final s = await backend.twoStepStatus();
+      twoStepPending = s.enforced && !s.verified;
+    } catch (_) {
+      twoStepPending = true; // fail closed: no dashboard without the second step
+    }
+  }
+
+  Future<TwoStepStatus> twoStepStatus() => backend.twoStepStatus();
+  Future<TwoStepSetup> twoStepSetup() => backend.twoStepSetup();
+
+  Future<void> twoStepVerify({required String factorId, required String code}) async {
+    await backend.twoStepVerify(factorId: factorId, code: code);
+    await _checkTwoStep();
+    _notify();
+    await refresh();
+  }
+
   Future<void> init() async {
     try {
       user = await backend.restoreSession();
+      await _checkTwoStep();
     } catch (_) {
       user = null;
     }
@@ -142,6 +170,7 @@ class AppState extends ChangeNotifier {
 
   Future<void> signIn({required String email, required String password, required Portal portal}) async {
     user = await backend.signIn(email: email, password: password, portal: portal);
+    await _checkTwoStep();
     _notify();
     await refresh();
   }
@@ -165,6 +194,7 @@ class AppState extends ChangeNotifier {
   /// Re-reads the account (e.g. after a partner application is approved and the role changes).
   Future<void> reloadUser() async {
     user = await backend.restoreSession();
+    await _checkTwoStep();
     _notify();
     await refresh();
   }
@@ -178,6 +208,7 @@ class AppState extends ChangeNotifier {
   Future<List<WaitlistEntry>> fetchWaitlist() => backend.fetchWaitlist();
 
   Future<void> signOut() async {
+    twoStepPending = false;
     _pending?.cancel();
     _shareTicker?.cancel();
     await stopTracking();

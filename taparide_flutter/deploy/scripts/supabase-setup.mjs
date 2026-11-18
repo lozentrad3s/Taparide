@@ -64,8 +64,10 @@ if (!server.TOPUP_SIGNING_SECRET) {
 const setting = (key, value) => q('insert into taparide_private.settings (key, value) values ($1, $2) on conflict (key) do update set value = excluded.value', [key, value]);
 await setting('topup_secret_hash', createHash('sha256').update(server.TOPUP_SIGNING_SECRET).digest('hex'));
 // Real payments switch on when a Paystack key is present; until then top-ups are test money.
-await setting('payments_live', env.PAYSTACK_SECRET_KEY ? 'true' : 'false');
-log('payments:', env.PAYSTACK_SECRET_KEY ? 'live (Paystack)' : 'test money (add PAYSTACK_SECRET_KEY to go live)');
+// Real money only with a LIVE key (Bachs sk_live_… or Paystack); sandbox keys keep test money on.
+const realPayments = (env.BACHS_SECRET_KEY || '').startsWith('sk_live_') || !!env.PAYSTACK_SECRET_KEY;
+await setting('payments_live', realPayments ? 'true' : 'false');
+log('payments:', realPayments ? `live (${(env.BACHS_SECRET_KEY || '').startsWith('sk_live_') ? 'Bachs' : 'Paystack'})` : 'test money (add a live BACHS_SECRET_KEY to go live)');
 
 // ---------------------------------------------------------------- base demo data
 if (!(await q('select 1 from public.providers limit 1')).rowCount) {

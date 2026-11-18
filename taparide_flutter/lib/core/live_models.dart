@@ -531,3 +531,25 @@ class WaitlistEntry {
         seats: [for (final s in (j['seats'] as List? ?? const [])) WaitlistSeat.fromJson(Map<String, dynamic>.from(s as Map))],
       );
 }
+
+/// Two-step sign-in (authenticator app) for platform admins and FCTA staff.
+class TwoStepStatus {
+  const TwoStepStatus({required this.enforced, required this.verified, this.factorId});
+
+  /// False on the demo backend, which has no authenticator support.
+  final bool enforced;
+
+  /// This session has passed the second step.
+  final bool verified;
+
+  /// The confirmed authenticator, if one is set up.
+  final String? factorId;
+}
+
+/// A new authenticator to add: scan [uri] as a QR code or type [secret] into the app.
+class TwoStepSetup {
+  const TwoStepSetup({required this.factorId, required this.secret, required this.uri});
+  final String factorId;
+  final String secret;
+  final String uri;
+}

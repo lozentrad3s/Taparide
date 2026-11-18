@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app/app.dart';
+import 'app/app_mode.dart';
 import 'core/app_state.dart';
 import 'core/backend/backend.dart';
 import 'core/backend/demo_backend.dart';
 import 'core/backend/supabase_backend.dart';
+import 'core/error_reporting.dart';
 import 'core/reminders.dart';
 import 'shared/route_map.dart';
 
@@ -16,6 +18,7 @@ const _supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  ErrorReporting.install(app: AppMode.current.name);
   final Backend backend = _supabaseUrl.isNotEmpty && _supabaseAnonKey.isNotEmpty
       ? await SupabaseBackend.create(url: _supabaseUrl, anonKey: _supabaseAnonKey)
       : await DemoBackend.create();

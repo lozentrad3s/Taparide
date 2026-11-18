@@ -35,6 +35,11 @@ abstract class Backend {
   /// to [redirectTo]; new accounts are created as passengers.
   Future<void> signInWithProvider(SocialProvider provider, {String? redirectTo});
 
+  /// Two-step sign-in (authenticator app) for admins and FCTA staff.
+  Future<TwoStepStatus> twoStepStatus();
+  Future<TwoStepSetup> twoStepSetup();
+  Future<void> twoStepVerify({required String factorId, required String code});
+
   /// Everyone who joined on the website (waitlist, Tech Week seats). Admins only.
   Future<List<WaitlistEntry>> fetchWaitlist();
 

@@ -5,6 +5,29 @@
 //   GET  ?event=abuja-tech-week-2026                                 -> seat demand (counts only)
 import { call, isPreview, StoreError } from "./_lib/store.js";
 import { cached, overLimit } from "./_lib/redis.js";
+import { reportError } from "./_lib/sentry.js";
+
+// Anti-bot: forms must be filled by a person in a browser.
+// 1. a hidden honeypot field ("company") that people never see;
+// 2. at least 3 seconds between the page loading and the form being sent ("elapsed");
+// 3. Cloudflare Turnstile when TURNSTILE_SECRET_KEY / TURNSTILE_SITE_KEY are set (invisible check).
+const MIN_FILL_MS = 3000;
+async function turnstileOk(token, ip) {
+  const secret = process.env.TURNSTILE_SECRET_KEY;
+  if (!secret) return true;
+  if (!token) return false;
+  try {
+    const r = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ secret, response: String(token).slice(0, 2048), remoteip: ip }),
+      signal: AbortSignal.timeout(4000),
+    });
+    return (await r.json()).success === true;
+  } catch {
+    return false;
+  }
+}
 
 const hits = new Map();
 const ALLOWED = new Set(
@@ -53,6 +76,7 @@ export default async function handler(req, res) {
 
     if (req.method === "GET") {
       if (await limited(req, 60, "read")) return send(res, 429, { error: "Too many requests. Wait a minute and try again." });
+      if (url.searchParams.has("config")) return send(res, 200, { turnstile: process.env.TURNSTILE_SITE_KEY || null });
       const event = url.searchParams.get("event");
       const code = url.searchParams.get("code");
       if (event) {
@@ -68,6 +92,9 @@ export default async function handler(req, res) {
     const b = await readBody(req);
     // Bots fill every field; people never see this one.
     if (b.company) return send(res, 400, { error: "Something went wrong. Please try again." });
+    if (!(Number(b.elapsed) >= MIN_FILL_MS)) return send(res, 400, { error: "That was quick! Please check your details and send again." });
+    const ip = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
+    if (b.action === "join" && !(await turnstileOk(b.turnstile, ip))) return send(res, 400, { error: "We couldn't confirm you're a person. Refresh the page and try again." });
 
     if (b.action === "join") {
       if (b.terms !== "v1") return send(res, 400, { error: "Please agree to the Terms and Privacy notice to claim your free ride." });
@@ -98,8 +125,12 @@ export default async function handler(req, res) {
     return send(res, 400, { error: "Unknown action." });
   } catch (e) {
     if (e instanceof SyntaxError) return send(res, 400, { error: "That request could not be read." });
-    if (e instanceof StoreError) return send(res, e.status, { error: e.message });
+    if (e instanceof StoreError) {
+      if (e.status >= 500) reportError(e, { route: "waitlist" });
+      return send(res, e.status, { error: e.message });
+    }
     console.error(e);
+    reportError(e, { route: "waitlist" });
     return send(res, 500, { error: "Something went wrong on our side. Please try again." });
   }
 }

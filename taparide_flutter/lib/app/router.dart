@@ -5,6 +5,7 @@ import '../core/app_state.dart';
 import '../core/models.dart';
 import 'app_mode.dart';
 import '../features/auth/login_page.dart';
+import '../features/auth/two_step_page.dart';
 import '../features/common/credits_page.dart';
 import '../features/ev/ev_page.dart';
 import '../features/common/redirect_pages.dart';
@@ -61,6 +62,9 @@ GoRouter buildRouter(AppState state, {AppMode? mode}) {
       final path = s.uri.path;
       final portal = path.startsWith('/portal');
       if (path == '/moved') return null;
+      // Admins and FCTA staff pass the authenticator step before anything else opens.
+      if (user != null && state.twoStepPending) return path == '/two-step' ? null : '/two-step';
+      if (path == '/two-step') return user == null ? '/login?portal=partner' : homeFor(user);
       // Each production build serves one side; links to the other side are sent across.
       if (!appMode.hasDashboards && _dashboardPath(path)) return _moved(true, s.uri);
       if (!appMode.hasRiderApp && (_riderPath(path) || path == '/register')) return _moved(false, s.uri);
@@ -110,6 +114,7 @@ GoRouter buildRouter(AppState state, {AppMode? mode}) {
         path: '/register',
         builder: (context, s) => LoginPage(portal: Portal.passenger, startInRegister: true, from: s.uri.queryParameters['from'], email: s.uri.queryParameters['email'], mode: appMode),
       ),
+      GoRoute(path: '/two-step', builder: (context, s) => const TwoStepPage()),
       GoRoute(path: '/switch-account', builder: (context, s) => SwitchAccountPage(query: s.uri.queryParameters)),
       GoRoute(
         path: '/moved',

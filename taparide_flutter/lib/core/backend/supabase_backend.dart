@@ -129,6 +129,31 @@ class SupabaseBackend implements Backend {
       });
 
   @override
+  Future<TwoStepStatus> twoStepStatus() => _guard(() async {
+        final factors = await _client.auth.mfa.listFactors();
+        final aal = _client.auth.mfa.getAuthenticatorAssuranceLevel();
+        return TwoStepStatus(enforced: true, verified: aal.currentLevel == AuthenticatorAssuranceLevels.aal2, factorId: factors.totp.firstOrNull?.id);
+      });
+
+  @override
+  Future<TwoStepSetup> twoStepSetup() => _guard(() async {
+        // Clear half-finished set-ups first (an unconfirmed authenticator blocks a new one).
+        final factors = await _client.auth.mfa.listFactors();
+        for (final f in factors.all.where((f) => f.status == FactorStatus.unverified)) {
+          await _client.auth.mfa.unenroll(f.id);
+        }
+        final res = await _client.auth.mfa.enroll(factorType: FactorType.totp, issuer: 'Tap A Ride', friendlyName: 'Tap A Ride dashboard ${DateTime.now().millisecondsSinceEpoch}');
+        final totp = res.totp;
+        if (totp == null) throw const BackendException(BackendErrorKind.unknown, 'Could not start the authenticator set-up. Please try again.');
+        return TwoStepSetup(factorId: res.id, secret: totp.secret, uri: totp.uri);
+      });
+
+  @override
+  Future<void> twoStepVerify({required String factorId, required String code}) => _guard(() async {
+        await _client.auth.mfa.challengeAndVerify(factorId: factorId, code: code.trim());
+      });
+
+  @override
   Future<List<WaitlistEntry>> fetchWaitlist() => _guard(() async {
         final rows = await _client.rpc('admin_waitlist');
         return [for (final r in (rows as List? ?? const [])) WaitlistEntry.fromJson(Map<String, dynamic>.from(r as Map))];

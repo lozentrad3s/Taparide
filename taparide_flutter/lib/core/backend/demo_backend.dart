@@ -269,6 +269,16 @@ class DemoBackend implements Backend {
     throw BackendException(BackendErrorKind.validation, 'Continue with ${provider.label} works on the live app. In this demo, sign in with email.');
   }
 
+  /// The demo has no authenticator support; two-step sign-in applies on the live app only.
+  @override
+  Future<TwoStepStatus> twoStepStatus() async => const TwoStepStatus(enforced: false, verified: false);
+
+  @override
+  Future<TwoStepSetup> twoStepSetup() async => throw const BackendException(BackendErrorKind.validation, 'Two-step sign-in works on the live dashboard.');
+
+  @override
+  Future<void> twoStepVerify({required String factorId, required String code}) async => throw const BackendException(BackendErrorKind.validation, 'Two-step sign-in works on the live dashboard.');
+
   /// The real list lives in the live database (filled from the website). The demo shows a few
   /// clearly-labelled sample sign-ups so the admin page can be tried.
   @override

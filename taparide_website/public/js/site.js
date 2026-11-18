@@ -129,8 +129,31 @@
     cd.textContent = days > 1 ? `in ${days} days` : days === 1 ? "tomorrow" : Date.now() < new Date("2026-11-27") ? "on now" : "finished";
   }
 
+  // ---------------------------------------------------------------- anti-bot (see api/waitlist.js)
+  const loadedAt = performance.now();
+  let turnstileToken = null;
+  let turnstileWidget = null;
+  fetch("/api/waitlist?config=1").then((r) => r.json()).then(({ turnstile }) => {
+    if (!turnstile) return;
+    window.onTurnstileReady = () => {
+      const box = document.createElement("div");
+      box.className = "ts-box";
+      document.body.append(box);
+      turnstileWidget = window.turnstile.render(box, { sitekey: turnstile, size: "flexible", appearance: "interaction-only", callback: (t) => (turnstileToken = t) });
+    };
+    const s = document.createElement("script");
+    s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileReady&render=explicit";
+    s.async = true;
+    document.head.append(s);
+  }).catch(() => {});
+
   // ---------------------------------------------------------------- api
   async function api(method, body, query = "") {
+    if (body) {
+      body = { ...body, elapsed: Math.round(performance.now() - loadedAt), turnstile: turnstileToken || undefined };
+      turnstileToken = null;
+      if (turnstileWidget !== null) window.turnstile?.reset(turnstileWidget);
+    }
     const res = await fetch("/api/waitlist" + query, {
       method,
       headers: body ? { "Content-Type": "application/json" } : undefined,

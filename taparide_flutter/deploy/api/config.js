@@ -13,6 +13,6 @@ export default function handler(req, res) {
     backend: process.env.SUPABASE_URL ? "supabase" : "demo",
     redis: !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN),
     // "paystack" once card and bank top-ups are switched on; until then wallet money is test money.
-    payments: process.env.PAYSTACK_SECRET_KEY && process.env.TOPUP_SIGNING_SECRET ? "paystack" : "test",
+    payments: !process.env.TOPUP_SIGNING_SECRET ? "test" : process.env.BACHS_SECRET_KEY ? "bachs" : process.env.PAYSTACK_SECRET_KEY ? "paystack" : "test",
   });
 }

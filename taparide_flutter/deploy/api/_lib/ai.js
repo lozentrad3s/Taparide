@@ -5,6 +5,7 @@
 // The conversation history is kept in each provider's NATIVE format and passed back
 // verbatim on every turn (append-only), so tool calls and reasoning signatures stay valid.
 import Anthropic from "@anthropic-ai/sdk";
+import { reportError } from "./sentry.js";
 
 export const provider = () => (process.env.AI_PROVIDER || "gemini").toLowerCase();
 
@@ -234,7 +235,10 @@ export function send(res, status, body) {
 
 export function handleError(res, error) {
   const status = error instanceof AiError ? error.status : 500;
-  if (!(error instanceof AiError)) console.error(error);
+  if (!(error instanceof AiError)) {
+    console.error(error);
+    reportError(error);
+  } else if (status >= 500) reportError(error, { status });
   send(res, status, { error: error instanceof AiError ? error.message : "Something went wrong on the server." });
 }
 

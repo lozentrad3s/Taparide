@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { loadEnv } from './check-keys.mjs';
 
 // Only what the serverless functions need. SUPABASE_DB_URL and GITHUB_TOKEN are deliberately excluded.
-const ALLOWED = ['AI_PROVIDER', 'GEMINI_API_KEY', 'GEMINI_MODEL', 'ANTHROPIC_API_KEY', 'CARTO_API_KEY', 'CARTO_LDS_TOKEN', 'CARTO_GEOCODING', 'SUPABASE_URL', 'SUPABASE_ANON_KEY', 'PAYSTACK_SECRET_KEY', 'TOPUP_SIGNING_SECRET'];
+const ALLOWED = ['AI_PROVIDER', 'GEMINI_API_KEY', 'GEMINI_MODEL', 'ANTHROPIC_API_KEY', 'CARTO_API_KEY', 'CARTO_LDS_TOKEN', 'CARTO_GEOCODING', 'SUPABASE_URL', 'SUPABASE_ANON_KEY', 'PAYSTACK_SECRET_KEY', 'TOPUP_SIGNING_SECRET', 'BACHS_SECRET_KEY', 'BACHS_WEBHOOK_SECRET', 'MAPTILER_API_KEY', 'MAPTILER_STYLE', 'UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN', 'SENTRY_DSN', 'TURNSTILE_SECRET_KEY'];
 const env = loadEnv();
 // Generated server-only secrets (see supabase-setup.mjs).
 const serverFile = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '.env.server.local');

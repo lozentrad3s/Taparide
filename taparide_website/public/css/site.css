@@ -483,6 +483,8 @@ legend, .field label { display: block; font-weight: 700; font-size: 15px; margin
 .wa-float.is-min .wa-toggle .ic { transform: rotate(45deg); }
 @media (max-width: 479px) { .wa-text { display: none; } .wa-link { padding: 0 4px 0 14px; } }
 
+.ts-box { position: fixed; left: 16px; bottom: 16px; z-index: 50; }
+
 /* ------------------------------------------------------------ "I agree" checkbox */
 .agree { margin-top: 16px; display: flex; align-items: flex-start; gap: 10px; font-size: 14px; line-height: 1.45; color: var(--ink-soft); cursor: pointer; }
 .agree input { flex: none; width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--forest); cursor: pointer; }
