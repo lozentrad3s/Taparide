@@ -1,3 +1,5 @@
+import '../fleet_drivers.dart';
+import '../live_models.dart';
 import '../models.dart';
 import '../partner_models.dart';
 import '../route_operators.dart';
@@ -42,6 +44,7 @@ abstract final class DemoSeed {
     ('Grace Okafor · private driver', 'grace@taparide.demo', UserRole.operator),
     ('Musa Abdullahi · driver applicant', 'musa@taparide.demo', UserRole.passenger),
     ('Ngozi Eze · company applicant', 'ngozi@capitalcabs.demo', UserRole.passenger),
+    ('Aliyu Wada · sample fleet driver (GreenFleet)', fleetDriverEmail, UserRole.fleetDriver),
   ];
 
   static List<AppUser> users() => [
@@ -58,6 +61,7 @@ abstract final class DemoSeed {
         AppUser(id: 'u_events', fullName: 'Halima Sani', email: 'events@taparide.demo', phone: '+234 807 555 0606', role: UserRole.eventPartner, providerId: pEvents, organisation: 'Capital Events Hub (sample)', createdAt: DateTime(2026, 10, 1)),
         AppUser(id: 'u_grace', fullName: 'Grace Okafor', email: 'grace@taparide.demo', phone: '+234 805 555 0404', role: UserRole.operator, providerId: pGrace, createdAt: DateTime(2026, 9, 28)),
         AppUser(id: 'u_musa', fullName: 'Musa Abdullahi', email: 'musa@taparide.demo', phone: '+234 803 555 0101', role: UserRole.passenger, createdAt: DateTime(2026, 10, 10)),
+        AppUser(id: uFleetDriver, fullName: 'Aliyu Wada', email: fleetDriverEmail, phone: '+234 803 555 0707', role: UserRole.fleetDriver, organisation: 'GreenFleet Logistics', createdAt: DateTime(2026, 10, 20)),
         AppUser(id: 'u_ngozi', fullName: 'Ngozi Eze', email: 'ngozi@capitalcabs.demo', phone: '+234 802 555 0202', role: UserRole.passenger, organisation: 'Capital City Cabs Ltd', createdAt: DateTime(2026, 10, 11)),
       ];
 
@@ -404,4 +408,71 @@ abstract final class DemoSeed {
     routesOffPlatform: 32 - routes().where((r) => r.active && const {pMetro, pRail, pAirport}.contains(r.providerId)).length,
     activeRoutesDelta: 6,
   );
+
+  // ---------------------------------------------------------------- fleet drivers (sample)
+
+  static const uFleetDriver = 'u_gf_driver';
+  static const fleetDriverEmail = 'driver@greenfleet.demo';
+
+  /// The vehicle and route the sample fleet driver works today (a GreenFleet bus on K01 Kubwa – Berger).
+  static const fleetDriverVehicle = 'v_abj021';
+  static const fleetDriverRoute = 'r01';
+
+  /// Event buses that already have a vehicle (and so a driver) on them.
+  static const eventBusVehicles = {'eb_kubwa': fleetDriverVehicle};
+
+  static List<FleetDriver> fleetDrivers() => [
+        FleetDriver(id: 'fd_aliyu', providerId: pGreenFleet, userId: uFleetDriver, fullName: 'Aliyu Wada', phone: '+234 803 555 0707', email: fleetDriverEmail, licenceNumber: 'ABJ21734AA02', vehicleId: fleetDriverVehicle, routeId: fleetDriverRoute, status: FleetDriverStatus.active, createdAt: DateTime(2026, 10, 20)),
+        FleetDriver(id: 'fd_hauwa', providerId: pGreenFleet, fullName: 'Hauwa Aliyu (sample)', phone: '+234 806 555 0808', email: 'hauwa.driver@greenfleet.demo', licenceNumber: 'ABJ40912BB17', vehicleId: 'v_abj015', routeId: 'r02', status: FleetDriverStatus.active, createdAt: DateTime(2026, 10, 22)),
+        FleetDriver(id: 'fd_kelechi', providerId: pMetro, fullName: 'Kelechi Obi (sample)', phone: '+234 809 555 0909', email: 'kelechi.driver@abujametro.demo', licenceNumber: 'ABJ77310CC45', vehicleId: 'v_abj104', routeId: 'r07', status: FleetDriverStatus.active, createdAt: DateTime(2026, 10, 24)),
+      ];
+
+  /// Gives seeded event buses their vehicle (the sample driver's bus runs the Kubwa stadium bus).
+  static EventBus withSeedVehicle(EventBus b) {
+    final vehicle = eventBusVehicles[b.id];
+    if (vehicle == null || b.vehicleId != null) return b;
+    return EventBus(id: b.id, eventId: b.eventId, providerId: b.providerId, providerName: b.providerName, origin: b.origin, fare: b.fare, capacity: b.capacity, minRiders: b.minRiders, slots: b.slots, seatsBySlot: b.seatsBySlot, status: b.status, vehicleId: vehicle, vehicleLabel: 'City bus · CNG · ABJ 021', confirmedAt: b.confirmedAt);
+  }
+
+  /// Riders on the sample driver's bus: the next K01 departures, earlier trips today and
+  /// seats held on the Kubwa event bus. Times are relative to [now] so the dashboard always has data.
+  static List<Booking> fleetDriverBookings(DateTime now) {
+    final route = routes().firstWhere((r) => r.id == fleetDriverRoute);
+    final next = route.upcomingDepartures(now, count: 3);
+    final cupBus = DateTime(now.year, now.month, now.day + 6, 18);
+    Booking b(String id, String user, String name, String origin, DateTime at, BookingStatus status, String seat, {bool event = false}) => Booking(
+          id: id,
+          userId: user,
+          passengerName: name,
+          kind: event ? BookingKind.eventBus : BookingKind.transit,
+          status: status,
+          origin: origin,
+          destination: event ? 'Moshood Abiola National Stadium' : route.destination,
+          departureAt: at,
+          fare: event ? 1200 : route.fare,
+          paymentMethod: PaymentMethod.tapCard,
+          ticketCode: '${event ? 'EB' : 'TR'}-${id.substring(id.length - 4).toUpperCase()}',
+          // Booked the day before, so today's platform figures stay as the other seeds set them.
+          createdAt: now.subtract(const Duration(days: 1, hours: 2)),
+          title: event ? 'Community Cup Final' : null,
+          seat: seat,
+          routeId: event ? null : route.id,
+          vehicleId: fleetDriverVehicle,
+          providerId: pMetro,
+          eventId: event ? 'ev_cup' : null,
+          eventBusId: event ? 'eb_kubwa' : null,
+        );
+    return [
+      b('bk_fd_0001', 'u_emeka', 'Emeka Nwosu', 'Kubwa', next[0], BookingStatus.confirmed, 'S04'),
+      b('bk_fd_0002', 'u_zainab', 'Zainab Yusuf', 'Dutse Junction', next[0], BookingStatus.confirmed, 'S09'),
+      b('bk_fd_0003', 'u_rider_sample1', 'Chidi Okeke (sample)', 'Kubwa', next[0], BookingStatus.confirmed, 'S12'),
+      b('bk_fd_0004', 'u_rider_sample2', 'Amina Garba (sample)', 'Gwarinpa Junction', next[1], BookingStatus.confirmed, 'S02'),
+      b('bk_fd_0005', 'u_rider_sample3', 'Tobi Adeleke (sample)', 'Kubwa', next[2], BookingStatus.confirmed, 'S17'),
+      b('bk_fd_0006', 'u_rider_sample1', 'Chidi Okeke (sample)', 'Kubwa', now.subtract(const Duration(hours: 2, minutes: 10)), BookingStatus.completed, 'S06'),
+      b('bk_fd_0007', 'u_rider_sample2', 'Amina Garba (sample)', 'Dutse Junction', now.subtract(const Duration(hours: 1, minutes: 25)), BookingStatus.completed, 'S21'),
+      b('bk_fd_0008', 'u_emeka', 'Emeka Nwosu', 'Kubwa', cupBus, BookingStatus.requested, 'S05', event: true),
+      b('bk_fd_0009', 'u_rider_sample3', 'Tobi Adeleke (sample)', 'Kubwa', cupBus, BookingStatus.requested, 'S06', event: true),
+      b('bk_fd_0010', 'u_rider_sample2', 'Amina Garba (sample)', 'Kubwa', cupBus, BookingStatus.requested, 'S07', event: true),
+    ];
+  }
 }

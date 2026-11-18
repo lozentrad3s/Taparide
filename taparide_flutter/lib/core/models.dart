@@ -21,7 +21,7 @@ double? _double(Object? raw) => raw is num ? raw.toDouble() : double.tryParse('$
 
 // ---------------------------------------------------------------- accounts
 
-enum UserRole { passenger, operator, fleetOwner, government, admin, eventPartner }
+enum UserRole { passenger, operator, fleetOwner, government, admin, eventPartner, fleetDriver }
 
 extension UserRoleX on UserRole {
   String get label => switch (this) {
@@ -31,6 +31,7 @@ extension UserRoleX on UserRole {
         UserRole.government => 'Government / FCTA',
         UserRole.admin => 'Platform admin',
         UserRole.eventPartner => 'Event partner',
+        UserRole.fleetDriver => 'Fleet driver',
       };
 
   IconData get icon => switch (this) {
@@ -40,6 +41,7 @@ extension UserRoleX on UserRole {
         UserRole.government => Icons.account_balance_outlined,
         UserRole.admin => Icons.admin_panel_settings_outlined,
         UserRole.eventPartner => Icons.celebration_outlined,
+        UserRole.fleetDriver => Icons.badge_outlined,
       };
 
   bool get isPartner => this != UserRole.passenger;

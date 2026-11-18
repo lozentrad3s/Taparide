@@ -4,6 +4,8 @@ import 'admin_dashboard.dart';
 import 'applications_page.dart';
 import 'dashboard_pages.dart';
 import 'events_portal_page.dart';
+import 'fleet_driver_dashboard.dart';
+import 'fleet_drivers_page.dart';
 import 'insights_page.dart';
 import 'manage_pages.dart';
 import 'portal_shell.dart';
@@ -29,5 +31,7 @@ Widget portalPageFor(PortalSection section, Map<String, String> query) => switch
       '/portal/applications' => const ApplicationsPage(),
       '/portal/events' => const EventsPortalPage(),
       '/portal/waitlist' => const WaitlistPage(),
+      '/portal/drivers' => FleetDriversPage(providerId: query['provider']),
+      '/portal/driver' => FleetDriverDashboard(driverId: query['driver']),
       _ => const OverviewPage(),
     };

@@ -34,6 +34,7 @@ String homeFor(AppUser user) => switch (user.role) {
       UserRole.government => '/portal/fcta',
       UserRole.admin => '/portal/overview',
       UserRole.eventPartner => '/portal/events',
+      UserRole.fleetDriver => '/portal/driver',
     };
 
 /// Dashboard-only pages (they live at taparide.com/dashboard in production).
