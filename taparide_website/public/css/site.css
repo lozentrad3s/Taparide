@@ -139,13 +139,11 @@ h3 { font-weight: 700; letter-spacing: -0.01em; font-size: 22px; line-height: 1.
   background: #1B1F1C; color: #fff;
 }
 .hero-slides { position: absolute; inset: 0; z-index: -2; }
-.hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 35%; opacity: 0; transition: opacity 1200ms ease, transform 7000ms linear; transform: scale(1.04); }
+.hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 80% 40%; opacity: 0; transition: opacity 1200ms ease, transform 7000ms linear; transform: scale(1.04); }
 .hero-bg.is-on { opacity: 1; transform: scale(1); }
-.hero-bg.pos-top { object-position: 50% 20%; }
-.hero-bg.pos-face { object-position: 50% 22%; }
 .hero-in { position: relative; }
 .hero-tabs { position: absolute; right: clamp(16px, 2.4vw, 36px); bottom: clamp(16px, 2.4vw, 32px); display: flex; align-items: flex-end; gap: 6px; }
-.hero-tab { width: 138px; display: grid; gap: 8px; padding: 10px 4px; color: rgba(255, 255, 255, 0.72); text-decoration: none; font-size: 13px; font-weight: 600; line-height: 1.25; }
+.hero-tab { width: 138px; display: grid; gap: 8px; padding: 10px 4px; border: 0; background: none; cursor: pointer; text-align: left; color: rgba(255, 255, 255, 0.72); font-size: 13px; font-weight: 600; line-height: 1.25; }
 .hero-tab:hover, .hero-tab.is-on { color: #fff; }
 .hero-tab .bar { height: 3px; border-radius: 3px; background: rgba(255, 255, 255, 0.3); overflow: hidden; }
 .hero-tab .bar i { display: block; height: 100%; width: 100%; background: #fff; transform: scaleX(0); transform-origin: left; }
@@ -156,15 +154,26 @@ h3 { font-weight: 700; letter-spacing: -0.01em; font-size: 22px; line-height: 1.
 .hero-pause { width: 36px; height: 36px; margin-left: 4px; display: grid; place-items: center; border-radius: 50%; border: 0; background: rgba(255, 255, 255, 0.16); color: #fff; cursor: pointer; }
 .hero-pause:hover { background: rgba(255, 255, 255, 0.28); }
 .hero-pause .ic { width: 16px; height: 16px; }
-@media (max-width: 1099px) { .hero-tabs { display: none; } }
+@media (max-width: 1099px) {
+  .hero-tabs { left: 14px; right: 14px; top: 12px; bottom: auto; gap: 6px; }
+  .hero-tab { flex: 1; width: auto; padding: 8px 0; }
+  .hero-tab .tab-label { display: none; }
+  .hero-pause { width: 30px; height: 30px; margin-left: 2px; }
+}
 .hero-frame::before {
   content: ""; position: absolute; inset: 0; z-index: -1;
   background:
-    linear-gradient(0deg, rgba(0, 0, 0, 0.78) 0%, rgba(0, 0, 0, 0.45) 38%, rgba(0, 0, 0, 0) 68%),
-    linear-gradient(90deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0) 60%);
+    linear-gradient(0deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.25) 35%, rgba(0, 0, 0, 0) 60%),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.1) 45%, rgba(0, 0, 0, 0) 60%);
 }
 .hero-in { width: 100%; max-width: var(--max); margin-inline: auto; padding: 120px var(--gutter) clamp(32px, 5vw, 64px); }
-.hero h1 { color: #fff; max-width: 12ch; font-size: clamp(2.8rem, 5.6vw, 4.6rem); }
+.hero-stories { display: grid; max-width: 620px; }
+.story-slide { grid-area: 1 / 1; align-self: end; opacity: 0; visibility: hidden; transform: translateY(12px); transition: opacity 600ms ease, transform 700ms var(--ease), visibility 0s linear 600ms; }
+.story-slide.is-on { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
+.hero-title { color: #fff; font-weight: 700; letter-spacing: -0.035em; line-height: 0.98; font-size: clamp(2.6rem, 5.2vw, 4.5rem); text-wrap: balance; }
+.hero-link { margin-top: 16px; display: inline-flex; align-items: center; gap: 8px; color: #fff; font-weight: 700; text-decoration: none; padding-bottom: 3px; border-bottom: 2px solid var(--lime); }
+.hero-link .ic { width: 18px; height: 18px; transition: transform 200ms var(--ease); }
+.hero-link:hover .ic { transform: translateX(4px); }
 .hero-lede { margin-top: 18px; max-width: 36ch; font-size: clamp(18px, 1.6vw, 21px); color: rgba(255, 255, 255, 0.9); }
 .quick { margin-top: 28px; max-width: 540px; }
 .quick-row { display: flex; flex-direction: column; gap: 10px; }
@@ -429,6 +438,7 @@ legend, .field label { display: block; font-weight: 700; font-size: 15px; margin
 @media (max-width: 719px) {
   .hero-frame { display: block; min-height: 0; background: var(--ink); }
   .hero-slides { position: relative; aspect-ratio: 4 / 3; }
+  .hero-bg { object-position: 50% 40%; }
   .hero-frame::before { display: none; }
   .hero-in { padding: 28px 20px 30px; }
   .notice-tag { display: none; }
@@ -463,3 +473,7 @@ legend, .field label { display: block; font-weight: 700; font-size: 15px; margin
 .wa-float .ic { width: 22px; height: 22px; }
 @media (max-width: 479px) { .wa-float span { display: none; } .wa-float { width: 52px; padding: 0; justify-content: center; } }
 .preview-flag { bottom: 80px; }
+
+/* The WhatsApp button waits until the visitor has scrolled past the hero. */
+.wa-float { opacity: 0; pointer-events: none; transform: translateY(12px); transition: opacity 260ms ease, transform 260ms var(--ease), background-color 160ms ease; }
+.wa-float.is-visible { opacity: 1; pointer-events: auto; transform: none; }

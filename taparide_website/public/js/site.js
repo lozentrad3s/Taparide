@@ -27,7 +27,11 @@
 
   // ---------------------------------------------------------------- header + menu
   const top = $("[data-top]");
-  const solid = () => top?.classList.toggle("solid", scrollY > 8);
+  const wa = $(".wa-float");
+  const solid = () => {
+    top?.classList.toggle("solid", scrollY > 8);
+    wa?.classList.toggle("is-visible", scrollY > Math.min(innerHeight * 0.75, 640));
+  };
   solid();
   addEventListener("scroll", solid, { passive: true });
 
@@ -46,6 +50,7 @@
   const hero = $("[data-hero]");
   if (hero) {
     const slides = $$("[data-slide]", hero);
+    const stories = $$("[data-story-slide]", hero);
     const tabs = $$("[data-tab]", hero);
     const pauseBtn = $("[data-hero-pause]", hero);
     const MS = 6000;
@@ -53,19 +58,19 @@
     let i = 0, timer = null, paused = reduced();
     const show = (n) => {
       i = (n + slides.length) % slides.length;
-      slides.forEach((s, k) => {
-        if (k === i && s.loading === "lazy") s.loading = "eager";
-        s.classList.toggle("is-on", k === i);
+      slides.forEach((s, k) => s.classList.toggle("is-on", k === i));
+      stories.forEach((st, k) => {
+        st.classList.toggle("is-on", k === i);
+        st.setAttribute("aria-hidden", String(k !== i));
+        for (const a of $$("a", st)) a.tabIndex = k === i ? 0 : -1;
       });
       tabs.forEach((t, k) => {
         t.classList.toggle("is-on", k === i);
+        t.setAttribute("aria-pressed", String(k === i));
         t.classList.toggle("is-done", k < i);
         const bar = t.querySelector(".bar i");
         if (bar) { bar.style.animation = "none"; void bar.offsetWidth; bar.style.animation = ""; }
       });
-      // Warm the next photo so the fade never shows a blank frame.
-      const next = slides[(i + 1) % slides.length];
-      if (next?.loading === "lazy") next.loading = "eager";
     };
     const schedule = () => { clearTimeout(timer); if (!paused) timer = setTimeout(() => { show(i + 1); schedule(); }, MS); };
     const setPaused = (p) => {
@@ -77,7 +82,7 @@
       }
       schedule();
     };
-    tabs.forEach((t, k) => t.addEventListener("mouseenter", () => { show(k); schedule(); }));
+    tabs.forEach((t, k) => t.addEventListener("click", () => { show(k); schedule(); }));
     pauseBtn?.addEventListener("click", () => setPaused(!paused));
     hero.addEventListener("focusin", () => { clearTimeout(timer); hero.classList.add("paused"); });
     hero.addEventListener("focusout", () => { if (!paused) { hero.classList.remove("paused"); schedule(); } });

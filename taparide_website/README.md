@@ -9,19 +9,35 @@ The public website for Tap A Ride. It is a separate project from the app in `../
 - **Abuja Tech Week buses:** people pick the day, their area and a departure time and reserve a free seat. Demand is shown live by area. A bus is confirmed once 14 people from one area pick the same day and time.
 - **Privacy notice (`public/privacy.html`)** and photo credits.
 
-## Run it on your computer
+## How it is hosted
+
+One Vercel project serves everything on taparide.com:
+
+| Address | What | Built from |
+|---|---|---|
+| `taparide.com/` | This website | `public/` |
+| `taparide.com/app` | Rider app (onboarding, sign-in with Google/Apple/email, booking) | `../taparide_flutter`, `APP_MODE=rider` |
+| `taparide.com/dashboard` | Partner, operator, FCTA, fleet, event-partner and admin dashboards | `../taparide_flutter`, `APP_MODE=dashboard` |
+| `dashboard.taparide.com`, `app.taparide.com`, `www.` | Redirect to the addresses above | `vercel.json` |
+| `/api/*` | Website waitlist + the app's maps, search, AI and payments | `api/` + `../taparide_flutter/deploy/api` |
+
+The website and the app stay in separate folders; `scripts/assemble.mjs` joins them only in `.output/` (git-ignored).
 
 ```
-node scripts/dev.mjs 8090
+node scripts/assemble.mjs              # builds the rider app and the dashboards, then assembles .output/
+node scripts/assemble.mjs --no-build   # reuse the last Flutter builds
+node scripts/dev.mjs --dir .output     # preview everything at http://localhost:8090
+node scripts/dev.mjs                   # website only
 ```
 
-Then open http://localhost:8090. Without database keys, sign-ups are saved in a temporary file on this computer (the page shows "Preview mode"). "Open the app" links go to the local app at http://localhost:8080 when you run it locally, and to https://taparide.vercel.app otherwise.
+Without `--live`, website sign-ups in the preview are saved in a temp file (the page says "Preview mode").
 
 ## Go live
 
-1. Apply the database migration `../taparide_flutter/supabase/migrations/20261118000000_waitlist.sql` (with `node scripts/supabase-setup.mjs` in `../taparide_flutter/deploy`). It creates the waitlist, seat requests and the free-ride credit that's paid when a waitlisted email opens and confirms an account.
-2. Create a new Vercel project from this folder, and set `SUPABASE_URL` and `SUPABASE_ANON_KEY`, the same values the app uses. Set `SITE_ORIGINS` if the domain isn't `taparide.com`.
-3. Point the domain at it, e.g. `taparide.com` for the website and `app.taparide.com` for the app. Then change the app address in `vercel.json` (redirects) and in `public/js/site.js` (`APP`).
+1. Apply the database migrations in `../taparide_flutter/supabase/migrations` (`node scripts/supabase-setup.mjs` in `../taparide_flutter/deploy`): the waitlist and Tech Week seats (`20261118000000_waitlist.sql`) and the real Abuja routes (`20261118010000_real_routes.sql`).
+2. `node scripts/assemble.mjs`, then `cd .output && npx vercel deploy --prod`. It deploys to the existing `taparide` Vercel project, so its keys (Supabase, AI, maps) carry over.
+3. In Vercel, add the domains `taparide.com`, `www.taparide.com`, `dashboard.taparide.com` and `app.taparide.com`, and set the DNS records Vercel shows.
+4. In Supabase → Authentication: set the Site URL to `https://taparide.com/app/`, add it under Redirect URLs, and switch on Google and Apple with their client IDs.
 
 ## Swapping in your own photos and flyers
 

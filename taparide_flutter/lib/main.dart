@@ -26,6 +26,10 @@ Future<void> main() async {
   // Credit whichever provider the server is using for map tiles.
   state.api.config().then((c) {
     state.setServices(c);
-    MapTiles.attribution.value = c['tiles'] == 'carto' ? '© OpenStreetMap contributors · © CARTO' : '© OpenStreetMap contributors';
+    MapTiles.attribution.value = switch (c['tiles']) {
+      'maptiler' => '© MapTiler · © OpenStreetMap contributors',
+      'carto' => '© OpenStreetMap contributors · © CARTO',
+      _ => '© OpenStreetMap contributors',
+    };
   });
 }

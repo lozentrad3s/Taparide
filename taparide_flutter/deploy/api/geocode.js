@@ -1,5 +1,5 @@
 // GET /api/geocode?q=… — turns a place name into coordinates inside the FCT.
-// CARTO Location Data Services when CARTO_API_KEY is set; OpenStreetMap Nominatim otherwise.
+// MapTiler geocoding (MAPTILER_API_KEY), then CARTO Location Data Services, then OpenStreetMap Nominatim.
 // The key stays on the server.
 import { AiError, handleError, send } from "./_lib/ai.js";
 import { requireUser } from "./_lib/auth.js";
@@ -18,6 +18,20 @@ function collect(node, out = []) {
   }
   for (const v of Array.isArray(node) ? node : Object.values(node)) if (v && typeof v === "object") collect(v, out);
   return out;
+}
+
+async function maptiler(q) {
+  const key = process.env.MAPTILER_API_KEY;
+  if (!key) return null;
+  const bbox = `${FCT.minLng},${FCT.minLat},${FCT.maxLng},${FCT.maxLat}`;
+  const url = `https://api.maptiler.com/geocoding/${encodeURIComponent(q)}.json?key=${encodeURIComponent(key)}&country=ng&bbox=${bbox}&proximity=7.4951,9.0579&limit=5&language=en`;
+  const res = await fetch(url);
+  if (res.status === 401 || res.status === 403) throw new AiError(503, "The MapTiler API key was refused.");
+  if (!res.ok) return null;
+  const { features = [] } = await res.json();
+  return features
+    .filter((f) => Array.isArray(f.center))
+    .map((f) => ({ lng: f.center[0], lat: f.center[1], name: f.place_name || f.text || null, source: "maptiler" }));
 }
 
 async function carto(q) {
@@ -48,10 +62,13 @@ export default async function handler(req, res) {
     const q = String(new URL(req.url, "http://x").searchParams.get("q") || "").trim().slice(0, 120);
     if (q.length < 2) throw new AiError(400, "Enter a place name.");
     let results = null;
-    try {
-      results = await carto(q);
-    } catch (e) {
-      if (e instanceof AiError && e.status !== 503) throw e;
+    for (const provider of [maptiler, carto]) {
+      if (results && results.length) break;
+      try {
+        results = await provider(q);
+      } catch (e) {
+        if (e instanceof AiError && e.status !== 503) throw e;
+      }
     }
     if (!results || results.length === 0) results = await nominatim(q);
     results = results.filter(inFct).map((r) => ({ ...r, name: (r.name || q).split(",").slice(0, 3).join(",").trim() }));

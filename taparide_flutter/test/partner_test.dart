@@ -112,7 +112,7 @@ void main() {
     final (state, _) = await freshState();
     await state.signIn(email: 'aisha@taparide.demo', password: DemoSeed.password, portal: Portal.passenger);
     expect(state.suggestions, isNotEmpty);
-    expect(state.suggestions.first.title, contains('Wuse – Maitama'));
+    expect(state.suggestions.first.title, contains('Kubwa – Berger'));
   });
 
   test('admin analytics add up across the platform', () async {

@@ -218,7 +218,7 @@ class _SystemStrip extends StatelessWidget {
     final items = [
       (Icons.storage_rounded, 'Data', demo ? 'Demo data on this device' : 'Live Supabase', demo ? Tone.warning : Tone.success),
       (Icons.auto_awesome_rounded, 'AI', ai == null ? (services.isEmpty ? 'Checking…' : 'Offline answers (add GEMINI_API_KEY)') : 'Live · ${ai[0].toUpperCase()}${ai.substring(1)}', ai == null ? Tone.warning : Tone.success),
-      (Icons.map_rounded, 'Maps', tiles == null ? 'Checking…' : (tiles == 'carto' ? 'CARTO basemaps' : 'OpenStreetMap (add CARTO_API_KEY)'), tiles == 'carto' ? Tone.success : Tone.info),
+      (Icons.map_rounded, 'Maps', tiles == null ? 'Checking…' : switch (tiles) { 'maptiler' => 'MapTiler', 'carto' => 'CARTO basemaps', _ => 'OpenStreetMap (add MAPTILER_API_KEY)' }, tiles == 'osm' ? Tone.info : Tone.success),
       (Icons.alt_route_rounded, 'Routing', 'FindMe AI road routes', Tone.success),
     ];
     final text = Theme.of(context).textTheme;

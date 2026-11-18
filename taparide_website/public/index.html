@@ -100,16 +100,49 @@
 
 <!-- ============================================================ HERO -->
 <section class="hero" aria-labelledby="hero-title">
-  <div class="hero-frame" data-hero>
+  <h1 id="hero-title" class="sr">Tap A Ride: bus rides, event rides and shared trips across Abuja</h1>
+  <div class="hero-frame" data-hero aria-roledescription="carousel" aria-label="What Tap A Ride does">
     <div class="hero-slides" aria-hidden="true">
-      <img class="hero-bg is-on" src="/img/photos/back-seat.jpg" width="1200" height="600" alt="" fetchpriority="high" data-slide>
-      <img class="hero-bg pos-top" src="/img/photos/event-crowd.jpg" width="1082" height="673" alt="" loading="lazy" data-slide>
-      <img class="hero-bg pos-face" src="/img/photos/rider-in-car.jpg" width="1080" height="1350" alt="" loading="lazy" data-slide>
-      <img class="hero-bg pos-face" src="/img/photos/tap-to-pay.jpg" width="989" height="1591" alt="" loading="lazy" data-slide>
+      <picture>
+        <source media="(min-width: 720px)" srcset="/img/hero/hero-1-wide.jpg">
+        <img class="hero-bg is-on" src="/img/hero/hero-1-phone.jpg" width="960" height="720" alt="" decoding="async" fetchpriority="high" data-slide>
+      </picture>
+      <picture>
+        <source media="(min-width: 720px)" srcset="/img/hero/hero-2-wide.jpg">
+        <img class="hero-bg" src="/img/hero/hero-2-phone.jpg" width="960" height="720" alt="" decoding="async" data-slide>
+      </picture>
+      <picture>
+        <source media="(min-width: 720px)" srcset="/img/hero/hero-3-wide.jpg">
+        <img class="hero-bg" src="/img/hero/hero-3-phone.jpg" width="960" height="720" alt="" decoding="async" data-slide>
+      </picture>
+      <picture>
+        <source media="(min-width: 720px)" srcset="/img/hero/hero-4-wide.jpg">
+        <img class="hero-bg" src="/img/hero/hero-4-phone.jpg" width="960" height="720" alt="" decoding="async" data-slide>
+      </picture>
     </div>
     <div class="hero-in">
-      <h1 id="hero-title">Move more.<br>Worry less.</h1>
-      <p class="hero-lede">Bus rides, event rides and shared trips across Abuja. Fixed fares, verified drivers, pay with a tap.</p>
+      <div class="hero-stories" aria-live="polite">
+        <div class="story-slide is-on" data-story-slide>
+          <p class="hero-title">Move more.<br>Worry less.</p>
+          <p class="hero-lede">Fixed fares, verified drivers and a seat that's yours before you leave home. The ride across Abuja becomes the easy part of your day.</p>
+          <a class="hero-link" href="#bus">How bus rides work<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+        </div>
+        <div class="story-slide" data-story-slide aria-hidden="true">
+          <p class="hero-title">Free buses to<br>Abuja Tech Week.</p>
+          <p class="hero-lede">Six pick-up points across the city, 7:00 AM sharp, 24–26 November. Tap A Ride is the official ride partner, powered by Pi-CNG &amp; EV.</p>
+          <a class="hero-link" href="#tech-week">Reserve a free seat<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+        </div>
+        <div class="story-slide" data-story-slide aria-hidden="true">
+          <p class="hero-title">Going your way?<br>Hop on.</p>
+          <p class="hero-lede">Tagalong pairs you with verified car owners already heading your way. Share the trip, split the cost, and let family follow along live.</p>
+          <a class="hero-link" href="#tagalong">How Tagalong works<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+        </div>
+        <div class="story-slide" data-story-slide aria-hidden="true">
+          <p class="hero-title">Tap. Pay.<br>You're on your way.</p>
+          <p class="hero-lede">Top up once and pay for every seat with a tap or a QR code. No change wahala, instant confirmation.</p>
+          <a class="hero-link" href="#tap-pay">See Tap to Pay<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+        </div>
+      </div>
       <form class="quick" data-join="hero" novalidate>
         <div class="quick-row">
           <label class="sr" for="hero-email">Email address</label>
@@ -121,11 +154,11 @@
       </form>
       <p class="hero-offer"><svg class="ic" aria-hidden="true"><use href="#i-ticket"/></svg>Join the waitlist and your first ride is free, up to ₦1,000.</p>
     </div>
-    <div class="hero-tabs" role="group" aria-label="What Tap A Ride does">
-      <a href="#bus" class="hero-tab is-on" data-tab="0"><span class="bar"><i></i></span>Everyday rides</a>
-      <a href="#tech-week" class="hero-tab" data-tab="1"><span class="bar"><i></i></span>Free Tech Week buses</a>
-      <a href="#tagalong" class="hero-tab" data-tab="2"><span class="bar"><i></i></span>Share the ride</a>
-      <a href="#tap-pay" class="hero-tab" data-tab="3"><span class="bar"><i></i></span>Tap to Pay</a>
+    <div class="hero-tabs" role="group" aria-label="Choose a story">
+      <button type="button" class="hero-tab is-on" data-tab="0" aria-label="Story 1: Move more, worry less"><span class="bar"><i></i></span><span class="tab-label">Everyday rides</span></button>
+      <button type="button" class="hero-tab" data-tab="1" aria-label="Story 2: Free buses to Abuja Tech Week"><span class="bar"><i></i></span><span class="tab-label">Tech Week buses</span></button>
+      <button type="button" class="hero-tab" data-tab="2" aria-label="Story 3: Tagalong"><span class="bar"><i></i></span><span class="tab-label">Tagalong</span></button>
+      <button type="button" class="hero-tab" data-tab="3" aria-label="Story 4: Tap to Pay"><span class="bar"><i></i></span><span class="tab-label">Tap to Pay</span></button>
       <button class="hero-pause" type="button" aria-label="Pause slideshow" data-hero-pause><svg class="ic" aria-hidden="true"><use href="#i-pause"/></svg></button>
     </div>
   </div>
@@ -171,7 +204,7 @@
         <p class="badge-partner"><svg class="ic" aria-hidden="true"><use href="#i-shield"/></svg>Official ride partner · Abuja Tech Week 2026</p>
         <h2 id="tw-title">Free buses to Abuja Tech Week.</h2>
         <p class="lede">Six pick-up points across Abuja. Buses leave at 7:00 AM sharp, 24–26 November, and drop you at the Velodrome, National Stadium.</p>
-        <p class="powered"><svg class="ic" aria-hidden="true"><use href="#i-leaf"/></svg>Powered by <strong>Pi CNG &amp; EV</strong></p>
+        <p class="powered"><svg class="ic" aria-hidden="true"><use href="#i-leaf"/></svg>Powered by <strong>Pi-CNG &amp; EV</strong></p>
         <dl class="event-facts">
           <div><dt><svg class="ic" aria-hidden="true"><use href="#i-calendar"/></svg>Dates</dt><dd>24–26 Nov 2026</dd></div>
           <div><dt><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg>Departure</dt><dd>7:00 AM sharp</dd></div>
@@ -185,7 +218,7 @@
     </div>
 
     <div class="event-grid">
-      <div class="points card">
+      <div class="pickups card">
         <div class="points-head">
           <h3>Pick-up points</h3>
           <p class="points-day" data-points-day>Seats registered for Tue 24 Nov</p>
@@ -226,7 +259,7 @@
         <input type="hidden" name="slot" value="07:00">
         <div class="field">
           <label for="seat-name">Full name</label>
-          <input id="seat-name" name="name" autocomplete="name" placeholder="As it should appear on the boarding list" required>
+          <input id="seat-name" name="name" autocomplete="name" placeholder="e.g. Ngozi Eze" required>
         </div>
         <div class="field">
           <label for="seat-phone">WhatsApp number</label>
@@ -518,7 +551,7 @@
       </details>
       <details>
         <summary>Are the Abuja Tech Week buses really free?</summary>
-        <p>Yes. Tap A Ride is the official ride partner of Abuja Tech Week 2026, and the buses, powered by Pi CNG &amp; EV, cost nothing. Reserve a seat for each day you're going.</p>
+        <p>Yes. Tap A Ride is the official ride partner of Abuja Tech Week 2026, and the buses, powered by Pi-CNG &amp; EV, cost nothing. Reserve a seat for each day you're going.</p>
       </details>
       <details>
         <summary>Where and when do the Tech Week buses leave?</summary>

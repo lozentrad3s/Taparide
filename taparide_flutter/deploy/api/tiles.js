@@ -1,6 +1,6 @@
 // GET /api/tiles/{z}/{x}/{y}[@2x].png — map tiles for the app.
-// CARTO basemaps (Positron / light_all) with the server-side CARTO_API_KEY; OpenStreetMap
-// tiles when no key is set or CARTO is unavailable. Cached at the edge for a month.
+// MapTiler (MAPTILER_API_KEY, style MAPTILER_STYLE, default streets-v2) first, then CARTO basemaps
+// (CARTO_API_KEY), then OpenStreetMap. Keys stay on the server. Cached at the edge for a month.
 // Only serves the region around Abuja (and low zooms), so it can't be used as a free tile server.
 
 const UA = "TapARide/1.0 (+https://taparide.vercel.app)";
@@ -46,9 +46,15 @@ export default async function handler(req, res) {
   }
 
   const key = process.env.CARTO_API_KEY;
+  const maptiler = process.env.MAPTILER_API_KEY;
   let source = "osm";
   let body = null;
-  if (key) {
+  if (maptiler) {
+    const style = process.env.MAPTILER_STYLE || "streets-v2";
+    body = await get(`https://api.maptiler.com/maps/${style}/256/${z}/${x}/${y}${m[2] || ""}.png?key=${encodeURIComponent(maptiler)}`);
+    if (body) source = "maptiler";
+  }
+  if (!body && key) {
     const style = process.env.CARTO_BASEMAP_STYLE || "light_all";
     body = await get(`https://basemaps.cartocdn.com/rastertiles/${style}/${z}/${x}/${y}${m[2] || ""}.png?key=${encodeURIComponent(key)}`);
     if (body) source = "carto";

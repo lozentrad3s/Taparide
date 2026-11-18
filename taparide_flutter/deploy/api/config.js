@@ -6,8 +6,8 @@ export default function handler(req, res) {
   const ai = provider();
   const aiReady = (ai === "gemini" && !!process.env.GEMINI_API_KEY) || (ai === "anthropic" && !!process.env.ANTHROPIC_API_KEY);
   send(res, 200, {
-    tiles: process.env.CARTO_API_KEY ? "carto" : "osm",
-    geocoder: process.env.CARTO_LDS_TOKEN || process.env.CARTO_GEOCODING === "true" ? "carto" : "osm",
+    tiles: process.env.MAPTILER_API_KEY ? "maptiler" : process.env.CARTO_API_KEY ? "carto" : "osm",
+    geocoder: process.env.MAPTILER_API_KEY ? "maptiler" : process.env.CARTO_LDS_TOKEN || process.env.CARTO_GEOCODING === "true" ? "carto" : "osm",
     ai: aiReady ? ai : null,
     aiFallback: ai === "gemini" ? !!process.env.ANTHROPIC_API_KEY : !!process.env.GEMINI_API_KEY,
     backend: process.env.SUPABASE_URL ? "supabase" : "demo",

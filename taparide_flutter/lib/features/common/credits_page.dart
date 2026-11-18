@@ -59,7 +59,7 @@ class CreditsPage extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 18),
-              Text('Map data © OpenStreetMap contributors, tiles © CARTO. Tap A Ride logo © its owners.', style: text.bodySmall),
+              Text('Map data © OpenStreetMap contributors; map tiles © MapTiler or CARTO. Tap A Ride logo © its owners.', style: text.bodySmall),
             ]),
           ),
         ],

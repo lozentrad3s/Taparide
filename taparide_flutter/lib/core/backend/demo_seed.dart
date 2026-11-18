@@ -77,44 +77,66 @@ abstract final class DemoSeed {
         for (var m = fromHour * 60; m <= toHour * 60; m += stepMin) '${(m ~/ 60).toString().padLeft(2, '0')}:${(m % 60).toString().padLeft(2, '0')}',
       ];
 
-  static const _wuse = RouteStop('Wuse', 9.0643, 7.4686);
-  static const _banex = RouteStop('Banex Junction', 9.0790, 7.4801);
-  static const _maitama = RouteStop('Maitama', 9.0882, 7.4934);
-  static const _central = RouteStop('Central Area', 9.0556, 7.4914);
-  static const _utako = RouteStop('Utako', 9.0703, 7.4400);
-  static const _jabi = RouteStop('Jabi', 9.0705, 7.4250);
-  static const _lifeCamp = RouteStop('Life Camp', 9.0814, 7.4055);
-  static const _gwarinpa = RouteStop('Gwarinpa', 9.1099, 7.4083);
+  // Real Abuja stops and corridors (fares reported 2025-26; operators confirm before launch).
   static const _kubwa = RouteStop('Kubwa', 9.1548, 7.3227);
-  static const _dutse = RouteStop('Dutse Junction', 9.1305, 7.3640);
+  static const _dutseJunction = RouteStop('Dutse Junction', 9.1305, 7.3640);
+  static const _gwarinpaJunction = RouteStop('Gwarinpa Junction', 9.0985, 7.4140);
   static const _berger = RouteStop('Berger', 9.0679, 7.4560);
-  static const _nyanya = RouteStop('Nyanya', 9.0213, 7.5616);
-  static const _aya = RouteStop('AYA', 9.0430, 7.5170);
   static const _area1 = RouteStop('Area 1', 9.0272, 7.4842);
-  static const _lugbe = RouteStop('Lugbe', 8.9800, 7.3750);
-  static const _airportJn = RouteStop('Airport Junction', 8.9960, 7.4080);
   static const _garki = RouteStop('Garki', 9.0310, 7.4890);
-  static const _asokoro = RouteStop('Asokoro', 9.0420, 7.5250);
-  static const _karu = RouteStop('Karu', 9.0170, 7.5480);
-  static const _lokogoma = RouteStop('Lokogoma', 8.9920, 7.4590);
+  static const _wuse = RouteStop('Wuse', 9.0643, 7.4686);
+  static const _aya = RouteStop('AYA', 9.0430, 7.5170);
+  static const _nyanya = RouteStop('Nyanya', 9.0213, 7.5616);
+  static const _mararaba = RouteStop('Mararaba', 9.0236, 7.5960);
   static const _apo = RouteStop('Apo', 9.0040, 7.4930);
+  static const _asokoro = RouteStop('Asokoro', 9.0420, 7.5250);
+  static const _lugbe = RouteStop('Lugbe', 8.9800, 7.3750);
+  static const _airportJunction = RouteStop('Airport Junction', 8.9960, 7.4080);
+  static const _gwagwalada = RouteStop('Gwagwalada', 8.9420, 7.0830);
+  static const _bwari = RouteStop('Bwari', 9.2830, 7.3810);
+  static const _karmo = RouteStop('Karmo', 9.0590, 7.3800);
+  static const _jabiGarage = RouteStop('Jabi Garage', 9.0705, 7.4250);
+  static const _deiDei = RouteStop('Dei-Dei', 9.1100, 7.2850);
+  static const _zuba = RouteStop('Zuba', 9.1000, 7.2100);
+  static const _abujaMetroStation = RouteStop('Abuja Metro Station', 9.0441, 7.4868);
+  static const _stadium = RouteStop('Stadium', 9.0365, 7.4545);
+  static const _kukwaba = RouteStop('Kukwaba', 9.0395, 7.4380);
+  static const _wupa = RouteStop('Wupa', 9.0330, 7.3900);
+  static const _idu = RouteStop('Idu', 9.0480, 7.3480);
+  static const _bassanjiwa = RouteStop('Bassanjiwa', 9.0270, 7.2950);
+  static const _nnamdiAzikiweAirport = RouteStop('Nnamdi Azikiwe Airport', 9.0068, 7.2632);
 
   static List<TransitRoute> routes() => [
-        TransitRoute(id: 'r01', providerId: pMetro, code: 'R01', stops: const [_wuse, _banex, _maitama], fare: 500, durationMin: 20, mode: TransitMode.bus, departures: _every(6, 21, 30), monthlyTrips: 42800),
-        TransitRoute(id: 'r02', providerId: pMetro, code: 'R02', stops: const [_central, _utako, _jabi, _lifeCamp, _gwarinpa], fare: 700, durationMin: 25, mode: TransitMode.bus, departures: _every(6, 21, 15), monthlyTrips: 38450),
-        TransitRoute(id: 'r03', providerId: pRail, code: 'MR1', name: 'Abuja Metro Rail', stops: const [RouteStop('Central Station', 9.0441, 7.4868), RouteStop('Kukwaba', 9.0395, 7.4380), RouteStop('Idu', 9.0480, 7.3480)], fare: 600, durationMin: 15, mode: TransitMode.rail, departures: _every(6, 20, 20), monthlyTrips: 27400),
-        TransitRoute(id: 'r04', providerId: pMetro, code: 'R04', stops: const [_kubwa, _dutse, _gwarinpa, _berger, _central], fare: 800, durationMin: 35, mode: TransitMode.bus, departures: _every(5, 20, 20), monthlyTrips: 31200),
-        TransitRoute(id: 'r05', providerId: pMetro, code: 'R05', stops: const [_nyanya, _aya, _area1, _central], fare: 600, durationMin: 30, mode: TransitMode.bus, departures: _every(5, 21, 20), monthlyTrips: 29600),
-        TransitRoute(id: 'r06', providerId: pMetro, code: 'R06', stops: const [_lugbe, _airportJn, _area1], fare: 550, durationMin: 30, mode: TransitMode.bus, departures: _every(6, 20, 30), monthlyTrips: 21300),
-        TransitRoute(id: 'r07', providerId: pMetro, code: 'R07', stops: const [_wuse, _berger, _central], fare: 450, durationMin: 15, mode: TransitMode.bus, departures: _every(6, 21, 30), monthlyTrips: 18900),
-        TransitRoute(id: 'r08', providerId: pMetro, code: 'R08', stops: const [_jabi, _utako, _wuse], fare: 400, durationMin: 15, mode: TransitMode.bus, departures: _every(6, 20, 30), monthlyTrips: 15200),
-        TransitRoute(id: 'r09', providerId: pMetro, code: 'R09', stops: const [_garki, _central, _maitama], fare: 450, durationMin: 18, mode: TransitMode.bus, departures: _every(6, 20, 30), monthlyTrips: 12800),
-        TransitRoute(id: 'r10', providerId: pMetro, code: 'R10', stops: const [_asokoro, _garki, _central], fare: 400, durationMin: 15, mode: TransitMode.bus, departures: _every(6, 20, 45), monthlyTrips: 9400),
-        TransitRoute(id: 'r11', providerId: pMetro, code: 'R11', stops: const [_karu, _nyanya, _aya, _area1], fare: 650, durationMin: 32, mode: TransitMode.bus, departures: _every(5, 20, 30), monthlyTrips: 17600),
-        TransitRoute(id: 'r12', providerId: pMetro, code: 'R12', stops: const [_gwarinpa, _lifeCamp, _berger, _wuse], fare: 650, durationMin: 28, mode: TransitMode.bus, departures: _every(6, 20, 30), monthlyTrips: 14100),
-        TransitRoute(id: 'r13', providerId: pMetro, code: 'R13', stops: const [_lokogoma, _apo, _garki, _central], fare: 550, durationMin: 25, mode: TransitMode.bus, departures: _every(6, 20, 40), monthlyTrips: 8800),
-        TransitRoute(id: 'r14', providerId: pAirport, code: 'E01', name: 'Airport E-Shuttle', stops: const [RouteStop('Nnamdi Azikiwe Airport', 9.0068, 7.2632), _lugbe, _central], fare: 3000, durationMin: 40, mode: TransitMode.shuttle, departures: _every(6, 22, 60), monthlyTrips: 6200),
-        TransitRoute(id: 'r15', providerId: pKubwa, code: 'K01', stops: const [_kubwa, _dutse, _berger, _wuse], fare: 750, durationMin: 35, mode: TransitMode.bus, departures: _every(6, 19, 30), monthlyTrips: 0),
+        // CNG bus fare, FG statement
+        TransitRoute(id: 'r01', providerId: pMetro, code: 'K01', stops: const [_kubwa, _dutseJunction, _gwarinpaJunction, _berger], fare: 500, durationMin: 35, mode: TransitMode.bus, departures: _every(5, 21, 15), monthlyTrips: 42800),
+        // CNG bus fare, FG statement
+        TransitRoute(id: 'r02', providerId: pMetro, code: 'A01', stops: const [_area1, _airportJunction, _lugbe, _gwagwalada], fare: 900, durationMin: 50, mode: TransitMode.bus, departures: _every(5, 21, 20), monthlyTrips: 38450),
+        // FCTA rail fare notice
+        TransitRoute(id: 'r03', providerId: pRail, code: 'MR1', name: 'Abuja Metro Rail · Metro Line', stops: const [_abujaMetroStation, _stadium, _kukwaba, _wupa, _idu], fare: 500, durationMin: 25, mode: TransitMode.rail, departures: _every(6, 20, 30), monthlyTrips: 27400),
+        // CNG bus fare, FG statement
+        TransitRoute(id: 'r04', providerId: pMetro, code: 'A05', stops: const [_area1, _berger, _dutseJunction, _bwari], fare: 900, durationMin: 55, mode: TransitMode.bus, departures: _every(5, 20, 30), monthlyTrips: 31200),
+        // CNG bus fare, FG statement
+        TransitRoute(id: 'r05', providerId: pMetro, code: 'A02', stops: const [_area1, _aya, _nyanya], fare: 420, durationMin: 25, mode: TransitMode.bus, departures: _every(5, 21, 15), monthlyTrips: 29600),
+        // Trust Radio, 2026
+        TransitRoute(id: 'r06', providerId: pMetro, code: 'L01', stops: const [_lugbe, _airportJunction, _area1, _berger], fare: 1000, durationMin: 40, mode: TransitMode.bus, departures: _every(6, 20, 30), monthlyTrips: 21300),
+        // CNG bus fare, FG statement
+        TransitRoute(id: 'r07', providerId: pMetro, code: 'A03', stops: const [_area1, _garki, _wuse], fare: 240, durationMin: 15, mode: TransitMode.bus, departures: _every(6, 21, 15), monthlyTrips: 18900),
+        // Daily Trust / Trust Radio, 2026
+        TransitRoute(id: 'r08', providerId: pMetro, code: 'N01', stops: const [_nyanya, _aya, _area1, _berger, _jabiGarage], fare: 1700, durationMin: 50, mode: TransitMode.bus, departures: _every(6, 20, 30), monthlyTrips: 15200),
+        // Gazette, 2026
+        TransitRoute(id: 'r09', providerId: pMetro, code: 'B03', stops: const [_berger, _jabiGarage, _karmo], fare: 700, durationMin: 25, mode: TransitMode.bus, departures: _every(6, 20, 30), monthlyTrips: 12800),
+        // CNG bus fare, FG statement
+        TransitRoute(id: 'r10', providerId: pMetro, code: 'A04', stops: const [_apo, _asokoro, _nyanya, _mararaba], fare: 500, durationMin: 35, mode: TransitMode.bus, departures: _every(5, 20, 20), monthlyTrips: 9400),
+        // CNG bus fare, FG statement
+        TransitRoute(id: 'r11', providerId: pMetro, code: 'B02', stops: const [_berger, _airportJunction, _lugbe, _gwagwalada], fare: 700, durationMin: 55, mode: TransitMode.bus, departures: _every(5, 20, 30), monthlyTrips: 17600),
+        // Trust Radio / Daily Trust, 2026
+        TransitRoute(id: 'r12', providerId: pMetro, code: 'B04', stops: const [_berger, _gwarinpaJunction, _kubwa, _deiDei, _zuba], fare: 1800, durationMin: 50, mode: TransitMode.bus, departures: _every(6, 20, 30), monthlyTrips: 14100),
+        // retired
+        TransitRoute(id: 'r13', providerId: pMetro, code: 'X13', stops: const [_apo, _garki, _area1], fare: 400, durationMin: 20, mode: TransitMode.bus, departures: _every(6, 20, 40), monthlyTrips: 0, active: false),
+        // FCTA rail fare notice
+        TransitRoute(id: 'r14', providerId: pRail, code: 'MR2', name: 'Abuja Metro Rail · Airport Line', stops: const [_idu, _bassanjiwa, _nnamdiAzikiweAirport], fare: 500, durationMin: 20, mode: TransitMode.rail, departures: _every(6, 20, 60), monthlyTrips: 6200),
+        // Diesel bus fare, FG statement
+        TransitRoute(id: 'r15', providerId: pKubwa, code: 'K02', stops: const [_kubwa, _dutseJunction, _gwarinpaJunction, _berger], fare: 1000, durationMin: 40, mode: TransitMode.bus, departures: _every(6, 19, 30), monthlyTrips: 0),
       ];
 
   static List<Vehicle> vehicles() {
@@ -216,21 +238,21 @@ abstract final class DemoSeed {
           seat: seat,
           routeId: routeId,
           vehicleId: vehicle,
-          providerId: routeId == 'r03' ? pRail : pMetro,
+          providerId: routeId == 'r03' || routeId == 'r14' ? pRail : pMetro,
         );
 
     return [
-      b('bk_seed01', uAisha, 'Aisha Bello', 'r01', 'Wuse', 'Maitama', daysAgo(1, 8, 0), 500, 'v_abj021', BookingStatus.completed, seat: 'S08'),
-      b('bk_seed02', uAisha, 'Aisha Bello', 'r02', 'Central Area', 'Gwarinpa', daysAgo(3, 17, 45), 700, 'v_abj015', BookingStatus.completed, seat: 'S21'),
-      b('bk_seed03', uAisha, 'Aisha Bello', 'r03', 'Central Station', 'Idu', daysAgo(6, 9, 20), 600, 'v_amr1', BookingStatus.completed, seat: 'C3'),
+      b('bk_seed01', uAisha, 'Aisha Bello', 'r01', 'Kubwa', 'Berger', daysAgo(1, 8, 0), 500, 'v_abj021', BookingStatus.completed, seat: 'S08'),
+      b('bk_seed02', uAisha, 'Aisha Bello', 'r02', 'Area 1', 'Lugbe', daysAgo(3, 17, 45), 900, 'v_abj015', BookingStatus.completed, seat: 'S21'),
+      b('bk_seed03', uAisha, 'Aisha Bello', 'r03', 'Abuja Metro Station', 'Idu', daysAgo(6, 9, 20), 500, 'v_amr1', BookingStatus.completed, seat: 'C3'),
       // Aisha's weekday habit (Wuse to Maitama at 08:00) so the home screen can suggest booking early.
-      b('bk_seed08', uAisha, 'Aisha Bello', 'r01', 'Wuse', 'Maitama', daysAgo(2, 8, 0), 500, 'v_abj021', BookingStatus.completed, seat: 'S05'),
-      b('bk_seed09', uAisha, 'Aisha Bello', 'r01', 'Wuse', 'Maitama', daysAgo(4, 8, 0), 500, 'v_abj021', BookingStatus.completed, seat: 'S11'),
-      b('bk_seed10', uAisha, 'Aisha Bello', 'r02', 'Central Area', 'Gwarinpa', daysAgo(8, 17, 45), 700, 'v_abj015', BookingStatus.completed, seat: 'S02'),
-      b('bk_seed04', 'u_emeka', 'Emeka Nwosu', 'r01', 'Wuse', 'Maitama', today.add(const Duration(hours: 8)), 500, 'v_abj021', BookingStatus.confirmed, seat: 'S14'),
-      b('bk_seed05', 'u_zainab', 'Zainab Yusuf', 'r02', 'Central Area', 'Gwarinpa', today.add(const Duration(hours: 7, minutes: 45)), 700, 'v_abj015', BookingStatus.confirmed, seat: 'S03'),
-      b('bk_seed06', 'u_emeka', 'Emeka Nwosu', 'r05', 'Nyanya', 'Central Area', today.add(const Duration(hours: 6, minutes: 40)), 600, 'v_abj010', BookingStatus.confirmed, seat: 'S30'),
-      b('bk_seed07', 'u_zainab', 'Zainab Yusuf', 'r04', 'Kubwa', 'Central Area', today.add(const Duration(hours: 7)), 800, 'v_abj007', BookingStatus.confirmed, seat: 'S17'),
+      b('bk_seed08', uAisha, 'Aisha Bello', 'r01', 'Kubwa', 'Berger', daysAgo(2, 8, 0), 500, 'v_abj021', BookingStatus.completed, seat: 'S05'),
+      b('bk_seed09', uAisha, 'Aisha Bello', 'r01', 'Kubwa', 'Berger', daysAgo(4, 8, 0), 500, 'v_abj021', BookingStatus.completed, seat: 'S11'),
+      b('bk_seed10', uAisha, 'Aisha Bello', 'r02', 'Area 1', 'Lugbe', daysAgo(8, 17, 45), 900, 'v_abj015', BookingStatus.completed, seat: 'S02'),
+      b('bk_seed04', 'u_emeka', 'Emeka Nwosu', 'r01', 'Kubwa', 'Berger', today.add(const Duration(hours: 8)), 500, 'v_abj021', BookingStatus.confirmed, seat: 'S14'),
+      b('bk_seed05', 'u_zainab', 'Zainab Yusuf', 'r02', 'Area 1', 'Gwagwalada', today.add(const Duration(hours: 7, minutes: 45)), 900, 'v_abj015', BookingStatus.confirmed, seat: 'S03'),
+      b('bk_seed06', 'u_emeka', 'Emeka Nwosu', 'r05', 'Nyanya', 'Area 1', today.add(const Duration(hours: 6, minutes: 40)), 420, 'v_abj010', BookingStatus.confirmed, seat: 'S30'),
+      b('bk_seed07', 'u_zainab', 'Zainab Yusuf', 'r04', 'Bwari', 'Area 1', today.add(const Duration(hours: 7)), 900, 'v_abj007', BookingStatus.confirmed, seat: 'S17'),
       // Grace's car rides: one in progress, two completed earlier today.
       for (final (id, who, name, from, to, fare, ago, status) in [
         ('bk_ride01', 'u_zainab', 'Zainab Yusuf', 'Jabi', 'Wuse 2', 2400, 6, BookingStatus.confirmed),

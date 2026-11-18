@@ -2,7 +2,9 @@
 // - Creates a private master-admin password in ../.env.local the first time (never printed).
 // - Passes only a salted SHA-256 hash of it to the app, plus the public Supabase URL/anon key if set.
 // - Serves CanvasKit from our own domain (--no-web-resources-cdn).
-// Usage: node scripts/build-web.mjs
+// Usage: node scripts/build-web.mjs                       -> whole app at /, into deploy/public (standalone site)
+//        node scripts/build-web.mjs --target=rider --out=DIR      -> rider app for taparide.com/app
+//        node scripts/build-web.mjs --target=dashboard --out=DIR  -> dashboards for taparide.com/dashboard
 import { createHash, randomBytes } from 'node:crypto';
 import { cpSync, existsSync, rmSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
@@ -11,6 +13,10 @@ import { fileURLToPath } from 'node:url';
 import { loadEnv } from './check-keys.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
+const arg = (name) => process.argv.find((a) => a.startsWith(`--${name}=`))?.split('=').slice(1).join('=');
+const target = arg('target') || 'all';
+if (!['all', 'rider', 'dashboard'].includes(target)) throw new Error(`Unknown --target=${target}`);
+const baseHref = { all: '/', rider: '/app/', dashboard: '/dashboard/' }[target];
 const app = join(here, '..', '..');
 // Master admin credentials live in their own git-ignored file so editing .env.local can't lose them.
 const masterFile = join(app, '.env.master.local');
@@ -49,18 +55,20 @@ const defines = {
   MASTER_ADMIN_HASH: hash,
   // Public by design (Supabase row-level security protects the data):
   ...(live ? { SUPABASE_URL: sbUrl, SUPABASE_ANON_KEY: env.SUPABASE_ANON_KEY } : {}),
+  ...(target === 'all' ? {} : { APP_MODE: target }),
 };
 
 const flutter = process.env.FLUTTER || 'C:/src/flutter/bin/flutter.bat';
-const args = ['build', 'web', '--release', '--no-wasm-dry-run', '--no-web-resources-cdn', ...Object.entries(defines).map(([k, v]) => `"--dart-define=${k}=${v}"`)];
+const args = ['build', 'web', '--release', '--no-wasm-dry-run', '--no-web-resources-cdn', `--base-href=${baseHref}`, ...Object.entries(defines).map(([k, v]) => `"--dart-define=${k}=${v}"`)];
 const r = spawnSync(flutter, args, { cwd: app, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8', shell: true });
 const tail = (r.stdout + r.stderr).trim().split('\n').slice(-2).join('\n');
 if (r.status !== 0) {
   console.error('Build failed:\n' + tail);
   process.exit(1);
 }
-const pub = join(here, '..', 'public');
+const out = arg('out');
+const pub = out ? (out.match(/^[A-Za-z]:|^\//) ? out : join(process.cwd(), out)) : join(here, '..', 'public');
 rmSync(pub, { recursive: true, force: true });
 cpSync(join(app, 'build', 'web'), pub, { recursive: true });
 rmSync(join(pub, '_phone.html'), { force: true });
-console.log(`Built web app → deploy/public (master admin: ${master.MASTER_ADMIN_EMAIL}; Supabase: ${defines.SUPABASE_URL ? 'live' : 'demo data'})`);
+console.log(`Built ${target} web app (base ${baseHref}) → ${pub} (master admin: ${master.MASTER_ADMIN_EMAIL}; Supabase: ${defines.SUPABASE_URL ? 'live' : 'demo data'})`);
