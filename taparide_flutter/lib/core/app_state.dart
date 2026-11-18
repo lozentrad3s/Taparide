@@ -10,6 +10,7 @@ import 'api_client.dart';
 import 'backend/backend.dart';
 import 'dashboards.dart';
 import 'format.dart';
+import 'house_ads.dart';
 import 'insights.dart';
 import 'live_models.dart';
 import 'location.dart';
@@ -64,7 +65,7 @@ class AppState extends ChangeNotifier {
   List<EventBus> eventBuses = const [];
 
   /// Header ads for riders (house promotions until advertisers sign).
-  List<PromoAd> ads = const [];
+  List<PromoAd> ads = HouseAds.all;
 
   /// Ad rewards left today, once the rider has claimed one (null = not known yet).
   int? adRewardsLeft;
@@ -239,7 +240,7 @@ class AppState extends ChangeNotifier {
         wallet = rider[0] as Wallet;
         myBookings = rider[1] as List<Booking>;
         rideRequests = rider[2] as List<Booking>;
-        ads = rider[3] as List<PromoAd>;
+        ads = HouseAds.merge(rider[3] as List<PromoAd>);
       }
       myApplications = await backend.fetchMyApplications();
       dataState = LoadState.ready;

@@ -258,10 +258,18 @@ class PromoAd {
     required this.seconds,
     this.ctaLink,
     this.house = false,
+    this.banner,
+    this.poster,
   });
 
   final String id;
   final String sponsor;
+
+  /// Wide artwork for the header slot (an app asset path or an image URL).
+  final String? banner;
+
+  /// Larger artwork shown while the ad plays (falls back to [banner]).
+  final String? poster;
   final String headline;
   final String body;
   final String ctaLabel;
@@ -296,8 +304,26 @@ class PromoAd {
       reward: (json['reward'] as num?)?.toInt() ?? 0,
       seconds: (json['seconds'] as num?)?.toInt() ?? 15,
       house: json['house'] == true,
+      banner: json['banner_url'] as String?,
+      poster: json['poster_url'] as String?,
     );
   }
+
+  PromoAd copyWith({String? banner, String? poster, String? ctaLink, String? ctaLabel}) => PromoAd(
+        id: id,
+        sponsor: sponsor,
+        headline: headline,
+        body: body,
+        ctaLabel: ctaLabel ?? this.ctaLabel,
+        ctaLink: ctaLink ?? this.ctaLink,
+        colour: colour,
+        icon: icon,
+        reward: reward,
+        seconds: seconds,
+        house: house,
+        banner: banner ?? this.banner,
+        poster: poster ?? this.poster,
+      );
 }
 
 /// A started ad view; the server times it.

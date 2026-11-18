@@ -22,6 +22,22 @@ void _openAdLink(BuildContext context, PromoAd ad) {
   }
 }
 
+/// Ad artwork from the app bundle (`assets/...`) or the web.
+class AdArt extends StatelessWidget {
+  const AdArt(this.path, {super.key, this.fit = BoxFit.contain, this.label});
+  final String path;
+  final BoxFit fit;
+  final String? label;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget broken(BuildContext c, Object e, StackTrace? s) => const ColoredBox(color: AppColors.forest);
+    return path.startsWith('assets/')
+        ? Image.asset(path, fit: fit, semanticLabel: label, errorBuilder: broken)
+        : Image.network(path, fit: fit, semanticLabel: label, errorBuilder: broken);
+  }
+}
+
 /// A slim sponsored slot in the rider header. One ad shows at a time and rotates, so many
 /// riders see the same slot at once without anything covering what they're doing.
 class AdStrip extends StatefulWidget {
@@ -55,12 +71,54 @@ class _AdStripState extends State<AdStrip> {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
-    final ads = state.ads;
+    // Ads with artwork share one steady slot; plain ones show only when none have artwork.
+    final withArt = [for (final a in state.ads) if (a.banner != null) a];
+    final ads = withArt.isNotEmpty ? withArt : state.ads;
     if (ads.isEmpty) return const SizedBox.shrink();
     final ad = ads[_index % ads.length];
     if (_counted.add(ad.id)) state.countAdImpressions([ad]);
     final text = Theme.of(context).textTheme;
     final reduce = MediaQuery.disableAnimationsOf(context);
+
+    if (ad.banner != null) {
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
+        AnimatedSwitcher(
+          duration: reduce ? Duration.zero : const Duration(milliseconds: 380),
+          transitionBuilder: (child, a) => FadeTransition(opacity: a, child: child),
+          child: Semantics(
+            key: ValueKey(ad.id),
+            button: true,
+            label: '${ad.house ? 'Tap A Ride promotion' : 'Sponsored by ${ad.sponsor}'}: ${ad.headline}. ${ad.ctaLabel}',
+            child: InkWell(
+              onTap: () => _openAdLink(context, ad),
+              borderRadius: BorderRadius.circular(999),
+              child: AspectRatio(aspectRatio: 1200 / 167, child: ExcludeSemantics(child: AdArt(ad.banner!))),
+            ),
+          ),
+        ),
+        Row(children: [
+          if (ads.length > 1)
+            for (var i = 0; i < ads.length; i++)
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                margin: const EdgeInsets.only(right: 4, top: 6),
+                width: i == _index % ads.length ? 14 : 5,
+                height: 5,
+                decoration: BoxDecoration(color: i == _index % ads.length ? AppColors.forest : AppColors.lineStrong, borderRadius: BorderRadius.circular(3)),
+              ),
+          const Spacer(),
+          if (ad.reward > 0)
+            TextButton.icon(
+              onPressed: () => showAdWatchSheet(context, ad),
+              style: TextButton.styleFrom(visualDensity: VisualDensity.compact, padding: const EdgeInsets.symmetric(horizontal: 6)),
+              icon: const Icon(Icons.play_circle_fill_rounded, size: 18),
+              label: Text('Watch the ad · earn ${Fmt.naira(ad.reward)}', style: text.labelMedium?.copyWith(color: AppColors.forest)),
+            )
+          else
+            const SizedBox(height: 8),
+        ]),
+      ]);
+    }
 
     return AnimatedSwitcher(
       duration: reduce ? Duration.zero : const Duration(milliseconds: 280),
@@ -181,6 +239,24 @@ class _AdPlayerState extends State<_AdPlayer> with SingleTickerProviderStateMixi
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 460),
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          if (ad.poster ?? ad.banner case final art?)
+            Stack(children: [
+              Container(
+                color: AppColors.forestDeep,
+                child: AspectRatio(aspectRatio: art == ad.banner ? 1200 / 167 : 3, child: AdArt(art, fit: BoxFit.cover, label: ad.headline)),
+              ),
+              Positioned(
+                right: 6,
+                top: 6,
+                child: IconButton.filled(
+                  tooltip: done ? 'Close' : 'Skip (no reward)',
+                  style: IconButton.styleFrom(backgroundColor: Colors.black45, foregroundColor: Colors.white),
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close_rounded),
+                ),
+              ),
+            ])
+          else
           Container(
             color: ad.colour,
             padding: const EdgeInsets.fromLTRB(22, 18, 12, 26),

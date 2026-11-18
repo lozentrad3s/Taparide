@@ -35,6 +35,7 @@ flutter:
     - assets/brand/
     - assets/photos/
     - assets/onboarding/
+    - assets/ads/
   fonts:
     - family: Barlow
       fonts:
