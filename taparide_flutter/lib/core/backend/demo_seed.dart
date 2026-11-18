@@ -34,9 +34,9 @@ abstract final class DemoSeed {
   static const demoAccounts = <(String, String, UserRole)>[
     ('Daniel Adeyemi · demo admin', demoAdminEmail, UserRole.admin),
     ('Aisha Bello', 'aisha@taparide.demo', UserRole.passenger),
-    ('Ibrahim Musa · Abuja Metro Bus Co.', 'ops@abujametro.demo', UserRole.operator),
-    ('Chiamaka Obi · GreenFleet Logistics', 'fleet@greenfleet.demo', UserRole.fleetOwner),
-    ('Tunde Bello · NaviRide Electric', 'ev@naviride.demo', UserRole.operator),
+    ('Ibrahim Musa · Abuja Metro Bus Co. (sample)', 'ops@abujametro.demo', UserRole.operator),
+    ('Chiamaka Obi · GreenFleet Logistics (sample)', 'fleet@greenfleet.demo', UserRole.fleetOwner),
+    ('Tunde Bello · NaviRide Electric (sample)', 'ev@naviride.demo', UserRole.operator),
     ('Fatima Lawal · FCTA Transport', 'transport@fcta.demo', UserRole.government),
     ('Halima Sani · sample event partner', 'events@taparide.demo', UserRole.eventPartner),
     ('Grace Okafor · private driver', 'grace@taparide.demo', UserRole.operator),
@@ -375,7 +375,7 @@ abstract final class DemoSeed {
         AuditEntry(id: 'a1', at: now.subtract(const Duration(days: 2, hours: 3)), actorName: 'Fatima Lawal', actorRole: UserRole.government, action: 'Verified vehicle', target: 'Bus #ABJ 024'),
         AuditEntry(id: 'a2', at: now.subtract(const Duration(days: 3, hours: 6)), actorName: 'Daniel Adeyemi', actorRole: UserRole.admin, action: 'Suspended provider', target: 'City Keke Cooperative · permits expired'),
         AuditEntry(id: 'a3', at: now.subtract(const Duration(days: 5, hours: 1)), actorName: 'Ibrahim Musa', actorRole: UserRole.operator, action: 'Updated fare', target: 'R01 Wuse – Maitama → ₦500'),
-        AuditEntry(id: 'a4', at: now.subtract(const Duration(days: 9)), actorName: 'Daniel Adeyemi', actorRole: UserRole.admin, action: 'Approved provider', target: 'NaviRide Electric'),
+        AuditEntry(id: 'a4', at: now.subtract(const Duration(days: 9)), actorName: 'Daniel Adeyemi', actorRole: UserRole.admin, action: 'Approved provider', target: 'NaviRide Electric (sample)'),
       ];
 
   /// FCTA register totals in the mockup: 1,204 verified vehicles and 32 active routes.

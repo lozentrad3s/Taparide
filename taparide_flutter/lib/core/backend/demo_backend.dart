@@ -678,9 +678,9 @@ class DemoBackend implements Backend {
     DateTime at(int days, int hour) => DateTime(now.year, now.month, now.day + days, hour);
     Map<String, int> seats(List<(DateTime, int)> v) => {for (final e in v) EventBus.slotKey(e.$1): e.$2};
     return [
-      EventBus(id: 'eb_kubwa', eventId: 'ev_cup', providerId: DemoSeed.pMetro, providerName: 'Abuja Metro Bus Co.', vehicleLabel: 'City bus', origin: 'Kubwa', fare: 1200, capacity: 40, minRiders: 20, slots: [at(6, 17), at(6, 18), at(6, 19)], seatsBySlot: seats([(at(6, 17), 4), (at(6, 18), 11), (at(6, 19), 7)]), status: EventBusStatus.open),
-      EventBus(id: 'eb_nyanya', eventId: 'ev_cup', providerId: DemoSeed.pMetro, providerName: 'Abuja Metro Bus Co.', vehicleLabel: 'Toyota Coaster', origin: 'Nyanya', fare: 1000, capacity: 30, minRiders: 15, slots: [at(6, 18), at(6, 19)], seatsBySlot: seats([(at(6, 18), 9), (at(6, 19), 3)]), status: EventBusStatus.open),
-      EventBus(id: 'eb_jabi', eventId: 'ev_music', providerId: DemoSeed.pAirport, providerName: 'FCT Airport E-Shuttle', vehicleLabel: 'Electric shuttle', origin: 'Jabi', fare: 800, capacity: 14, minRiders: 8, slots: [at(5, 16), at(5, 17)], seatsBySlot: seats([(at(5, 17), 8)]), status: EventBusStatus.confirmed, confirmedAt: at(5, 17)),
+      EventBus(id: 'eb_kubwa', eventId: 'ev_cup', providerId: DemoSeed.pMetro, providerName: 'Abuja Metro Bus Co. (sample)', vehicleLabel: 'City bus', origin: 'Kubwa', fare: 1200, capacity: 40, minRiders: 20, slots: [at(6, 17), at(6, 18), at(6, 19)], seatsBySlot: seats([(at(6, 17), 4), (at(6, 18), 11), (at(6, 19), 7)]), status: EventBusStatus.open),
+      EventBus(id: 'eb_nyanya', eventId: 'ev_cup', providerId: DemoSeed.pMetro, providerName: 'Abuja Metro Bus Co. (sample)', vehicleLabel: 'Toyota Coaster', origin: 'Nyanya', fare: 1000, capacity: 30, minRiders: 15, slots: [at(6, 18), at(6, 19)], seatsBySlot: seats([(at(6, 18), 9), (at(6, 19), 3)]), status: EventBusStatus.open),
+      EventBus(id: 'eb_jabi', eventId: 'ev_music', providerId: DemoSeed.pAirport, providerName: 'FCT Airport E-Shuttle (sample)', vehicleLabel: 'Electric shuttle', origin: 'Jabi', fare: 800, capacity: 14, minRiders: 8, slots: [at(5, 16), at(5, 17)], seatsBySlot: seats([(at(5, 17), 8)]), status: EventBusStatus.confirmed, confirmedAt: at(5, 17)),
     ];
   }
 
