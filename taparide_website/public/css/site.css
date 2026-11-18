@@ -297,8 +297,6 @@ legend, .field label { display: block; font-weight: 700; font-size: 15px; margin
 .more-body h3 { display: flex; align-items: center; gap: 10px; }
 .more-body h3 .ic { color: var(--forest); }
 .more-body p { color: var(--muted); max-width: 42ch; }
-.bus-dot { offset-path: path("M40 300 C 120 270, 150 150, 270 150 S 430 110, 520 70"); offset-rotate: 0deg; animation: drive 9s var(--ease) infinite alternate; }
-@keyframes drive { from { offset-distance: 8%; } to { offset-distance: 92%; } }
 
 /* ------------------------------------------------------------ campaigns gallery */
 .gallery { padding-block: var(--section); background: var(--forest-deep); color: #fff; overflow: hidden; }
@@ -467,11 +465,36 @@ legend, .field label { display: block; font-weight: 700; font-size: 15px; margin
 .seat-done[hidden] { display: none; }
 @media (min-width: 960px) { .event-grid { grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); } }
 
-/* ------------------------------------------------------------ WhatsApp chat button */
-.wa-float { position: fixed; right: 16px; bottom: 16px; z-index: 35; display: inline-flex; align-items: center; gap: 8px; min-height: 52px; padding: 0 18px 0 14px; border-radius: 999px; background: #1F8F4E; color: #fff; text-decoration: none; font-weight: 700; box-shadow: 0 12px 28px -10px rgba(0, 0, 0, 0.45); transition: background-color 160ms ease, transform 200ms var(--ease); }
-.wa-float:hover { background: #18773F; transform: translateY(-2px); }
-.wa-float .ic { width: 22px; height: 22px; }
-@media (max-width: 479px) { .wa-float span { display: none; } .wa-float { width: 52px; padding: 0; justify-content: center; } }
+/* ------------------------------------------------------------ WhatsApp chat button (tucks away to a small tab) */
+.wa-float { position: fixed; right: 16px; bottom: 16px; z-index: 35; display: flex; align-items: center; border-radius: 999px; background: #1F8F4E; color: #fff; box-shadow: 0 12px 28px -10px rgba(0, 0, 0, 0.45);
+  opacity: 0; pointer-events: none; transform: translateY(12px); transition: opacity 260ms ease, transform 300ms var(--ease), right 300ms var(--ease), border-radius 300ms var(--ease); }
+.wa-float.is-visible { opacity: 1; pointer-events: auto; transform: none; }
+.wa-link { display: inline-flex; align-items: center; gap: 8px; min-height: 52px; padding: 0 6px 0 14px; color: #fff; text-decoration: none; font-weight: 700; border-radius: 999px; }
+.wa-link:hover { background: rgba(0, 0, 0, 0.12); }
+.wa-link .ic { width: 22px; height: 22px; }
+.wa-toggle { width: 34px; height: 34px; margin: 0 9px 0 4px; display: grid; place-items: center; border-radius: 50%; border: 0; background: rgba(255, 255, 255, 0.18); color: #fff; cursor: pointer; }
+.wa-toggle:hover { background: rgba(255, 255, 255, 0.3); }
+.wa-toggle .ic { width: 16px; height: 16px; transition: transform 300ms var(--ease); }
+/* Tucked: a small tab at the right edge; tap the icon to chat, the arrow to bring it back. */
+.wa-float.is-min { right: 0; border-radius: 999px 0 0 999px; }
+.wa-float.is-min .wa-text { display: none; }
+.wa-float.is-min .wa-link { padding: 0 2px 0 12px; min-height: 46px; }
+.wa-float.is-min .wa-toggle { width: 26px; height: 26px; margin: 0 6px 0 2px; }
+.wa-float.is-min .wa-toggle .ic { transform: rotate(45deg); }
+@media (max-width: 479px) { .wa-text { display: none; } .wa-link { padding: 0 4px 0 14px; } }
+
+/* ------------------------------------------------------------ "I agree" checkbox */
+.agree { margin-top: 16px; display: flex; align-items: flex-start; gap: 10px; font-size: 14px; line-height: 1.45; color: var(--ink-soft); cursor: pointer; }
+.agree input { flex: none; width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--forest); cursor: pointer; }
+.agree a { color: var(--forest); font-weight: 700; }
+.agree.on-dark { color: rgba(255, 255, 255, 0.88); }
+.agree.on-dark a { color: #fff; }
+.agree.on-dark input { accent-color: var(--lime); }
+.agree.is-missing span { color: var(--red); }
+.agree.on-dark.is-missing span { color: #FFC9C2; }
+.doc-toc { margin-top: 20px; padding: 14px 16px; border-radius: var(--r-md); background: var(--soft); font-size: 15px; line-height: 1.9; }
+.doc-toc a { color: var(--forest); font-weight: 600; text-decoration: none; }
+.doc-toc a:hover { text-decoration: underline; }
 .preview-flag { bottom: 80px; }
 
 /* The WhatsApp button waits until the visitor has scrolled past the hero. */

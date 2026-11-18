@@ -4,6 +4,7 @@
   document.documentElement.classList.add("js");
 
   const EVENT = "abuja-tech-week-2026";
+  const TERMS = "v1"; // the version of /terms people agree to
   const EVENT_START = new Date("2026-11-24T07:00:00+01:00");
   // The app and the partner dashboards live on this same site.
   const APP = "/app";
@@ -27,7 +28,19 @@
 
   // ---------------------------------------------------------------- header + menu
   const top = $("[data-top]");
-  const wa = $(".wa-float");
+  const wa = $("[data-wa-float]");
+  const waToggle = $("[data-wa-toggle]");
+  const setWa = (min) => {
+    wa?.classList.toggle("is-min", min);
+    waToggle?.setAttribute("aria-expanded", String(!min));
+    waToggle?.setAttribute("aria-label", min ? "Show the chat button" : "Tuck the chat button away");
+  };
+  setWa(store.get("tar.wa") === "min");
+  waToggle?.addEventListener("click", () => {
+    const min = !wa.classList.contains("is-min");
+    setWa(min);
+    if (min) store.set("tar.wa", "min"); else store.del("tar.wa");
+  });
   const solid = () => {
     top?.classList.toggle("solid", scrollY > 8);
     wa?.classList.toggle("is-visible", scrollY > Math.min(innerHeight * 0.75, 640));
@@ -144,6 +157,16 @@
     b.disabled = on;
     b.setAttribute("aria-busy", String(on));
   }
+  // Claiming the free ride needs the terms accepted.
+  function agreed(form) {
+    const box = form.terms;
+    if (!box || box.checked) { box?.closest(".agree")?.classList.remove("is-missing"); return true; }
+    box.closest(".agree")?.classList.add("is-missing");
+    box.focus();
+    say(form, "Please agree to the Terms and Privacy notice to claim your free ride.", "err");
+    return false;
+  }
+
   function invalid(input, form, message) {
     input.setAttribute("aria-invalid", "true");
     input.focus();
@@ -234,7 +257,7 @@
   if (saved) api("GET", null, "?code=" + encodeURIComponent(saved)).then((d) => renderTicket(d)).catch(() => store.del("tar.code"));
 
   async function join(fields, source) {
-    const data = await api("POST", { action: "join", ref: store.get("tar.ref") || undefined, source, ...fields });
+    const data = await api("POST", { action: "join", ref: store.get("tar.ref") || undefined, source, terms: TERMS, ...fields });
     if (fields.name) store.set("tar.name", fields.name.trim().split(/\s+/)[0]);
     if (fields.email) store.set("tar.email", fields.email.trim().toLowerCase());
     renderTicket(data, { print: true });
@@ -248,6 +271,7 @@
     const email = quick.email.value;
     if (!emailOk(email)) return invalid(quick.email, quick, "Enter a valid email address.");
     quick.email.removeAttribute("aria-invalid");
+    if (!agreed(quick)) return;
     busy(quick, true);
     say(quick, "");
     try {
@@ -269,6 +293,7 @@
     const f = fullForm;
     if (!emailOk(f.email.value)) return invalid(f.email, f, "Enter a valid email address.");
     f.email.removeAttribute("aria-invalid");
+    if (!agreed(f)) return;
     busy(f, true);
     say(f, "");
     try {
@@ -346,6 +371,7 @@
     if (f.name.value.trim().split(/\s+/).length < 2) return invalid(f.name, f, "Enter your first and last name for the boarding list.");
     if (!phoneOk(f.phone.value)) return invalid(f.phone, f, "Enter your WhatsApp number so we can send bus updates.");
     if (!me?.code && !emailOk(f.email.value)) return invalid(f.email, f, "Enter your email to get your pass.");
+    if (!agreed(f)) return;
     busy(f, true);
     say(f, "");
     try {

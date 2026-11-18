@@ -665,6 +665,8 @@ class DemoBackend implements Backend {
     DateTime at(int days, int hour) => DateTime(now.year, now.month, now.day + days, hour);
     const org = 'Capital Events Hub (sample)';
     return [
+      // Real event: Tap A Ride is the official ride partner (free buses, booked on taparide.com).
+      RideEvent(id: 'ev_techweek', title: 'Abuja Tech Week 2026', venue: 'Velodrome, National Stadium', area: 'Kukwaba', startsAt: DateTime(2026, 11, 24, 9), endsAt: DateTime(2026, 11, 26, 17), category: EventCategory.conference, organiserName: 'Abuja Tech & Digital Economy Week', sponsored: true, description: 'Abuja Tech & Digital Economy Week at the Velodrome, National Stadium. Tap A Ride is the official ride partner: free buses leave at 7:00 AM sharp from University of Abuja (Gwagwalada), Nnamdi Azikiwe Airport, Old Parade Ground (corps members), Nile University, Police Signboard (Lugbe) and the checkpoint between Maraba and Nyanya. Powered by Pi-CNG & EV.', lat: 9.0392, lng: 7.4556),
       RideEvent(id: 'ev_showcase', title: 'Smart Mobility Showcase', venue: 'International Conference Centre', area: 'Central Area', startsAt: at(3, 10), endsAt: at(3, 16), category: EventCategory.conference, organiserId: 'u_events', organiserName: org, providerId: DemoSeed.pEvents, description: 'Sample event: demos and talks on how Abuja moves.', lat: 9.0412, lng: 7.4893, ticketPrice: 2000, ticketsTotal: 400, ticketsSold: 118),
       RideEvent(id: 'ev_music', title: 'Abuja Live Music Night', venue: 'Millennium Park', area: 'Maitama', startsAt: at(5, 18), endsAt: at(5, 22), category: EventCategory.concert, organiserId: 'u_events', organiserName: org, providerId: DemoSeed.pEvents, description: 'Sample event: an evening of live music in the park.', lat: 9.0718, lng: 7.5003, ticketPrice: 5000, ticketsTotal: 1200, ticketsSold: 640),
       RideEvent(id: 'ev_cup', title: 'Community Cup Final', venue: 'Moshood Abiola National Stadium', area: 'Kukwaba', startsAt: at(6, 20), endsAt: at(6, 22), category: EventCategory.sport, organiserId: 'u_events', organiserName: org, providerId: DemoSeed.pEvents, sponsored: true, description: 'Sample event: the weekend football final. Event buses run from Kubwa and Nyanya.', lat: 9.0379, lng: 7.4531),
@@ -687,7 +689,7 @@ class DemoBackend implements Backend {
     await _wait();
     _me;
     final now = _clock();
-    return [for (final e in _events) if (e.startsAt.isAfter(now.subtract(const Duration(hours: 6)))) e]..sort((a, b) => a.startsAt.compareTo(b.startsAt));
+    return [for (final e in _events) if ((e.endsAt ?? e.startsAt).isAfter(now.subtract(const Duration(hours: 6)))) e]..sort((a, b) => a.startsAt.compareTo(b.startsAt));
   }
 
   @override

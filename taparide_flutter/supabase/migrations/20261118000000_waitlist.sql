@@ -14,6 +14,9 @@ create table if not exists public.waitlist (
   referred_by text references public.waitlist (code) on delete set null,
   referrals int not null default 0,
   source text,
+  -- Version of taparide.com/terms accepted when claiming the free ride, and when.
+  terms_version text,
+  terms_accepted_at timestamptz,
   created_at timestamptz not null default now(),
   -- The free first ride is paid once, to the account that confirms this email.
   credited_user uuid references auth.users (id) on delete set null,
@@ -97,7 +100,7 @@ $$;
 -- Join (or look up) the waitlist. Joining again with the same email returns the same place.
 create or replace function public.join_waitlist(
   p_email text, p_name text default null, p_phone text default null, p_area text default null,
-  p_ref text default null, p_role text default 'rider', p_source text default null
+  p_ref text default null, p_role text default 'rider', p_source text default null, p_terms text default null
 ) returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare
@@ -123,7 +126,9 @@ begin
   if found then
     -- Fill in details given later, never overwrite ones already given.
     update public.waitlist set
-      name = coalesce(name, v_name), phone = coalesce(phone, v_phone), area = coalesce(area, v_area)
+      name = coalesce(name, v_name), phone = coalesce(phone, v_phone), area = coalesce(area, v_area),
+      terms_version = coalesce(left(p_terms, 10), terms_version),
+      terms_accepted_at = case when p_terms is not null then now() else terms_accepted_at end
     where id = w.id returning * into w;
     return public._waitlist_summary(w) || jsonb_build_object('existing', true);
   end if;
@@ -132,8 +137,8 @@ begin
     v_ref := null;
   end if;
 
-  insert into public.waitlist (email, name, phone, area, role, code, referred_by, source)
-  values (v_email, v_name, v_phone, v_area, v_role, public._waitlist_code(), v_ref, left(p_source, 40))
+  insert into public.waitlist (email, name, phone, area, role, code, referred_by, source, terms_version, terms_accepted_at)
+  values (v_email, v_name, v_phone, v_area, v_role, public._waitlist_code(), v_ref, left(p_source, 40), left(p_terms, 10), case when p_terms is not null then now() end)
   returning * into w;
 
   if v_ref is not null then
@@ -218,7 +223,7 @@ begin
   return coalesce((
     select jsonb_agg(jsonb_build_object(
       'id', w.id, 'email', w.email, 'name', w.name, 'phone', w.phone, 'area', w.area, 'role', w.role,
-      'code', w.code, 'referred_by', w.referred_by, 'referrals', w.referrals, 'source', w.source,
+      'code', w.code, 'referred_by', w.referred_by, 'referrals', w.referrals, 'source', w.source, 'terms_version', w.terms_version,
       'created_at', w.created_at, 'credited_at', w.credited_at,
       'seats', coalesce((
         select jsonb_agg(jsonb_build_object('event', s.event_slug, 'day', s.day, 'area', s.area, 'slot', s.slot, 'created_at', s.created_at) order by s.day)
@@ -255,7 +260,7 @@ create trigger on_auth_user_waitlist_credit
 -- ------------------------------------------------------------------ grants
 revoke all on public.waitlist, public.event_seat_requests from anon, authenticated;
 revoke execute on function public._waitlist_summary(public.waitlist), public._waitlist_code(), public.credit_waitlist_ride() from public, anon, authenticated;
-grant execute on function public.join_waitlist(text, text, text, text, text, text, text) to anon, authenticated;
+grant execute on function public.join_waitlist(text, text, text, text, text, text, text, text) to anon, authenticated;
 grant execute on function public.waitlist_status(text) to anon, authenticated;
 grant execute on function public.request_event_seat(text, text, date, text, text, text, text) to anon, authenticated;
 revoke execute on function public.admin_waitlist() from public, anon;

@@ -36,6 +36,7 @@ flutter:
     - assets/photos/
     - assets/onboarding/
     - assets/ads/
+    - assets/events/
   fonts:
     - family: Barlow
       fonts:

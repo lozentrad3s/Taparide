@@ -63,6 +63,7 @@ export default async function handler(req, res) {
     if (b.company) return send(res, 400, { error: "Something went wrong. Please try again." });
 
     if (b.action === "join") {
+      if (b.terms !== "v1") return send(res, 400, { error: "Please agree to the Terms and Privacy notice to claim your free ride." });
       const out = await call("join_waitlist", {
         p_email: str(b.email, 254),
         p_name: str(b.name, 80) ?? null,
@@ -71,6 +72,7 @@ export default async function handler(req, res) {
         p_ref: str(b.ref, 12) ?? null,
         p_role: str(b.role, 20) ?? "rider",
         p_source: str(b.source, 40) ?? "website",
+        p_terms: "v1",
       });
       return send(res, 200, { ...out, preview: isPreview() });
     }

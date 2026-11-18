@@ -150,6 +150,7 @@
           <input class="hp" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
           <button class="btn btn-go btn-lg" type="submit"><span>Get my free ride</span><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></button>
         </div>
+        <label class="agree on-dark"><input type="checkbox" name="terms" id="hero-terms" required><span>I agree to the <a href="/terms" target="_blank">Terms</a> and <a href="/privacy" target="_blank">Privacy notice</a>, including the free ride rules.</span></label>
         <p class="form-msg" role="status" aria-live="polite" data-msg></p>
       </form>
       <p class="hero-offer"><svg class="ic" aria-hidden="true"><use href="#i-ticket"/></svg>Join the waitlist and your first ride is free, up to ₦1,000.</p>
@@ -270,6 +271,7 @@
           <input id="seat-email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com">
         </div>
         <input class="hp" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <label class="agree"><input type="checkbox" name="terms" id="seat-terms" required><span>I agree to the <a href="/terms" target="_blank">Terms</a> and <a href="/privacy" target="_blank">Privacy notice</a>, including the free ride rules.</span></label>
         <button class="btn btn-go btn-lg btn-block" type="submit"><span>Reserve my free seat</span><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></button>
         <p class="form-msg" role="status" aria-live="polite" data-msg></p>
         <div class="seat-done" hidden data-seat-done>
@@ -352,27 +354,7 @@
         </div>
       </article>
       <article class="more-card">
-        <div class="more-img route-art" aria-hidden="true">
-          <svg viewBox="0 0 560 360" preserveAspectRatio="xMidYMid slice">
-            <rect width="560" height="360" fill="#EEF6E8"/>
-            <g stroke="#D8E7D0" stroke-width="10" fill="none" stroke-linecap="round">
-              <path d="M-20 290 C 120 250, 160 120, 300 130 S 470 70, 600 40"/>
-              <path d="M60 -20 C 90 120, 200 200, 230 380"/>
-              <path d="M380 380 C 360 260, 420 200, 600 210"/>
-            </g>
-            <path id="route" d="M40 300 C 120 270, 150 150, 270 150 S 430 110, 520 70" fill="none" stroke="#0B5A3A" stroke-width="6" stroke-linecap="round" stroke-dasharray="1 0"/>
-            <g fill="#fff" stroke="#0B5A3A" stroke-width="4">
-              <circle cx="40" cy="300" r="10"/><circle cx="170" cy="200" r="9"/><circle cx="270" cy="150" r="9"/><circle cx="400" cy="118" r="9"/><circle cx="520" cy="70" r="10"/>
-            </g>
-            <g font-family="Barlow, sans-serif" font-size="17" font-weight="700" fill="#0D1A12">
-              <text x="52" y="330">Kubwa</text><text x="184" y="230">Gwarinpa</text><text x="250" y="128">Wuse</text><text x="372" y="100">Central Area</text>
-            </g>
-            <g class="bus-dot">
-              <circle r="16" fill="#8CE01F" stroke="#0D1A12" stroke-width="3"/>
-              <path d="M-6 -6h12v10h-12zM-6 0h12" stroke="#0D1A12" stroke-width="2" fill="none"/>
-            </g>
-          </svg>
-        </div>
+        <div class="more-img"><img src="/img/photos/live-map.jpg" width="736" height="460" alt="Commuters checking a live map on their phones, with buses and a train behind them." loading="lazy"></div>
         <div class="more-body">
           <h3><svg class="ic" aria-hidden="true"><use href="#i-map"/></svg>Live map</h3>
           <p>See buses and cars near you, with how many minutes until they reach you.</p>
@@ -497,9 +479,10 @@
           </select>
         </div>
         <input class="hp" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <label class="agree"><input type="checkbox" name="terms" id="j-terms" required><span>I agree to the <a href="/terms" target="_blank">Terms</a> and <a href="/privacy" target="_blank">Privacy notice</a>, including the free ride rules.</span></label>
         <button class="btn btn-go btn-lg btn-block" type="submit"><span>Claim my free ride</span><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></button>
         <p class="form-msg" role="status" aria-live="polite" data-msg></p>
-        <p class="fine">By joining you agree we can contact you about Tap A Ride. <a href="/privacy">Privacy notice</a></p>
+        <p class="fine">We'll contact you about your free ride, your seat and our launch. You can opt out any time.</p>
       </form>
 
       <div class="ticket" hidden data-ticket tabindex="-1">
@@ -594,7 +577,7 @@
       </div>
       <div>
         <h3>Contact</h3>
-        <a href="https://wa.me/2349110502561" target="_blank" rel="noopener">WhatsApp +234 911 050 2561</a><a href="mailto:info@taparide.com">info@taparide.com</a><a href="mailto:partnership@taparide.com">partnership@taparide.com</a><a href="/privacy">Privacy</a>
+        <a href="https://wa.me/2349110502561" target="_blank" rel="noopener">WhatsApp +234 911 050 2561</a><a href="mailto:info@taparide.com">info@taparide.com</a><a href="mailto:partnership@taparide.com">partnership@taparide.com</a><a href="/terms">Terms</a><a href="/privacy">Privacy</a>
       </div>
     </nav>
   </div>
@@ -604,7 +587,10 @@
   </div>
 </footer>
 
-<a class="wa-float" href="https://wa.me/2349110502561?text=Hi%20Tap%20A%20Ride" target="_blank" rel="noopener" aria-label="Chat with Tap A Ride on WhatsApp"><svg class="ic" aria-hidden="true"><use href="#i-chat"/></svg><span>Chat with us</span></a>
+<div class="wa-float" data-wa-float>
+  <a class="wa-link" href="https://wa.me/2349110502561?text=Hi%20Tap%20A%20Ride" target="_blank" rel="noopener" aria-label="Chat with Tap A Ride on WhatsApp"><svg class="ic" aria-hidden="true"><use href="#i-chat"/></svg><span class="wa-text">Chat with us</span></a>
+  <button class="wa-toggle" type="button" aria-label="Tuck the chat button away" aria-expanded="true" data-wa-toggle><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
+</div>
 
 <p class="preview-flag" hidden data-preview-flag>Preview mode: sign-ups are saved on this computer only.</p>
 </body>

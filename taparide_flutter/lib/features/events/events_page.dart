@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/theme.dart';
 import '../../core/app_state.dart';
@@ -115,7 +116,15 @@ class EventDateBlock extends StatelessWidget {
   }
 }
 
-String _priceLabel(RideEvent e) => !e.sellsTickets ? 'Free entry' : (e.ticketPrice == 0 ? 'Free ticket' : Fmt.naira(e.ticketPrice));
+/// Events where Tap A Ride runs the free buses itself; seats are booked on the website
+/// (one boarding list per pick-up point), and the event's own flyer is shown.
+const _freeBusEvents = {'ev_techweek': '/#tech-week'};
+const _eventArt = {'ev_techweek': 'assets/events/tech-week.jpg'};
+
+/// Same site in production (taparide.com/app -> taparide.com/#tech-week).
+Uri _siteLink(String path) => Uri.base.scheme.startsWith('http') && Uri.base.host.isNotEmpty ? Uri.base.replace(path: '/', query: '', fragment: path.replaceFirst('/#', '')) : Uri.parse('https://taparide.com$path');
+
+String _priceLabel(RideEvent e) => _freeBusEvents.containsKey(e.id) ? 'Free buses' : !e.sellsTickets ? 'Free entry' : (e.ticketPrice == 0 ? 'Free ticket' : Fmt.naira(e.ticketPrice));
 
 class EventCard extends StatelessWidget {
   const EventCard({super.key, required this.event, required this.buses});
@@ -193,6 +202,13 @@ class EventDetailPage extends StatelessWidget {
               width: 760,
               padding: const EdgeInsets.fromLTRB(18, 8, 18, 0),
               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                if (_eventArt[event.id] case final art?) ...[
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    child: ConstrainedBox(constraints: const BoxConstraints(maxHeight: 520), child: Image.asset(art, fit: BoxFit.contain, semanticLabel: '${event.title} flyer')),
+                  ),
+                  const SizedBox(height: 14),
+                ],
                 Panel(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -212,7 +228,7 @@ class EventDetailPage extends StatelessWidget {
                     const SizedBox(height: 14),
                     _Line(icon: Icons.schedule_rounded, text: event.endsAt == null ? Fmt.dayTime(event.startsAt) : '${Fmt.dayTime(event.startsAt)} – ${Fmt.time(event.endsAt!)}'),
                     _Line(icon: Icons.place_rounded, text: '${event.venue}, ${event.area}'),
-                    _Line(icon: Icons.verified_rounded, text: 'Listed by ${event.organiserName}, a verified event partner'),
+                    _Line(icon: Icons.verified_rounded, text: _freeBusEvents.containsKey(event.id) ? 'Tap A Ride is the official ride partner' : 'Listed by ${event.organiserName}, a verified event partner'),
                     if (event.description.isNotEmpty) ...[const SizedBox(height: 8), Text(event.description, style: text.bodyMedium)],
                   ]),
                 ),
@@ -271,6 +287,26 @@ class _TicketPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    if (_freeBusEvents[event.id] case final link?) {
+      return Panel(
+        color: AppColors.mint,
+        border: false,
+        shadow: false,
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Row(children: [
+            const Icon(Icons.directions_bus_rounded, color: AppColors.forest),
+            const SizedBox(width: 12),
+            Expanded(child: Text('Free buses at 7:00 AM sharp from six pick-up points, every day of the event. Powered by Pi-CNG & EV.', style: text.bodyMedium)),
+          ]),
+          const SizedBox(height: 12),
+          FilledButton.icon(
+            onPressed: () => launchUrl(_siteLink(link), webOnlyWindowName: '_self'),
+            icon: const Icon(Icons.event_seat_rounded, size: 18),
+            label: const Text('Reserve your free seat'),
+          ),
+        ]),
+      );
+    }
     if (!event.sellsTickets) {
       return Panel(
         color: AppColors.mint,

@@ -86,7 +86,7 @@ function summary(db, w) {
 }
 
 const preview = {
-  join_waitlist({ p_email, p_name, p_phone, p_area, p_ref, p_role, p_source }) {
+  join_waitlist({ p_email, p_name, p_phone, p_area, p_ref, p_role, p_source, p_terms }) {
     const db = load();
     const email = String(p_email || "").trim().toLowerCase();
     if (email.length > 254 || !/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/.test(email)) throw bad("Enter a valid email address.");
@@ -112,6 +112,8 @@ const preview = {
       referred_by: ref,
       referrals: 0,
       source: p_source || null,
+      terms_version: p_terms || null,
+      terms_accepted_at: p_terms ? new Date().toISOString() : null,
       created_at: new Date().toISOString(),
     };
     db.waitlist.push(w);
