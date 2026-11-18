@@ -29,21 +29,22 @@
   // ---------------------------------------------------------------- header + menu
   const top = $("[data-top]");
   const wa = $("[data-wa-float]");
-  const waToggle = $("[data-wa-toggle]");
-  const setWa = (min) => {
-    wa?.classList.toggle("is-min", min);
-    waToggle?.setAttribute("aria-expanded", String(!min));
-    waToggle?.setAttribute("aria-label", min ? "Show the chat button" : "Tuck the chat button away");
+  const waHint = $("[data-wa-hint]");
+  let waHinted = store.get("tar.wa-hint") === "closed";
+  const closeHint = () => {
+    if (waHint) waHint.hidden = true;
+    store.set("tar.wa-hint", "closed");
   };
-  setWa(store.get("tar.wa") === "min");
-  waToggle?.addEventListener("click", () => {
-    const min = !wa.classList.contains("is-min");
-    setWa(min);
-    if (min) store.set("tar.wa", "min"); else store.del("tar.wa");
-  });
+  $("[data-wa-hint-close]")?.addEventListener("click", closeHint);
   const solid = () => {
     top?.classList.toggle("solid", scrollY > 8);
-    wa?.classList.toggle("is-visible", scrollY > Math.min(innerHeight * 0.75, 640));
+    const show = scrollY > Math.min(innerHeight * 0.75, 640);
+    wa?.classList.toggle("is-visible", show);
+    // Say hello once, a moment after the button first appears; it closes itself after 10 s.
+    if (show && !waHinted && waHint) {
+      waHinted = true;
+      setTimeout(() => { waHint.hidden = false; setTimeout(() => { waHint.hidden = true; }, 10000); }, 1200);
+    }
   };
   solid();
   addEventListener("scroll", solid, { passive: true });
@@ -65,7 +66,6 @@
     const slides = $$("[data-slide]", hero);
     const stories = $$("[data-story-slide]", hero);
     const tabs = $$("[data-tab]", hero);
-    const pauseBtn = $("[data-hero-pause]", hero);
     const MS = 6000;
     hero.style.setProperty("--slide-ms", MS + "ms");
     let i = 0, timer = null, paused = reduced();
@@ -89,14 +89,9 @@
     const setPaused = (p) => {
       paused = p;
       hero.classList.toggle("paused", p);
-      if (pauseBtn) {
-        pauseBtn.setAttribute("aria-label", p ? "Play slideshow" : "Pause slideshow");
-        pauseBtn.querySelector("use").setAttribute("href", p ? "#i-play" : "#i-pause");
-      }
       schedule();
     };
     tabs.forEach((t, k) => t.addEventListener("click", () => { show(k); schedule(); }));
-    pauseBtn?.addEventListener("click", () => setPaused(!paused));
     hero.addEventListener("focusin", () => { clearTimeout(timer); hero.classList.add("paused"); });
     hero.addEventListener("focusout", () => { if (!paused) { hero.classList.remove("paused"); schedule(); } });
     document.addEventListener("visibilitychange", () => (document.hidden ? clearTimeout(timer) : schedule()));
@@ -235,7 +230,7 @@
     const seatEl = $("[data-t-seat]", ticket);
     seatEl.hidden = !seats.length;
     if (seats.length) {
-      seatEl.textContent = "Tech Week pass: " + seats.map((s) => `${dayLabel(s.day)} from ${shortPoint(s.area)}`).join(" · ") + ". Be there by 7:00 AM.";
+      seatEl.textContent = "Tech Week passes: " + seats.map((s) => `${dayLabel(s.day)}, ${shortPoint(s.area)}${s.ticket ? ` (${s.ticket})` : ""}`).join(" · ") + ". Be there by 7:00 AM.";
     }
 
     const link = inviteLink(me.code);
@@ -253,7 +248,8 @@
       void ticket.offsetWidth;
       ticket.classList.add("printing");
     }
-    $("[data-seat-email]")?.setAttribute("hidden", "");
+    if (store.get("tar.access")) $("[data-seat-email]")?.setAttribute("hidden", "");
+    savePasses(me.seats || []);
   }
 
   $("[data-copy]", ticket)?.addEventListener("click", async (e) => {
@@ -267,7 +263,8 @@
     navigator.share?.({ title: "Tap A Ride", text: "Get a free ride on Tap A Ride in Abuja", url: inviteLink(me.code) }).catch(() => {});
   });
   $("[data-forget]", ticket)?.addEventListener("click", () => {
-    for (const k of ["tar.code", "tar.name", "tar.email"]) store.del(k);
+    for (const k of ["tar.code", "tar.name", "tar.email", "tar.access", "tar.passes"]) store.del(k);
+    renderPasses();
     me = null;
     ticket.hidden = true;
     fullForm.hidden = false;
@@ -279,8 +276,63 @@
   const saved = store.get("tar.code");
   if (saved) api("GET", null, "?code=" + encodeURIComponent(saved)).then((d) => renderTicket(d)).catch(() => store.del("tar.code"));
 
+  // ---------------------------------------------------------------- personal bus passes
+  function getPasses() {
+    try { return JSON.parse(store.get("tar.passes") || "[]"); } catch { return []; }
+  }
+  /** Keeps one pass per day (the newest), from the server's view of this person's seats. */
+  function savePasses(seats) {
+    const fresh = seats.filter((s) => s.event === EVENT && s.ticket).map((s) => ({ code: s.ticket, name: me?.name || store.get("tar.fullname") || "", day: s.day, area: s.area, slot: s.slot }));
+    if (!fresh.length) return;
+    const byDay = new Map(getPasses().map((p) => [p.day, p]));
+    for (const p of fresh) byDay.set(p.day, { ...byDay.get(p.day), ...p, name: p.name || byDay.get(p.day)?.name || "" });
+    store.set("tar.passes", JSON.stringify([...byDay.values()].sort((a, b) => a.day.localeCompare(b.day))));
+    renderPasses();
+  }
+  let qrReady;
+  const loadQr = () => (qrReady ||= new Promise((ok, fail) => {
+    if (window.qrcode) return ok();
+    const s = Object.assign(document.createElement("script"), { src: "/js/vendor/qrcode.js", onload: ok, onerror: fail });
+    document.head.append(s);
+  }));
+  async function renderPasses() {
+    const box = $("[data-passes]");
+    if (!box) return;
+    const passes = getPasses();
+    box.hidden = !passes.length;
+    const list = $("[data-pass-list]", box);
+    list.innerHTML = "";
+    for (const p of passes) {
+      const el = document.createElement("article");
+      el.className = "pass";
+      el.innerHTML = `<div class="pass-top"><img src="/img/brand/taparide_wordmark_white.png" width="120" height="18" alt="Tap A Ride"><span class="pass-tag">Free bus pass</span></div>
+        <div class="pass-body"><div><p class="pass-event">Abuja Tech Week 2026</p><dl>
+          <div><dt>Name</dt><dd class="pass-name"></dd></div>
+          <div><dt>Date</dt><dd class="pass-day"></dd></div>
+          <div><dt>Pick-up point</dt><dd class="pass-area"></dd></div>
+          <div><dt>Pass ID</dt><dd class="pass-id"></dd></div>
+        </dl></div><div class="pass-qr" aria-hidden="true"></div></div>
+        <p class="pass-rules">Valid only for the person named above, with a photo ID. Not transferable: a copied or shared pass is refused at boarding. Be there by 7:00 AM; the bus leaves on time.</p>`;
+      $(".pass-name", el).textContent = p.name || "Your name";
+      $(".pass-day", el).textContent = `${dayLabel(p.day)} · 7:00 AM sharp`;
+      $(".pass-area", el).textContent = p.area;
+      $(".pass-id", el).textContent = p.code;
+      el.setAttribute("aria-label", `Free bus pass ${p.code} for ${p.name}, ${dayLabel(p.day)} from ${p.area}`);
+      list.append(el);
+      loadQr().then(() => {
+        const q = window.qrcode(0, "M");
+        q.addData(`TAPARIDE PASS ${p.code} | ${p.name} | ${p.day} | ${p.area}`);
+        q.make();
+        $(".pass-qr", el).innerHTML = q.createSvgTag({ cellSize: 4, margin: 0, scalable: true });
+      }).catch(() => {});
+    }
+  }
+  $("[data-print-pass]")?.addEventListener("click", () => window.print());
+  renderPasses();
+
   async function join(fields, source) {
     const data = await api("POST", { action: "join", ref: store.get("tar.ref") || undefined, source, terms: TERMS, ...fields });
+    if (data.access) store.set("tar.access", data.access);
     if (fields.name) store.set("tar.name", fields.name.trim().split(/\s+/)[0]);
     if (fields.email) store.set("tar.email", fields.email.trim().toLowerCase());
     renderTicket(data, { print: true });
@@ -393,16 +445,19 @@
     if (!area) return invalid(f.area, f, "Choose your pick-up point.");
     if (f.name.value.trim().split(/\s+/).length < 2) return invalid(f.name, f, "Enter your first and last name for the boarding list.");
     if (!phoneOk(f.phone.value)) return invalid(f.phone, f, "Enter your WhatsApp number so we can send bus updates.");
-    if (!me?.code && !emailOk(f.email.value)) return invalid(f.email, f, "Enter your email to get your pass.");
+    if (!store.get("tar.access") && !emailOk(f.email.value)) return invalid(f.email, f, "Enter your email to get your pass.");
     if (!agreed(f)) return;
     busy(f, true);
     say(f, "");
     try {
-      if (!me?.code) await join({ email: f.email.value, name: f.name.value, phone: f.phone.value, company: f.company.value }, "tech-week");
-      const r = await api("POST", { action: "seat", code: me.code, event: EVENT, day, area, slot: "07:00", name: f.name.value, phone: f.phone.value });
+      if (!store.get("tar.access")) await join({ email: f.email.value, name: f.name.value, phone: f.phone.value, company: f.company.value }, "tech-week");
+      const r = await api("POST", { action: "seat", access: store.get("tar.access"), event: EVENT, day, area, slot: "07:00", name: f.name.value, phone: f.phone.value });
       store.set("tar.name", f.name.value.trim().split(/\s+/)[0]);
+      store.set("tar.fullname", r.ticket.name);
       renderTicket(r.summary);
-      say(f, `Your free seat is booked: ${dayLabel(day)}, ${shortPoint(area)}, 7:00 AM sharp. We'll send updates to your WhatsApp.`, "ok");
+      savePasses([{ ...r.ticket, ticket: r.ticket.code, event: EVENT }]);
+      say(f, `Your free bus pass is ready: ${r.ticket.code}, ${dayLabel(day)}, ${shortPoint(area)}, 7:00 AM sharp. It's below; save or screenshot it.`, "ok");
+      $("[data-passes]")?.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "start" });
       const msg = `I'm riding the free Tap A Ride bus to Abuja Tech Week (24–26 Nov, 7:00 AM). Get your free seat: ${inviteLink(me.code)}`;
       $("[data-seat-wa]", f).href = "https://wa.me/?text=" + encodeURIComponent(msg);
       $("[data-seat-done]", f).hidden = false;

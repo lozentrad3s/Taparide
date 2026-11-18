@@ -5,7 +5,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { randomInt } from "node:crypto";
+import { randomBytes, randomInt } from "node:crypto";
 
 export class StoreError extends Error {
   constructor(status, message) {
@@ -73,6 +73,24 @@ function code(db) {
   return c;
 }
 
+function ticketCode(db, day) {
+  const a = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  let c;
+  do c = `TW${day.slice(8, 10)}-` + Array.from({ length: 6 }, () => a[randomInt(a.length)]).join("");
+  while (db.seats.some((s) => s.ticket === c));
+  return c;
+}
+
+/** The person's own view: access key, name and their seats with pass IDs. */
+function privateView(db, w) {
+  return {
+    ...summary(db, w),
+    access: w.access,
+    name: w.name,
+    seats: db.seats.filter((s) => s.waitlist_id === w.id).map(({ event, day, area, slot, ticket }) => ({ event, day, area, slot, ticket })),
+  };
+}
+
 function summary(db, w) {
   return {
     code: w.code,
@@ -81,7 +99,7 @@ function summary(db, w) {
     total: db.waitlist.length,
     free_ride: FREE_RIDE,
     free_ride_left: db.waitlist.filter((o) => o.id <= w.id).length <= FREE_RIDE_CAP,
-    seats: db.seats.filter((s) => s.waitlist_id === w.id).map(({ event, day, area, slot }) => ({ event, day, area, slot })),
+    seats: [],
   };
 }
 
@@ -99,8 +117,9 @@ const preview = {
       w.name ??= name;
       w.phone ??= phone;
       w.area ??= area;
+      w.access ??= randomBytes(18).toString("hex");
       save(db);
-      return { ...summary(db, w), existing: true };
+      return { ...privateView(db, w), existing: true };
     }
     let ref = String(p_ref || "").trim().toUpperCase() || null;
     if (ref && !db.waitlist.some((o) => o.code === ref)) ref = null;
@@ -109,6 +128,7 @@ const preview = {
       email, name, phone, area,
       role: ROLES.includes(p_role) ? p_role : "other",
       code: code(db),
+      access: randomBytes(18).toString("hex"),
       referred_by: ref,
       referrals: 0,
       source: p_source || null,
@@ -119,7 +139,7 @@ const preview = {
     db.waitlist.push(w);
     if (ref) db.waitlist.find((o) => o.code === ref).referrals++;
     save(db);
-    return { ...summary(db, w), existing: false };
+    return { ...privateView(db, w), existing: false };
   },
 
   waitlist_status({ p_code }) {
@@ -129,11 +149,12 @@ const preview = {
     return summary(db, w);
   },
 
-  request_event_seat({ p_code, p_event, p_day, p_area, p_slot, p_name, p_phone }) {
+  reserve_event_seat({ p_access, p_event, p_day, p_area, p_slot, p_name, p_phone }) {
     const db = load();
     const ev = EVENTS[p_event];
     if (!ev) throw missing("This event is not taking seat requests.");
-    const w = db.waitlist.find((o) => o.code === String(p_code || "").trim().toUpperCase());
+    const key = String(p_access || "");
+    const w = key.length >= 20 ? db.waitlist.find((o) => o.access === key) : null;
     if (!w) throw missing("Join the waitlist first, then pick your seat.");
     if (!ev.days.includes(p_day)) throw bad("Pick one of the event days.");
     if (!ev.areas.includes(p_area)) throw bad("Pick a pick-up point from the list.");
@@ -143,12 +164,13 @@ const preview = {
     const name = String(p_name || "").trim().slice(0, 80);
     if (name) w.name = name;
     if (phone) w.phone = phone;
-    const mine = db.seats.find((s) => s.waitlist_id === w.id && s.event === p_event && s.day === p_day);
+    if (!w.name) throw bad("Enter your full name for the boarding list.");
+    let mine = db.seats.find((s) => s.waitlist_id === w.id && s.event === p_event && s.day === p_day);
     if (mine) Object.assign(mine, { area: p_area, slot: p_slot });
-    else db.seats.push({ waitlist_id: w.id, event: p_event, day: p_day, area: p_area, slot: p_slot });
+    else db.seats.push((mine = { waitlist_id: w.id, event: p_event, day: p_day, area: p_area, slot: p_slot, ticket: ticketCode(db, p_day) }));
     save(db);
     const riders = db.seats.filter((s) => s.event === p_event && s.day === p_day && s.area === p_area && s.slot === p_slot).length;
-    return { day: p_day, area: p_area, slot: p_slot, riders, seats_per_bus: ev.seats_per_bus, summary: summary(db, w) };
+    return { ticket: { code: mine.ticket, name: w.name, event: p_event, day: p_day, area: p_area, slot: p_slot }, riders, summary: privateView(db, w) };
   },
 
   event_seat_demand({ p_event }) {

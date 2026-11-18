@@ -297,7 +297,7 @@ class DemoBackend implements Backend {
           referrals: refs,
           source: seats.isEmpty ? 'website' : 'tech-week',
           joinedAt: now.subtract(Duration(days: daysAgo, hours: id)),
-          seats: [for (final s in seats) WaitlistSeat(event: 'abuja-tech-week-2026', day: DateTime(2026, 11, s.$1), pickup: s.$2, time: '07:00')],
+          seats: [for (final s in seats) WaitlistSeat(event: 'abuja-tech-week-2026', day: DateTime(2026, 11, s.$1), pickup: s.$2, time: '07:00', ticket: 'TW${s.$1}-SMPL0$id')],
         );
     return [
       e(1, 'Ngozi Eze', 'ngozi.sample@example.com', '08031112222', 'Gwagwalada', 3, 0, [(24, 'University of Abuja, Gwagwalada'), (25, 'University of Abuja, Gwagwalada')]),

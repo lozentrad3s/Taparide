@@ -1,6 +1,6 @@
 // /api/waitlist
 //   POST {action:"join", email, name?, phone?, area?, role?, ref?}   -> place in line + invite code
-//   POST {action:"seat", code, event, day, area, slot}               -> event-bus seat request
+//   POST {action:"seat", access, event, day, area, slot, name, phone} -> seat + personal bus pass
 //   GET  ?code=XXXXXX                                                -> place in line
 //   GET  ?event=abuja-tech-week-2026                                 -> seat demand (counts only)
 import { call, isPreview, StoreError } from "./_lib/store.js";
@@ -111,8 +111,9 @@ export default async function handler(req, res) {
       return send(res, 200, { ...out, preview: isPreview() });
     }
     if (b.action === "seat") {
-      const out = await call("request_event_seat", {
-        p_code: str(b.code, 12),
+      // The private access key (returned when joining), never the public invite code.
+      const out = await call("reserve_event_seat", {
+        p_access: str(b.access, 80),
         p_event: str(b.event, 60),
         p_day: str(b.day, 10),
         p_area: str(b.area, 40),

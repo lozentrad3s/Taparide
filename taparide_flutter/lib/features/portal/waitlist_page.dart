@@ -65,11 +65,11 @@ class _WaitlistPageState extends State<WaitlistPage> {
   /// Boarding list for one day (and optionally one pick-up point), ready to paste into a sheet.
   String _boardingCsv(List<WaitlistEntry> all) {
     String cell(String? v) => '"${(v ?? '').replaceAll('"', '""')}"';
-    final rows = <String>['Day,Pick-up point,Time,Name,Phone,Email'];
+    final rows = <String>['Day,Pick-up point,Time,Pass ID,Name,Phone,Email,Boarded'];
     for (final e in all) {
       for (final s in e.seats) {
         if (s.event != _techWeek || !_sameDay(s.day, _day) || (_pickup != null && s.pickup != _pickup)) continue;
-        rows.add([Fmt.date(s.day), s.pickup, s.time, e.name, e.phone, e.email].map(cell).join(','));
+        rows.add([Fmt.date(s.day), s.pickup, s.time, s.ticket, e.name, e.phone, e.email, ''].map(cell).join(','));
       }
     }
     return rows.join('\n');
@@ -79,7 +79,7 @@ class _WaitlistPageState extends State<WaitlistPage> {
     String cell(String? v) => '"${(v ?? '').replaceAll('"', '""')}"';
     final rows = <String>['Joined,Name,Email,Phone,Area,Wants to,Invite code,Invited by,Invites,Source,Free ride paid,Tech Week seats'];
     for (final e in all) {
-      final seats = [for (final s in e.seats) '${Fmt.date(s.day)} ${s.pickup}'].join('; ');
+      final seats = [for (final s in e.seats) '${Fmt.date(s.day)} ${s.pickup}${s.ticket == null ? '' : ' (${s.ticket})'}'].join('; ');
       rows.add([e.joinedAt.toIso8601String(), e.name, e.email, e.phone, e.area, e.role, e.code, e.referredBy, '${e.referrals}', e.source, e.creditedAt == null ? 'no' : 'yes', seats].map(cell).join(','));
     }
     return rows.join('\n');
@@ -277,7 +277,7 @@ class _EntryRow extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 6),
                 child: Wrap(spacing: 6, runSpacing: 6, children: [
-                  for (final s in e.seats) StatusPill('Tech Week ${s.day.day} Nov · ${s.pickup.split(',').first}', tone: Tone.warning),
+                  for (final s in e.seats) StatusPill('Tech Week ${s.day.day} Nov · ${s.pickup.split(',').first}${s.ticket == null ? '' : ' · ${s.ticket}'}', tone: Tone.warning),
                 ]),
               ),
           ]),

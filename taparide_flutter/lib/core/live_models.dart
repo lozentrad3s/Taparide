@@ -469,8 +469,11 @@ enum SocialProvider {
 
 /// An event-bus seat someone reserved on the website.
 class WaitlistSeat {
-  const WaitlistSeat({required this.event, required this.day, required this.pickup, required this.time});
+  const WaitlistSeat({required this.event, required this.day, required this.pickup, required this.time, this.ticket});
   final String event;
+
+  /// Personal pass ID (e.g. TW24-K7P2QX), checked with the rider's name and photo ID at boarding.
+  final String? ticket;
   final DateTime day;
   final String pickup;
   final String time;
@@ -480,6 +483,7 @@ class WaitlistSeat {
         day: DateTime.parse(j['day'] as String),
         pickup: j['area'] as String,
         time: j['slot'] as String,
+        ticket: j['ticket'] as String?,
       );
 }
 
