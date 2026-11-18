@@ -15,6 +15,7 @@ import '../../core/models.dart';
 import '../../shared/download/download.dart';
 import '../../shared/route_map.dart';
 import '../../shared/ui.dart';
+import 'manage_pages.dart' show showRegisterVehicleDialog;
 import 'portal_widgets.dart';
 
 Color statusColor(VehicleStatus s) => switch (s) {
@@ -48,6 +49,7 @@ class _LiveTrackerPanelState extends State<LiveTrackerPanel> {
     final tracking = vehicles.where((v) => v.id == state.trackingVehicleId).firstOrNull;
     final selected = tracking ?? vehicles.where((v) => v.id == _picked).firstOrNull ?? vehicles.first;
     return Panel(
+      radius: AppRadius.md,
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Row(children: [
           IconBadge(tracking == null ? Icons.location_searching_rounded : Icons.my_location_rounded, size: 40, radius: 12),
@@ -151,6 +153,7 @@ class _LiveFleetMapState extends State<LiveFleetMap> {
     final moving = positions.where((p) => p.vehicle.status == VehicleStatus.onTrip || p.route != null).length;
     final sel = _selected == null ? null : positions.where((p) => p.vehicle.id == _selected!.id).firstOrNull;
     return Panel(
+      radius: AppRadius.md,
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         PanelTitle(
           'Live fleet',
@@ -309,6 +312,7 @@ class PartnerAlertsPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return Panel(
+      radius: AppRadius.md,
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         PanelTitle('Needs attention', subtitle: alerts.isEmpty ? 'All clear' : '${alerts.length} item${alerts.length == 1 ? '' : 's'}'),
         if (alerts.isEmpty)
@@ -350,7 +354,7 @@ class PartnerQuickActions extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = [
       (Icons.auto_awesome_rounded, 'AI insights', () => context.go('/portal/insights')),
-      (Icons.add_road_rounded, 'Register vehicle', () => context.go('/portal/vehicles')),
+      (Icons.add_road_rounded, 'Register vehicle', () => showRegisterVehicleDialog(context)),
       if (canEditFares) (Icons.price_change_rounded, 'Routes & fares', () => context.go('/portal/routes')),
       (Icons.download_rounded, 'Download report', () => exportReport(context, report)),
     ];
@@ -399,13 +403,14 @@ class AiTeaser extends StatelessWidget {
     return Panel(
       color: AppColors.forestDeep,
       border: false,
+      radius: AppRadius.md,
       onTap: () => context.go('/portal/insights'),
       child: Row(children: [
-        const Icon(Icons.auto_awesome_rounded, color: AppColors.leaf),
+        const Icon(Icons.auto_awesome_rounded, color: AppLime.lime),
         const SizedBox(width: 12),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('AI analyst', style: text.labelMedium?.copyWith(color: AppColors.leaf, fontWeight: FontWeight.w800)),
+            Text('AI ANALYST', style: text.labelSmall?.copyWith(color: AppLime.lime, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
             const SizedBox(height: 2),
             Text(top?.title ?? 'Your routes and fleet look healthy today.', style: text.titleMedium?.copyWith(color: Colors.white)),
             if (top != null) Text(top.detail, style: text.bodySmall?.copyWith(color: AppColors.onForestMuted), maxLines: 2, overflow: TextOverflow.ellipsis),

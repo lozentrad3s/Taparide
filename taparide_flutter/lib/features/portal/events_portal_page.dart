@@ -70,7 +70,7 @@ class _PartnerEvents extends StatelessWidget {
           FigureCard(label: 'Ticket revenue', value: Fmt.naira(ticketRevenue), icon: Icons.payments_rounded),
           FigureCard(label: 'Bus seats booked', value: Fmt.count(seats), icon: Icons.directions_bus_rounded, caption: '${buses.length} buses from ${{for (final b in buses) b.origin}.length} areas'),
         ]),
-        const SizedBox(height: 18),
+        const SizedBox(height: PortalSpace.gap),
         if (mine.isEmpty)
           const Panel(child: EmptyState(icon: Icons.celebration_rounded, title: 'No events yet', message: 'Post your first event. Riders see it on the Events page, buy tickets and book buses from their area.'))
         else
@@ -102,6 +102,7 @@ class _EventAnalytics extends StatelessWidget {
     final peak = byTime.values.fold<int>(1, (a, b) => a > b ? a : b);
 
     return Panel(
+      radius: AppRadius.md,
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           EventDateBlock(event.startsAt),
@@ -263,7 +264,7 @@ class _PostEventSheetState extends State<_PostEventSheet> {
             Text('Post an event', style: text.headlineSmall),
             const SizedBox(height: 4),
             Text('It appears on the Events page for every rider. Bus operators can then add buses to it.', style: text.bodySmall),
-            const SizedBox(height: 18),
+            const SizedBox(height: PortalSpace.gap),
             TextFormField(controller: _title, decoration: const InputDecoration(labelText: 'Event name'), validator: (v) => (v == null || v.trim().length < 3) ? 'At least 3 letters' : null),
             const SizedBox(height: 12),
             Row(children: [
@@ -346,7 +347,7 @@ class _OperatorEvents extends StatelessWidget {
           FigureCard(label: 'Expected takings', value: Fmt.naira(mine.fold<int>(0, (a, b) => a + b.riders * b.fare)), icon: Icons.payments_rounded),
           FigureCard(label: 'Upcoming events', value: '${upcoming.length}', icon: Icons.event_rounded),
         ]),
-        const SizedBox(height: 18),
+        const SizedBox(height: PortalSpace.gap),
         if (upcoming.isEmpty)
           const Panel(child: EmptyState(icon: Icons.event_busy_rounded, title: 'No upcoming events', message: 'Partner events appear here as soon as they are posted.'))
         else
@@ -369,24 +370,30 @@ class _OperatorEventPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final add = FilledButton.icon(
+      onPressed: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, builder: (_) => _OfferBusSheet(event: event)),
+      icon: const Icon(Icons.add_rounded, size: 18),
+      label: const Text('Add a bus'),
+    );
     return Panel(
+      radius: AppRadius.md,
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          EventDateBlock(event.startsAt),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(event.title, style: text.titleLarge),
-              Text('${Fmt.dayTime(event.startsAt)} · ${event.venue}, ${event.area}', style: text.bodySmall),
-              Text('By ${event.organiserName}${others > 0 ? ' · $others bus${others == 1 ? '' : 'es'} from other operators' : ''}', style: text.bodySmall),
-            ]),
-          ),
-          FilledButton.icon(
-            onPressed: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, builder: (_) => _OfferBusSheet(event: event)),
-            icon: const Icon(Icons.add_rounded, size: 18),
-            label: const Text('Add a bus'),
-          ),
-        ]),
+        LayoutBuilder(builder: (context, c) {
+          final head = Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            EventDateBlock(event.startsAt),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(event.title, style: text.titleLarge),
+                Text('${Fmt.dayTime(event.startsAt)} · ${event.venue}, ${event.area}', style: text.bodySmall),
+                Text('By ${event.organiserName}${others > 0 ? ' · $others bus${others == 1 ? '' : 'es'} from other operators' : ''}', style: text.bodySmall),
+              ]),
+            ),
+          ]);
+          return c.maxWidth >= 560
+              ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(child: head), const SizedBox(width: 12), add])
+              : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [head, const SizedBox(height: 12), add]);
+        }),
         for (final b in buses) ...[const Divider(height: 28), _OperatorBusRow(bus: b)],
       ]),
     );
@@ -416,6 +423,7 @@ class _OperatorBusRowState extends State<_OperatorBusRow> {
         const Icon(Icons.directions_bus_filled_rounded, color: AppColors.forest),
         const SizedBox(width: 10),
         Expanded(child: Text('From ${bus.origin} · ${Fmt.naira(bus.fare)} · ${bus.capacity} seats${bus.vehicleLabel.isEmpty ? '' : ' · ${bus.vehicleLabel}'}', style: text.titleSmall)),
+        const SizedBox(width: 8),
         StatusPill(confirmed ? 'Confirmed ${Fmt.time(bus.confirmedAt!)}' : '${bus.riders}/${bus.minRiders} riders', tone: confirmed ? Tone.success : (bus.riders >= bus.minRiders ? Tone.info : Tone.warning)),
       ]),
       const SizedBox(height: 10),
@@ -554,7 +562,7 @@ class _OfferBusSheetState extends State<_OfferBusSheet> {
             Text('Add a bus to ${widget.event.title}', style: text.headlineSmall),
             const SizedBox(height: 4),
             Text('To ${widget.event.venue} · event starts ${Fmt.dayTime(widget.event.startsAt)}', style: text.bodySmall),
-            const SizedBox(height: 18),
+            const SizedBox(height: PortalSpace.gap),
             TextFormField(controller: _origin, decoration: const InputDecoration(labelText: 'Leaves from', hintText: 'Kubwa'), validator: (v) => (v == null || v.trim().length < 2) ? 'Required' : null),
             const SizedBox(height: 12),
             Row(children: [
@@ -623,7 +631,7 @@ class _AllEvents extends StatelessWidget {
           FigureCard(label: 'Event buses', value: '${state.eventBuses.length}', icon: Icons.directions_bus_rounded),
           FigureCard(label: 'Bus riders', value: Fmt.count(state.eventBuses.fold<int>(0, (a, b) => a + b.riders)), icon: Icons.groups_rounded),
         ]),
-        const SizedBox(height: 18),
+        const SizedBox(height: PortalSpace.gap),
         if (events.isEmpty)
           const Panel(child: EmptyState(icon: Icons.event_busy_rounded, title: 'No events', message: 'Partner events appear here.'))
         else

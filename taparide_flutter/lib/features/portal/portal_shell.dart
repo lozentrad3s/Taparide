@@ -8,6 +8,7 @@ import '../../core/models.dart';
 import '../../shared/brand.dart';
 import '../../shared/ui.dart';
 import '../assistant/assistant_sheet.dart';
+import 'portal_chrome.dart';
 
 /// One area of the partner portal and the roles allowed into it.
 /// The backend enforces the same rules; this only decides what to show.
@@ -98,23 +99,32 @@ class PortalShell extends StatelessWidget {
 
     if (wide) {
       return Scaffold(
+        backgroundColor: AppColors.ground,
         body: Row(children: [
-          _Sidebar(user: user, sections: sections, current: current),
-          Expanded(child: child),
+          PortalSidebar(user: user, sections: sections, current: current),
+          Expanded(
+            child: Column(children: [
+              PortalTopBar(user: user, current: current),
+              Expanded(child: child),
+            ]),
+          ),
         ]),
         floatingActionButton: const AssistantButton(),
       );
     }
 
+    // Phone: the first three sections in the bottom bar, the rest under "More".
     final primary = sections.take(3).toList();
     final index = primary.indexWhere((s) => s.path == current?.path);
     return Scaffold(
+      backgroundColor: AppColors.ground,
       appBar: AppBar(
         backgroundColor: AppColors.forestDeep,
         foregroundColor: Colors.white,
         titleSpacing: 0,
         title: const BrandLockup(height: 26, onDark: true),
         actions: [
+          const DemoBadge(onDark: true),
           IconButton(tooltip: 'Refresh', onPressed: state.refresh, icon: const Icon(Icons.refresh_rounded)),
           const SizedBox(width: 4),
         ],
@@ -122,157 +132,25 @@ class PortalShell extends StatelessWidget {
       floatingActionButton: const AssistantButton(),
       drawer: Drawer(
         backgroundColor: AppColors.forestDeep,
-        child: _SidebarContent(user: user, sections: sections, current: current, onNavigate: () => Navigator.of(context).pop()),
+        width: 288,
+        child: Builder(builder: (drawer) => PortalSidebar(user: user, sections: sections, current: current, width: 288, onNavigate: () => Navigator.of(drawer).pop())),
       ),
       body: child,
       bottomNavigationBar: NavigationBar(
         selectedIndex: index < 0 ? primary.length : index,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         onDestinationSelected: (i) {
           if (i < primary.length) {
             context.go(primary[i].path);
           } else {
-            Scaffold.maybeOf(context)?.openDrawer();
-            _openMore(context, user, sections, current);
+            showPortalMenu(context, user: user, sections: sections, current: current);
           }
         },
         destinations: [
           for (final s in primary) NavigationDestination(icon: Icon(s.icon), label: s.shortLabel),
-          const NavigationDestination(icon: Icon(Icons.more_horiz_rounded), label: 'More'),
+          const NavigationDestination(icon: Icon(Icons.menu_rounded), label: 'More'),
         ],
       ),
-    );
-  }
-
-  void _openMore(BuildContext context, AppUser user, List<PortalSection> sections, PortalSection? current) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (sheet) => SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            for (final s in sections.skip(3))
-              ListTile(
-                leading: Icon(s.icon, color: s == current ? AppColors.forest : AppColors.muted),
-                title: Text(s.label),
-                selected: s == current,
-                onTap: () {
-                  Navigator.pop(sheet);
-                  context.go(s.path);
-                },
-              ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.logout_rounded),
-              title: const Text('Sign out'),
-              onTap: () async {
-                Navigator.pop(sheet);
-                await context.read<AppState>().signOut();
-                if (context.mounted) context.go('/');
-              },
-            ),
-          ]),
-        ),
-      ),
-    );
-  }
-}
-
-class _Sidebar extends StatelessWidget {
-  const _Sidebar({required this.user, required this.sections, required this.current});
-  final AppUser user;
-  final List<PortalSection> sections;
-  final PortalSection? current;
-
-  @override
-  Widget build(BuildContext context) => Container(
-        width: 260,
-        color: AppColors.forestDeep,
-        child: _SidebarContent(user: user, sections: sections, current: current),
-      );
-}
-
-class _SidebarContent extends StatelessWidget {
-  const _SidebarContent({required this.user, required this.sections, required this.current, this.onNavigate});
-  final AppUser user;
-  final List<PortalSection> sections;
-  final PortalSection? current;
-  final VoidCallback? onNavigate;
-
-  @override
-  Widget build(BuildContext context) {
-    final state = context.read<AppState>();
-    final provider = state.providerById(user.providerId);
-    final text = Theme.of(context).textTheme;
-    return SafeArea(
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 22, 16, 18),
-          child: InkWell(onTap: () => context.go('/'), child: const Align(alignment: Alignment.centerLeft, child: BrandLockup(height: 30, onDark: true))),
-        ),
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 12),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.07), borderRadius: BorderRadius.circular(AppRadius.md)),
-          child: Row(children: [
-            Avatar(initials: user.initials, size: 38, color: AppColors.leaf, textColor: AppColors.forestDeep),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(user.fullName, style: text.titleSmall?.copyWith(color: Colors.white), maxLines: 1, overflow: TextOverflow.ellipsis),
-                Text(provider?.name ?? user.organisation ?? user.role.label, style: text.bodySmall?.copyWith(color: AppColors.onForestMuted), maxLines: 1, overflow: TextOverflow.ellipsis),
-              ]),
-            ),
-          ]),
-        ),
-        const SizedBox(height: 14),
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            children: [
-              for (final s in sections)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 2),
-                  child: Material(
-                    color: s == current ? Colors.white.withValues(alpha: 0.12) : Colors.transparent,
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                      onTap: () {
-                        onNavigate?.call();
-                        context.go(s.path);
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-                        child: Row(children: [
-                          Icon(s.icon, size: 20, color: s == current ? AppColors.leaf : AppColors.onForestMuted),
-                          const SizedBox(width: 12),
-                          Expanded(child: Text(s.label, style: TextStyle(color: s == current ? Colors.white : const Color(0xFFD5E6DC), fontWeight: s == current ? FontWeight.w700 : FontWeight.w500, fontSize: 15))),
-                        ]),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 12, 16),
-          child: Row(children: [
-            const DemoBadge(onDark: true),
-            const Spacer(),
-            IconButton(
-              tooltip: 'Sign out',
-              color: Colors.white,
-              onPressed: () async {
-                await context.read<AppState>().signOut();
-                if (context.mounted) context.go('/');
-              },
-              icon: const Icon(Icons.logout_rounded),
-            ),
-          ]),
-        ),
-      ]),
     );
   }
 }

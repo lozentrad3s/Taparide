@@ -58,9 +58,9 @@ void main() {
     await tester.pumpAndSettle();
     await signIn(tester, 'ops@abujametro.demo', partner: true);
 
-    expect(find.text('Operator Dashboard'), findsOneWidget);
+    expect(find.text('Operator dashboard'), findsWidgets, reason: 'page title, sidebar and breadcrumb');
     expect(find.text('Abuja Metro Bus Co. (sample) · Bus operator'), findsOneWidget);
-    expect(find.text('Total Trips'), findsOneWidget);
+    expect(find.text('Total trips'), findsOneWidget);
     expect(state.partnerBookings, isNotEmpty);
     expect(tester.takeException(), isNull);
   });

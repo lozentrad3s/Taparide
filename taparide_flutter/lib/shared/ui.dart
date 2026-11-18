@@ -10,6 +10,13 @@ import '../core/photos.dart';
 
 // ------------------------------------------------------------------ layout
 
+/// The brand's lime highlight. Always pair it with dark text (forestDeep or ink), never white.
+abstract final class AppLime {
+  static const lime = Color(0xFF8CE01F);
+  static const limeSoft = Color(0xFFEEF9DC);
+  static const onLime = Color(0xFF06331F);
+}
+
 bool isWide(BuildContext context, [double breakpoint = 900]) => MediaQuery.sizeOf(context).width >= breakpoint;
 
 class MaxWidth extends StatelessWidget {
@@ -266,7 +273,7 @@ class StatusPill extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[Icon(icon, size: 13, color: fg), const SizedBox(width: 4)],
-          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: fg, height: 1.1)),
+          ConstrainedBox(constraints: const BoxConstraints(maxWidth: 230), child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: fg, height: 1.1))),
         ],
       ),
     );
@@ -281,7 +288,7 @@ class DeltaLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final up = percent >= 0;
-    final color = onDark ? const Color(0xFFB8F0A0) : (up ? AppColors.leafText : AppColors.red);
+    final color = onDark ? AppLime.lime : (up ? AppColors.leafText : AppColors.red);
     return Semantics(
       label: '${up ? 'up' : 'down'} ${percent.abs()} percent',
       child: ExcludeSemantics(
@@ -369,7 +376,7 @@ class WeekBars extends StatelessWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          Text(Fmt.compact(values[i]), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: i == highlightIndex ? AppColors.forest : AppColors.muted, fontFeatures: tabular)),
+                          FittedBox(fit: BoxFit.scaleDown, child: Text(Fmt.compact(values[i]), maxLines: 1, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: i == highlightIndex ? AppColors.forest : AppColors.muted, fontFeatures: tabular))),
                           const SizedBox(height: 4),
                           TweenAnimationBuilder<double>(
                             tween: Tween(begin: 0, end: values[i] / maxValue),
@@ -384,7 +391,7 @@ class WeekBars extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 6),
-                          Text(labels[i], style: TextStyle(fontSize: 12, fontWeight: i == highlightIndex ? FontWeight.w800 : FontWeight.w600, color: i == highlightIndex ? AppColors.ink : AppColors.muted)),
+                          FittedBox(fit: BoxFit.scaleDown, child: Text(labels[i], maxLines: 1, style: TextStyle(fontSize: 12, fontWeight: i == highlightIndex ? FontWeight.w800 : FontWeight.w600, color: i == highlightIndex ? AppColors.ink : AppColors.muted))),
                         ],
                       ),
                     ),
