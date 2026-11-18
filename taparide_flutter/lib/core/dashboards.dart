@@ -101,11 +101,11 @@ class FctaDashboard {
   final List<int> ridershipByDay;
   final List<String> dayLabels;
   final int todayIndex;
-  final int ridershipDelta;
+  final int? ridershipDelta;
   final int verifiedVehicles;
-  final int verifiedDelta;
+  final int? verifiedDelta;
   final int activeRoutes;
-  final int routesDelta;
+  final int? routesDelta;
   final List<RouteVolume> topRoutes;
   final List<TransportProvider> providers;
   final List<Vehicle> pendingVehicles;
@@ -240,11 +240,11 @@ abstract final class Dashboards {
       ridershipByDay: [for (final d in days) byWeekday[d.weekday - 1]],
       dayLabels: [for (final d in days) Fmt.weekday(d)],
       todayIndex: days.length - 1,
-      ridershipDelta: baselines.ridershipDelta,
+      ridershipDelta: baselines.isNone ? null : baselines.ridershipDelta,
       verifiedVehicles: baselines.verifiedOffPlatform + platformVerified,
-      verifiedDelta: baselines.verifiedDelta,
+      verifiedDelta: baselines.isNone ? null : baselines.verifiedDelta,
       activeRoutes: baselines.routesOffPlatform + platformRoutes,
-      routesDelta: baselines.activeRoutesDelta,
+      routesDelta: baselines.isNone ? null : baselines.activeRoutesDelta,
       topRoutes: volumes,
       providers: providers,
       pendingVehicles: [for (final v in vehicles) if (v.verification == Verification.pending) v],

@@ -288,6 +288,9 @@ class TransitRoute {
   String get destination => stops.last.name;
   String get title => name ?? '$origin – $destination';
 
+  /// False for a real corridor no Tap A Ride operator runs yet (seat booking opens when one joins).
+  bool get hasOperator => providerId.isNotEmpty;
+
   TransitRoute copyWith({int? fare, bool? active, List<CorridorOperator>? servedBy}) => TransitRoute(
         id: id,
         providerId: providerId,
@@ -339,7 +342,8 @@ class TransitRoute {
 
   factory TransitRoute.fromJson(Map<String, dynamic> json) => TransitRoute(
         id: json['id'] as String,
-        providerId: json['provider_id'] as String,
+        // Real corridors with no Tap A Ride operator yet have no provider: riders can see them, not book them.
+        providerId: (json['provider_id'] as String?) ?? '',
         code: (json['code'] as String?) ?? '',
         stops: [for (final s in (json['stops'] as List? ?? const [])) RouteStop.fromJson(Map<String, dynamic>.from(s as Map))],
         fare: _int(json['fare']),
@@ -905,6 +909,28 @@ class MetricBaselines {
   final int activeRoutesDelta;
 
   int get totalRidership => ridershipByDay.fold(0, (a, b) => a + b);
+
+  /// Live platform with no off-platform figures: dashboards show only what happens on Tap A Ride.
+  static const none = MetricBaselines(
+    operatorProviderId: '',
+    fleetProviderId: '',
+    operatorTrips: 0,
+    operatorTripsDelta: 0,
+    operatorRevenue: 0,
+    operatorRevenueDelta: 0,
+    operatorActiveDrivers: 0,
+    fleetRevenue: 0,
+    fleetRevenueDelta: 0,
+    fleetEarnings: [],
+    ridershipByDay: [0, 0, 0, 0, 0, 0, 0],
+    ridershipDelta: 0,
+    verifiedOffPlatform: 0,
+    verifiedDelta: 0,
+    routesOffPlatform: 0,
+    activeRoutesDelta: 0,
+  );
+
+  bool get isNone => identical(this, none);
 }
 
 class VehicleEarning {

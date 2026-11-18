@@ -57,7 +57,8 @@ class _RouteDetailsPageState extends State<RouteDetailsPage> {
       selected: chosen,
       onSelect: (d) => setState(() => _selected = d),
     );
-    final bookBar = _BookBar(route: route, at: chosen, onBook: chosen == null ? null : () => _book(route, chosen));
+    final bookable = state.canBook(route);
+    final bookBar = _BookBar(route: route, at: chosen, bookable: bookable, onBook: chosen == null || !bookable ? null : () => _book(route, chosen));
 
     if (wide) {
       return Scaffold(
@@ -306,14 +307,27 @@ class _StopsTimeline extends StatelessWidget {
 }
 
 class _BookBar extends StatelessWidget {
-  const _BookBar({required this.route, required this.at, required this.onBook});
+  const _BookBar({required this.route, required this.at, required this.bookable, required this.onBook});
   final TransitRoute route;
   final DateTime? at;
+  final bool bookable;
   final VoidCallback? onBook;
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    if (!bookable) {
+      return Row(children: [
+        const Icon(Icons.schedule_send_rounded, color: AppColors.muted),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+            Text('Seat booking opens soon', style: text.titleSmall),
+            Text('No Tap A Ride operator runs this route yet. Fares shown are what riders pay today.', style: text.bodySmall),
+          ]),
+        ),
+      ]);
+    }
     return Row(children: [
       Expanded(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [

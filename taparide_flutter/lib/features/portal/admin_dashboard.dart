@@ -66,7 +66,7 @@ class AdminDashboard extends StatelessWidget {
         const SizedBox(height: PortalSpace.gap),
         TwoUp(
           left: Panel(radius: AppRadius.md, padding: const EdgeInsets.fromLTRB(20, 18, 20, 20), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            PanelTitle('Ridership', subtitle: 'Trips per day, last 7 days, all operators', trailing: fcta == null ? null : StatusPill('${fcta.ridershipDelta >= 0 ? '+' : ''}${fcta.ridershipDelta}% vs last week', tone: Tone.success)),
+            PanelTitle('Ridership', subtitle: 'Trips per day, last 7 days, all operators', trailing: fcta?.ridershipDelta == null ? null : StatusPill('${fcta!.ridershipDelta! >= 0 ? '+' : ''}${fcta.ridershipDelta}% vs last week', tone: Tone.success)),
             if (fcta != null) WeekBars(values: fcta.ridershipByDay, labels: fcta.dayLabels, highlightIndex: fcta.todayIndex),
           ])),
           right: Panel(radius: AppRadius.md, padding: const EdgeInsets.fromLTRB(20, 18, 20, 20), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [

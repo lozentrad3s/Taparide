@@ -316,11 +316,19 @@ class AppState extends ChangeNotifier {
   Vehicle? vehicleById(String? id) => id == null ? null : vehicles.where((v) => v.id == id).firstOrNull;
   Booking? bookingById(String? id) => id == null ? null : [...myBookings, ...partnerBookings].where((b) => b.id == id).firstOrNull;
 
-  /// Routes riders can book (active and run by a verified provider).
+  /// Routes riders see: active and run by a verified provider, plus real corridors with no operator yet
+  /// (shown with who runs them today; seat booking opens when an operator joins, see [canBook]).
   List<TransitRoute> get bookableRoutes {
     final verified = {for (final p in providers) if (p.status == Verification.verified) p.id};
-    return [for (final r in routes) if (r.active && verified.contains(r.providerId)) r]..sort((a, b) => b.monthlyTrips.compareTo(a.monthlyTrips));
+    return [for (final r in routes) if (r.active && (!r.hasOperator || verified.contains(r.providerId))) r]
+      ..sort((a, b) {
+        final operated = (b.hasOperator ? 1 : 0) - (a.hasOperator ? 1 : 0);
+        return operated != 0 ? operated : b.monthlyTrips.compareTo(a.monthlyTrips);
+      });
   }
+
+  /// Whether riders can buy a seat on [route] now (a verified Tap A Ride operator runs it).
+  bool canBook(TransitRoute route) => route.active && route.hasOperator && providerById(route.providerId)?.status == Verification.verified;
 
   /// Electric cars and verified private-driver cars riders can book.
   List<Vehicle> get availableEvs {

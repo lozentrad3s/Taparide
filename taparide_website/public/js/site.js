@@ -121,7 +121,7 @@
   // ---------------------------------------------------------------- countdown
   for (const cd of $$("[data-countdown]")) {
     const days = Math.ceil((EVENT_START - Date.now()) / 86_400_000);
-    cd.textContent = days > 1 ? `in ${days} days` : days === 1 ? "tomorrow" : Date.now() < new Date("2026-11-27") ? "on now" : "finished";
+    cd.textContent = days > 1 ? `starts in ${days} days` : days === 1 ? "starts tomorrow" : Date.now() < new Date("2026-11-27") ? "on now" : "event finished";
   }
 
   // ---------------------------------------------------------------- anti-bot (see api/waitlist.js)

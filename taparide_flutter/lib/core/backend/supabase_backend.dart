@@ -190,8 +190,10 @@ class SupabaseBackend implements Backend {
 
   @override
   Future<MetricBaselines> fetchBaselines() => _guard(() async {
-        final row = _row(await _client.from('metric_baselines').select('data').eq('id', 1).limit(1));
-        final d = Map<String, dynamic>.from(row['data'] as Map);
+        // The live database has no baseline row: dashboards then show platform figures only.
+        final rows = _rows(await _client.from('metric_baselines').select('data').eq('id', 1).limit(1));
+        if (rows.isEmpty) return MetricBaselines.none;
+        final d = Map<String, dynamic>.from(rows.first['data'] as Map);
         int n(String k) => (d[k] as num).toInt();
         return MetricBaselines(
           operatorProviderId: d['operator_provider_id'] as String,
