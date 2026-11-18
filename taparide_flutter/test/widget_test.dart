@@ -59,7 +59,7 @@ void main() {
     await signIn(tester, 'ops@abujametro.demo', partner: true);
 
     expect(find.text('Operator Dashboard'), findsOneWidget);
-    expect(find.text('Abuja Metro Bus Co. · Bus operator'), findsOneWidget);
+    expect(find.text('Abuja Metro Bus Co. (sample) · Bus operator'), findsOneWidget);
     expect(find.text('Total Trips'), findsOneWidget);
     expect(state.partnerBookings, isNotEmpty);
     expect(tester.takeException(), isNull);

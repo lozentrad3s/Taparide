@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/theme.dart';
 import '../../core/app_state.dart';
 import '../../core/format.dart';
 import '../../core/models.dart';
+import '../../core/route_operators.dart';
 import '../../shared/route_map.dart';
 import '../../shared/ui.dart';
 
@@ -170,7 +172,96 @@ class _Details extends StatelessWidget {
             ),
         ]),
       const SizedBox(height: 16),
+      _CorridorOperators(route: route),
     ]);
+  }
+}
+
+/// Public information on who runs vehicles on the corridor today. These are not Tap A Ride partners.
+class _CorridorOperators extends StatelessWidget {
+  const _CorridorOperators({required this.route});
+  final TransitRoute route;
+
+  @override
+  Widget build(BuildContext context) {
+    final operators = route.servedBy.isNotEmpty ? route.servedBy : (corridorOperators[route.id] ?? const <CorridorOperator>[]);
+    if (operators.isEmpty) return const SizedBox.shrink();
+    final text = Theme.of(context).textTheme;
+    final rail = route.mode == TransitMode.rail;
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      const SizedBox(height: 6),
+      Text(rail ? 'Who runs trains on this line today' : 'Who runs buses on this corridor today', style: text.titleLarge),
+      const SizedBox(height: 4),
+      Text('Public information from news reports. These operators are not Tap A Ride partners; bookings on Tap A Ride are only with verified partners.', style: text.bodySmall?.copyWith(color: AppColors.muted)),
+      const SizedBox(height: 10),
+      Panel(
+        padding: EdgeInsets.zero,
+        shadow: false,
+        child: Column(children: [
+          for (var i = 0; i < operators.length; i++) ...[
+            if (i > 0) const Divider(height: 1),
+            _CorridorOperatorTile(operator: operators[i]),
+          ],
+        ]),
+      ),
+      const SizedBox(height: 16),
+    ]);
+  }
+}
+
+class _CorridorOperatorTile extends StatelessWidget {
+  const _CorridorOperatorTile({required this.operator});
+  final CorridorOperator operator;
+
+  IconData get _icon {
+    final type = operator.type.toLowerCase();
+    if (type.contains('rail')) return Icons.tram_rounded;
+    if (type.contains('taxi') || type.contains('commercial vehicle')) return Icons.local_taxi_rounded;
+    if (type.contains('minibus') || type.contains('coaster')) return Icons.airport_shuttle_rounded;
+    return Icons.directions_bus_rounded;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final uri = Uri.tryParse(operator.source);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(color: AppColors.mint, borderRadius: BorderRadius.circular(AppRadius.md)),
+          child: Icon(_icon, size: 20, color: AppColors.forest),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(operator.name, style: text.titleSmall),
+            const SizedBox(height: 6),
+            Wrap(spacing: 6, runSpacing: 6, children: [
+              StatusPill(operator.type),
+              if (operator.uncertain) const StatusPill('Not confirmed for 2026', tone: Tone.warning),
+            ]),
+            if (operator.note != null && operator.note!.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(operator.note!, style: text.bodySmall),
+            ],
+            const SizedBox(height: 4),
+            Semantics(
+              link: uri != null,
+              child: InkWell(
+                onTap: uri == null ? null : () => launchUrl(uri),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Text('As reported ${operator.asOf} · ${operator.publisher}', style: text.labelMedium?.copyWith(color: AppColors.forest, decoration: uri == null ? null : TextDecoration.underline)),
+                ),
+              ),
+            ),
+          ]),
+        ),
+      ]),
+    );
   }
 }
 

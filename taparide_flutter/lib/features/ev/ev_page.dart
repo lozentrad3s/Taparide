@@ -40,7 +40,7 @@ class EvPage extends StatelessWidget {
             title: Text('Electric vehicles', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white)),
             flexibleSpace: const FlexibleSpaceBar(
               background: PhotoView(
-                AppPhoto.evPlug,
+                evPhoto,
                 semanticLabel: 'An electric car plugged into a charging station',
                 overlay: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0x9906331F), Color(0x2206331F), Color(0xCC06331F)]),
               ),
@@ -143,7 +143,7 @@ class _EvCard extends StatelessWidget {
       padding: EdgeInsets.zero,
       child: LayoutBuilder(builder: (context, c) {
         final row = c.maxWidth > 560;
-        final photo = SizedBox(width: row ? 220 : double.infinity, height: row ? 168 : 150, child: const PhotoView(AppPhoto.evCharging, alignment: Alignment(0.2, 0.3)));
+        final photo = SizedBox(width: row ? 220 : double.infinity, height: row ? 168 : 150, child: const PhotoView(evPhoto, alignment: Alignment(0.2, 0.3)));
         final body = Padding(
           padding: const EdgeInsets.all(16),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

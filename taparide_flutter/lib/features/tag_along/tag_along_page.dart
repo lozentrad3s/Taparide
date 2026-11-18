@@ -92,14 +92,14 @@ class _TagAlongPageState extends State<TagAlongPage> {
                         const Expanded(
                             child: SizedBox(
                                 height: 400,
-                                child: PhotoView(AppPhoto.taxis,
-                                    radius: AppRadius.xl, alignment: Alignment(-0.2, 0), semanticLabel: 'Green and white Abuja taxis on the road'))),
+                                child: PhotoView(AppPhoto.tagAlongFriends,
+                                    radius: AppRadius.xl, alignment: Alignment(0.1, 0), semanticLabel: 'Three friends smiling as they share a car ride'))),
                       ])
                     : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                         const SizedBox(
                             height: 210,
-                            child: PhotoView(AppPhoto.taxis,
-                                radius: AppRadius.xl, alignment: Alignment(-0.2, 0.2), semanticLabel: 'Green and white Abuja taxis on the road')),
+                            child: PhotoView(AppPhoto.tagAlongFriends,
+                                radius: AppRadius.xl, alignment: Alignment.center, semanticLabel: 'Three friends smiling as they share a car ride')),
                         const SizedBox(height: 20),
                         intro,
                       ]),
