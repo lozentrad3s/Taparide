@@ -178,7 +178,7 @@ class EvFleetPage extends StatelessWidget {
             }),
           ),
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: PortalSpace.gap),
         DataList<Vehicle>(
           items: evs,
           empty: const EmptyState(icon: Icons.electric_car_rounded, title: 'No electric vehicles yet', message: 'Registered EVs appear here once added.'),
@@ -566,7 +566,7 @@ class PortalBookingsPage extends StatelessWidget {
           FigureCard(label: 'All bookings', value: '${bookings.length}', icon: Icons.confirmation_number_rounded),
           FigureCard(label: 'Fares collected', value: Fmt.naira(revenue), icon: Icons.payments_rounded),
         ]),
-        const SizedBox(height: 18),
+        const SizedBox(height: PortalSpace.gap),
         DataList<Booking>(
           items: bookings,
           empty: const EmptyState(icon: Icons.confirmation_number_outlined, title: 'No bookings yet', message: 'Seats booked in the rider app appear here instantly.'),
@@ -601,37 +601,49 @@ class VerificationPage extends StatelessWidget {
       title: 'Verification queue',
       subtitle: 'Approve providers and vehicles before they can take bookings',
       children: [
-        Text('Providers (${providers.length})', style: text.titleLarge),
-        const SizedBox(height: 10),
+        Cols(min: 200, max: 3, children: [
+          FigureCard(label: 'Providers waiting', value: '${providers.length}', icon: Icons.apartment_rounded),
+          FigureCard(label: 'Vehicles waiting', value: '${vehicles.length}', icon: Icons.directions_car_filled_rounded),
+          FigureCard(label: 'Verified vehicles', value: '${state.vehicles.where((v) => v.verification == Verification.verified).length}', icon: Icons.verified_rounded, caption: 'on the platform'),
+        ]),
+        SectionLabel('Providers', subtitle: '${providers.length} waiting for review'),
         if (providers.isEmpty)
-          Panel(child: Text('No providers are waiting for review.', style: text.bodyMedium))
+          const Panel(child: EmptyState(icon: Icons.task_alt_rounded, title: 'All caught up', message: 'No providers are waiting for review.'))
         else
           for (final p in providers)
             Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: Panel(
-                child: Wrap(alignment: WrapAlignment.spaceBetween, crossAxisAlignment: WrapCrossAlignment.center, runSpacing: 10, children: [
-                  Row(mainAxisSize: MainAxisSize.min, children: [
+                radius: AppRadius.md,
+                child: LayoutBuilder(builder: (context, c) {
+                  final details = Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     IconBadge(p.kind.icon, size: 44),
                     const SizedBox(width: 12),
-                    Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(p.name, style: text.titleMedium),
-                      Text('${p.kind.label} · ${p.area} · applied ${Fmt.date(p.joinedAt)}', style: text.bodySmall),
-                      Text(p.description, style: text.bodySmall),
-                    ]),
-                  ]),
-                  Row(mainAxisSize: MainAxisSize.min, children: [
-                    FilledButton(onPressed: () => attemptOk(context, () => app.setProviderStatus(p, Verification.verified), success: '${p.name} approved'), child: const Text('Approve')),
-                  ]),
-                ]),
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(p.name, style: text.titleMedium),
+                        const SizedBox(height: 2),
+                        Text('${p.kind.label} · ${p.area} · applied ${Fmt.date(p.joinedAt)}', style: text.bodySmall),
+                        const SizedBox(height: 4),
+                        Text(p.description, style: text.bodySmall?.copyWith(color: AppColors.inkSoft)),
+                      ]),
+                    ),
+                  ]);
+                  final approve = FilledButton.icon(
+                    onPressed: () => attemptOk(context, () => app.setProviderStatus(p, Verification.verified), success: '${p.name} approved'),
+                    icon: const Icon(Icons.verified_rounded, size: 18),
+                    label: const Text('Approve'),
+                  );
+                  return c.maxWidth >= 560
+                      ? Row(children: [Expanded(child: details), const SizedBox(width: 16), approve])
+                      : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [details, const SizedBox(height: 12), approve]);
+                }),
               ),
             ),
-        const SizedBox(height: 22),
-        Text('Vehicles (${vehicles.length})', style: text.titleLarge),
-        const SizedBox(height: 10),
+        SectionLabel('Vehicles', subtitle: '${vehicles.length} waiting for checks'),
         DataList<Vehicle>(
           items: vehicles,
-          empty: Panel(child: Text('Every registered vehicle has been checked.', style: text.bodyMedium)),
+          empty: const Panel(child: EmptyState(icon: Icons.task_alt_rounded, title: 'All caught up', message: 'Every registered vehicle has been checked.')),
           columns: [
             Col('Vehicle', flex: 4, (v) => Text(v.displayName, style: text.titleSmall)),
             Col('Type', (v) => Text(v.kind.label, style: text.bodyMedium)),

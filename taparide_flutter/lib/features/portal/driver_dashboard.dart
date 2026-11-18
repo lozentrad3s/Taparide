@@ -92,7 +92,7 @@ class DriverDashboard extends StatelessWidget {
         }),
         if (car != null) ...[const SizedBox(height: 16), LiveTrackerPanel(vehicles: [car])],
         const SizedBox(height: 16),
-        Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Panel(radius: AppRadius.md, padding: const EdgeInsets.fromLTRB(20, 18, 20, 20), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           const PanelTitle('Where riders are', subtitle: 'Busiest areas across Abuja right now'),
           for (final (i, a) in hot.indexed)
             Padding(
@@ -108,7 +108,7 @@ class DriverDashboard extends StatelessWidget {
           Text('Wait near the top area between 7–9 am and 5–7 pm for the most requests.', style: text.bodySmall),
         ])),
         const SizedBox(height: 16),
-        Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Panel(radius: AppRadius.md, padding: const EdgeInsets.fromLTRB(20, 18, 20, 20), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           PanelTitle('Ride history', subtitle: '${rides.length} rides'),
           if (rides.isEmpty) Text('Your rides will appear here.', style: text.bodyMedium),
           for (final b in rides.take(8))

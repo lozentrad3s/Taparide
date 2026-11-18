@@ -14,6 +14,7 @@ import '../../core/models.dart';
 import '../../shared/mascot/mascot.dart';
 import '../../shared/route_map.dart';
 import '../../shared/ui.dart';
+import 'demand_widgets.dart';
 import 'portal_widgets.dart';
 
 /// AI Insights: income, fleet health, demand hot-spots, live traffic and an AI analyst, per organisation.
@@ -120,7 +121,7 @@ class _InsightsPageState extends State<InsightsPage> {
     return PortalScaffold(
       title: 'AI insights',
       subtitle: '${report.scopeName} · live from Tap A Ride data',
-      leading: const IconBadge(Icons.insights_rounded, size: 52, color: AppColors.forest, iconColor: Colors.white, radius: 26),
+      icon: Icons.insights_rounded,
       actions: [
         if (canPick)
           ConstrainedBox(
@@ -145,35 +146,37 @@ class _InsightsPageState extends State<InsightsPage> {
       ],
       children: [
         _AnalystPanel(ai: ai, thinking: _thinking, error: _aiError, onRun: () => _runAi(report, key)),
-        const SizedBox(height: 18),
-        Cols(min: 160, max: 5, children: [
+        const SizedBox(height: PortalSpace.gap),
+        Cols(min: 200, max: 5, children: [
           FigureCard(label: 'Revenue this month', value: Fmt.naira(report.monthlyRevenue), icon: Icons.payments_rounded, caption: 'Projected next month ${Fmt.nairaShort(report.projectedNextMonth)}'),
           FigureCard(label: 'Revenue today', value: Fmt.naira(report.revenueToday), icon: Icons.today_rounded, caption: '${report.bookingsToday} bookings so far'),
           FigureCard(label: 'Fleet working', value: '${(report.utilisation * 100).round()}%', icon: Icons.directions_bus_rounded, caption: '${report.vehicles.length} vehicles'),
           FigureCard(label: 'Idle cost / month', value: Fmt.naira(report.idleCostPerMonth), icon: Icons.build_circle_rounded, caption: '${report.idleVehicles.length} off the road'),
           FigureCard(label: 'Routes', value: '${report.routes.length}', icon: Icons.alt_route_rounded, caption: '${report.routes.fold<int>(0, (s, r) => s + r.departures.length)} departures a day'),
         ]),
-        const SizedBox(height: 18),
-        _TwoUp(
+        DemandSection(report: report.demand, title: 'Demand by corridor and hour'),
+        const SectionLabel('Income and fleet'),
+        TwoUp(
+          leftFlex: 1,
+          rightFlex: 1,
           left: _IncomePanel(report: report),
           right: _FleetPanel(report: report),
         ),
-        const SizedBox(height: 18),
-        _TwoUp(
+        const SectionLabel('Places, traffic and opportunities'),
+        TwoUp(
+          leftFlex: 1,
+          rightFlex: 1,
           left: DemandPanel(report: report),
           right: _TrafficPanel(checks: traffic, loading: _loadingTraffic, onRetry: () {
             _trafficCache.remove(key);
             _loadTraffic();
           }),
         ),
-        const SizedBox(height: 18),
-        _TwoUp(
-          left: Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            const PanelTitle('When people ride', subtitle: 'Bookings by departure hour'),
-            HourBars(values: report.bookingsByHour),
-          ])),
-          right: Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            const PanelTitle('Opportunities', subtitle: 'Worked out from your routes, fleet and demand'),
+        const SizedBox(height: PortalSpace.gap),
+        DashPanel(
+          title: 'Opportunities',
+          subtitle: 'Worked out from your routes, fleet and demand',
+          children: [
             if (report.opportunities.isEmpty) Text('No gaps found. Your routes cover the busiest areas and your fleet is on the road.', style: text.bodyMedium),
             for (final o in report.opportunities)
               Padding(
@@ -190,24 +193,11 @@ class _InsightsPageState extends State<InsightsPage> {
                   ),
                 ]),
               ),
-          ])),
+          ],
         ),
       ],
     );
   }
-}
-
-class _TwoUp extends StatelessWidget {
-  const _TwoUp({required this.left, required this.right});
-  final Widget left;
-  final Widget right;
-
-  @override
-  Widget build(BuildContext context) => LayoutBuilder(
-        builder: (context, c) => c.maxWidth >= 980
-            ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(child: left), const SizedBox(width: 18), Expanded(child: right)])
-            : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [left, const SizedBox(height: 18), right]),
-      );
 }
 
 class _AnalystPanel extends StatelessWidget {
@@ -460,7 +450,7 @@ class _EarnerRow extends StatelessWidget {
 }
 
 class DemandPanel extends StatelessWidget {
-  const DemandPanel({required this.report});
+  const DemandPanel({super.key, required this.report});
   final InsightsReport report;
 
   @override
@@ -578,50 +568,5 @@ class _TrafficPanel extends StatelessWidget {
         ],
       ]),
     );
-  }
-}
-
-class HourBars extends StatelessWidget {
-  const HourBars({required this.values});
-  final List<int> values;
-
-  @override
-  Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    const from = 5, to = 22;
-    final slice = values.sublist(from, to + 1);
-    final peak = math.max(1, slice.reduce(math.max));
-    final peakHour = from + slice.indexOf(peak);
-    if (slice.every((v) => v == 0)) return Text('Bookings will show here by hour as riders book.', style: text.bodyMedium);
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      SizedBox(
-        height: 150,
-        child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          for (var i = 0; i < slice.length; i++)
-            Expanded(
-              child: Tooltip(
-                message: '${from + i}:00 · ${slice[i]} bookings',
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
-                  child: Container(
-                    height: 6 + 140 * slice[i] / peak,
-                    decoration: BoxDecoration(
-                      color: from + i == peakHour ? AppColors.forest : AppColors.mintStrong,
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ]),
-      ),
-      const SizedBox(height: 6),
-      Row(children: [
-        for (var i = 0; i < slice.length; i++)
-          Expanded(child: Text((from + i) % 3 == 0 ? '${from + i}' : '', textAlign: TextAlign.center, style: text.labelSmall)),
-      ]),
-      const SizedBox(height: 8),
-      Text('Busiest at $peakHour:00. Put your most reliable vehicles on the road then.', style: text.bodySmall),
-    ]);
   }
 }

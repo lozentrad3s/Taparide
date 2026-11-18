@@ -124,7 +124,7 @@ class _WaitlistPageState extends State<WaitlistPage> {
                 FigureCard(label: 'Joined by invite', value: Fmt.count(all.where((e) => e.referredBy != null).length), icon: Icons.share_rounded),
                 FigureCard(label: 'Free rides paid', value: Fmt.count(all.where((e) => e.creditedAt != null).length), icon: Icons.account_balance_wallet_rounded, caption: 'Opened an account'),
               ]),
-              const SizedBox(height: 18),
+              const SizedBox(height: PortalSpace.gap),
               Panel(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                   Wrap(spacing: 12, runSpacing: 10, crossAxisAlignment: WrapCrossAlignment.center, alignment: WrapAlignment.spaceBetween, children: [
@@ -154,7 +154,7 @@ class _WaitlistPageState extends State<WaitlistPage> {
                   ),
                 ]),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: PortalSpace.gap),
               Panel(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                   Wrap(spacing: 12, runSpacing: 10, crossAxisAlignment: WrapCrossAlignment.center, children: [

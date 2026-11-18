@@ -14,7 +14,8 @@ import '../../core/partner_models.dart';
 import '../../shared/download/download.dart';
 import '../../shared/ui.dart';
 import 'dashboard_pages.dart' show AuditTile;
-import 'insights_page.dart' show DemandPanel, HourBars;
+import 'demand_widgets.dart';
+import 'insights_page.dart' show DemandPanel;
 import 'partner_widgets.dart';
 import 'portal_widgets.dart';
 
@@ -36,7 +37,7 @@ class AdminDashboard extends StatelessWidget {
     return PortalScaffold(
       title: 'Master control centre',
       subtitle: 'Signed in as ${state.user?.fullName ?? ''} · the whole of Tap A Ride · ${Fmt.date(state.now)}',
-      leading: const IconBadge(Icons.admin_panel_settings_rounded, size: 52, color: AppColors.forest, iconColor: Colors.white, radius: 26),
+      icon: Icons.admin_panel_settings_rounded,
       actions: [
         if (state.backend is DemoBackend)
           TextButton.icon(
@@ -55,28 +56,29 @@ class AdminDashboard extends StatelessWidget {
       ],
       children: [
         _SystemStrip(services: state.services, demo: state.backend.isDemo),
-        const SizedBox(height: 16),
+        const SizedBox(height: PortalSpace.gap),
         Cols(min: 200, max: 4, children: [
           FigureCard(label: 'Fares this month', value: Fmt.naira(a.faresThisMonth), icon: Icons.payments_rounded, caption: '${Fmt.naira(a.faresToday)} paid today'),
           FigureCard(label: 'Rides this month', value: Fmt.count(a.ridesThisMonth), icon: Icons.route_rounded, caption: '${a.bookingsToday} bookings today', onTap: () => context.go('/portal/bookings')),
           FigureCard(label: 'Users', value: Fmt.count(a.totalUsers), icon: Icons.people_alt_rounded, caption: '${a.usersByRole[UserRole.passenger] ?? 0} riders · ${a.totalUsers - (a.usersByRole[UserRole.passenger] ?? 0)} partner staff', onTap: () => context.go('/portal/users')),
           FigureCard(label: 'Verified vehicles', value: Fmt.count(fcta?.verifiedVehicles ?? a.verifiedVehicles), delta: fcta?.verifiedDelta, icon: Icons.verified_rounded, caption: '${a.pendingVehicles} awaiting checks', onTap: () => context.go('/portal/vehicles')),
         ]),
-        const SizedBox(height: 18),
-        _Two(
-          left: Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        const SizedBox(height: PortalSpace.gap),
+        TwoUp(
+          left: Panel(radius: AppRadius.md, padding: const EdgeInsets.fromLTRB(20, 18, 20, 20), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             PanelTitle('Ridership', subtitle: 'Trips per day, last 7 days, all operators', trailing: fcta == null ? null : StatusPill('${fcta.ridershipDelta >= 0 ? '+' : ''}${fcta.ridershipDelta}% vs last week', tone: Tone.success)),
             if (fcta != null) WeekBars(values: fcta.ridershipByDay, labels: fcta.dayLabels, highlightIndex: fcta.todayIndex),
           ])),
-          right: Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          right: Panel(radius: AppRadius.md, padding: const EdgeInsets.fromLTRB(20, 18, 20, 20), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             const PanelTitle('Fares by mode', subtitle: 'This month'),
             _DonutWithLegend(items: a.revenueByMode, centerLabel: 'this month', money: true),
           ])),
         ),
-        const SizedBox(height: 18),
-        _Two(
-          left: Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            PanelTitle('Revenue by operator', subtitle: 'Fares this month · tap to open their dashboard', trailing: TextButton(onPressed: () => context.go('/portal/providers'), child: const Text('Providers'))),
+        DemandSection(report: a.platform.demand, title: 'Demand across Abuja', showTable: false),
+        const SectionLabel('Revenue and payments'),
+        TwoUp(
+          left: Panel(radius: AppRadius.md, padding: const EdgeInsets.fromLTRB(20, 18, 20, 20), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            PanelTitle('Revenue by operator', subtitle: 'Fares this month · tap to open their dashboard', trailing: PanelLink('Providers', onPressed: () => context.go('/portal/providers'))),
             _HBars(
               rows: [
                 for (final r in a.byOperator.take(8))
@@ -84,12 +86,8 @@ class AdminDashboard extends StatelessWidget {
               ],
             ),
           ])),
-          right: Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            const PanelTitle('When people ride', subtitle: 'Bookings by departure hour'),
-            HourBars(values: a.platform.bookingsByHour),
-            const SizedBox(height: 18),
-            Text('How riders pay', style: text.titleSmall),
-            const SizedBox(height: 8),
+          right: Panel(radius: AppRadius.md, padding: const EdgeInsets.fromLTRB(20, 18, 20, 20), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            const PanelTitle('How riders pay', subtitle: 'Bookings by payment method'),
             _ShareWithLegend(items: [
               ('Tap card', a.payments[PaymentMethod.tapCard] ?? 0),
               ('QR code', a.payments[PaymentMethod.qr] ?? 0),
@@ -97,10 +95,10 @@ class AdminDashboard extends StatelessWidget {
             ], unit: 'bookings'),
           ])),
         ),
-        const SizedBox(height: 18),
-        _Two(
+        const SectionLabel('Fleet and network'),
+        TwoUp(
           left: LiveFleetMap(vehicles: state.vehicles, routes: state.routes, height: 360),
-          right: Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          right: Panel(radius: AppRadius.md, padding: const EdgeInsets.fromLTRB(20, 18, 20, 20), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             PanelTitle('Fleet health', subtitle: '${a.vehicles} vehicles · ${(a.platform.utilisation * 100).round()}% working'),
             ShareBar(parts: [for (final s in VehicleStatus.values) (a.vehiclesByStatus[s] ?? 0, statusColor(s))], height: 12),
             const SizedBox(height: 10),
@@ -113,11 +111,11 @@ class AdminDashboard extends StatelessWidget {
             _Metric(icon: Icons.build_circle_rounded, label: 'Idle-vehicle cost', value: '${Fmt.naira(a.platform.idleCostPerMonth)} a month'),
           ])),
         ),
-        const SizedBox(height: 18),
-        _Two(
+        const SizedBox(height: PortalSpace.gap),
+        TwoUp(
           left: DemandPanel(report: a.platform),
-          right: Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            PanelTitle('Partner pipeline', subtitle: '${a.openApplications} waiting for review', trailing: TextButton(onPressed: () => context.go('/portal/applications'), child: const Text('Review'))),
+          right: Panel(radius: AppRadius.md, padding: const EdgeInsets.fromLTRB(20, 18, 20, 20), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            PanelTitle('Partner pipeline', subtitle: '${a.openApplications} waiting for review', trailing: PanelLink('Review', onPressed: () => context.go('/portal/applications'))),
             _HBars(rows: [
               for (final s in [ApplicationStatus.submitted, ApplicationStatus.underReview, ApplicationStatus.needsChanges, ApplicationStatus.approved, ApplicationStatus.rejected])
                 _BarRow(label: s.label, value: a.applicationsByStatus[s] ?? 0, valueText: '${a.applicationsByStatus[s] ?? 0}', onTap: () => context.go('/portal/applications')),
@@ -132,27 +130,23 @@ class AdminDashboard extends StatelessWidget {
             ], unit: 'providers'),
           ])),
         ),
-        const SizedBox(height: 18),
-        _Two(
-          left: Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            PanelTitle('Users by role', subtitle: '${a.totalUsers} accounts', trailing: TextButton(onPressed: () => context.go('/portal/users'), child: const Text('Manage'))),
+        const SectionLabel('Partners and people'),
+        TwoUp(
+          left: Panel(radius: AppRadius.md, padding: const EdgeInsets.fromLTRB(20, 18, 20, 20), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            PanelTitle('Users by role', subtitle: '${a.totalUsers} accounts', trailing: PanelLink('Manage', onPressed: () => context.go('/portal/users'))),
             _HBars(rows: [
               for (final r in UserRole.values) _BarRow(label: r.label, value: a.usersByRole[r] ?? 0, valueText: '${a.usersByRole[r] ?? 0}', onTap: () => context.go('/portal/users')),
             ]),
           ])),
-          right: Panel(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            PanelTitle('Recent activity', trailing: TextButton(onPressed: () => context.go('/portal/audit'), child: const Text('Audit log'))),
+          right: Panel(radius: AppRadius.md, padding: const EdgeInsets.fromLTRB(20, 18, 20, 20), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            PanelTitle('Recent activity', trailing: PanelLink('Audit log', onPressed: () => context.go('/portal/audit'))),
             for (final e in state.audit.take(6)) AuditTile(entry: e),
             if (state.audit.isEmpty) Text('No changes recorded yet.', style: text.bodyMedium),
           ])),
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: PortalSpace.gap),
         _SecurityPanel(users: state.users, demo: state.backend.isDemo),
-        const SizedBox(height: 22),
-        Text('Open any dashboard', style: text.titleLarge),
-        const SizedBox(height: 4),
-        Text('See exactly what each partner and the FCTA see.', style: text.bodyMedium),
-        const SizedBox(height: 12),
+        const SectionLabel('Open any dashboard', subtitle: 'See exactly what each partner and the FCTA see.'),
         Cols(min: 300, max: 3, children: [
           _DashCard(icon: Icons.account_balance_rounded, title: 'FCTA dashboard', subtitle: 'Ridership, register, safety', onOpen: () => context.go('/portal/fcta'), onInsights: () => context.go('/portal/insights')),
           for (final p in state.providers)
@@ -190,19 +184,6 @@ class AdminDashboard extends StatelessWidget {
   }
 
   static String _dashboardFor(TransportProvider p) => p.kind == ProviderKind.fleetOwner ? '/portal/fleet?provider=${p.id}' : '/portal/operator?provider=${p.id}';
-}
-
-class _Two extends StatelessWidget {
-  const _Two({required this.left, required this.right});
-  final Widget left;
-  final Widget right;
-
-  @override
-  Widget build(BuildContext context) => LayoutBuilder(
-        builder: (context, c) => c.maxWidth >= 980
-            ? Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(flex: 3, child: left), const SizedBox(width: 18), Expanded(flex: 2, child: right)])
-            : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [left, const SizedBox(height: 18), right]),
-      );
 }
 
 /// Backend, AI, maps and place search: what is live right now.
@@ -250,7 +231,7 @@ class _SecurityPanel extends StatelessWidget {
     final staff = [for (final u in users) if (u.role != UserRole.passenger) u]..sort((a, b) => b.role.index.compareTo(a.role.index));
     return Panel(
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        PanelTitle('Security & access', subtitle: '${staff.length} staff accounts · only admins see this page', trailing: TextButton(onPressed: () => context.go('/portal/users'), child: const Text('Change roles'))),
+        PanelTitle('Security & access', subtitle: '${staff.length} staff accounts · only admins see this page', trailing: PanelLink('Change roles', onPressed: () => context.go('/portal/users'))),
         for (final u in staff)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 6),

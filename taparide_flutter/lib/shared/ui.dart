@@ -10,6 +10,13 @@ import '../core/photos.dart';
 
 // ------------------------------------------------------------------ layout
 
+/// The brand's lime highlight. Always pair it with dark text (forestDeep or ink), never white.
+abstract final class AppLime {
+  static const lime = Color(0xFF8CE01F);
+  static const limeSoft = Color(0xFFEEF9DC);
+  static const onLime = Color(0xFF06331F);
+}
+
 bool isWide(BuildContext context, [double breakpoint = 900]) => MediaQuery.sizeOf(context).width >= breakpoint;
 
 class MaxWidth extends StatelessWidget {
