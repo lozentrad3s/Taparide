@@ -1,6 +1,6 @@
 # Tap A Ride: go-live checklist
 
-Status on 18 November 2026. Live now: website, app and dashboards at https://taparide.vercel.app (/, /app, /dashboard), on the live Supabase database. Demo accounts on the live database are locked.
+Status on 18 November 2026. LIVE at https://taparide.com (website), /app (rider app) and /dashboard (partners, FCTA, admin); www., app. and dashboard. redirect there. Live Supabase database; demo accounts locked. Security steps for your dashboards are in SECURITY.md.
 
 ## 1. Already in place
 
@@ -14,7 +14,7 @@ Status on 18 November 2026. Live now: website, app and dashboards at https://tap
 
 ## 2. Do now (this week, before Tech Week on 24 Nov)
 
-1. **Domain DNS** at your registrar:
+1. ~~**Domain DNS**~~ done on 18 Nov (taparide.com is live). For reference, the records are:
    - `A` record: `@` → `216.198.79.1`
    - `CNAME` records: `www`, `dashboard` and `app` → `17f9810751af2f9b.vercel-dns-017.com`
    - The domains are already added in Vercel. HTTPS switches on by itself once DNS updates.

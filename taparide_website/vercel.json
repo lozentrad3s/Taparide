@@ -14,6 +14,9 @@
     "api/pay.js": { "maxDuration": 30 }
   },
   "redirects": [
+    { "source": "/", "has": [{ "type": "host", "value": "www.taparide.com" }], "destination": "https://taparide.com/", "permanent": true },
+    { "source": "/", "has": [{ "type": "host", "value": "dashboard.taparide.com" }], "destination": "https://taparide.com/dashboard/", "permanent": false },
+    { "source": "/", "has": [{ "type": "host", "value": "app.taparide.com" }], "destination": "https://taparide.com/app/", "permanent": false },
     { "source": "/:path*", "has": [{ "type": "host", "value": "www.taparide.com" }], "destination": "https://taparide.com/:path*", "permanent": true },
     { "source": "/:path*", "has": [{ "type": "host", "value": "dashboard.taparide.com" }], "destination": "https://taparide.com/dashboard/", "permanent": false },
     { "source": "/:path*", "has": [{ "type": "host", "value": "app.taparide.com" }], "destination": "https://taparide.com/app/", "permanent": false },
