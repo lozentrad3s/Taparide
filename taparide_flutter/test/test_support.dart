@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:taparide_flutter/app/app.dart';
+import 'package:taparide_flutter/app/app_mode.dart';
 import 'package:taparide_flutter/core/app_state.dart';
 import 'package:taparide_flutter/core/backend/demo_backend.dart';
 import 'package:taparide_flutter/shared/route_map.dart';
@@ -21,14 +22,14 @@ Future<(AppState, DemoBackend)> freshState() async {
   return (state, backend);
 }
 
-Future<AppState> pumpApp(WidgetTester tester, {Size size = const Size(390, 844)}) async {
+Future<AppState> pumpApp(WidgetTester tester, {Size size = const Size(390, 844), AppMode? mode}) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = size;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
   await tester.runAsync(loadAppFonts);
   final (state, _) = await tester.runAsync(freshState) ?? (throw StateError('setup failed'));
-  await tester.pumpWidget(TapARideApp(state: state));
+  await tester.pumpWidget(TapARideApp(state: state, mode: mode));
   await tester.pumpAndSettle();
   return state;
 }

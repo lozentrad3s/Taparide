@@ -42,14 +42,21 @@ alter table public.event_seat_requests enable row level security;
 create or replace function public.waitlist_free_ride() returns int language sql immutable as $$ select 1000 $$;
 create or replace function public.waitlist_free_ride_cap() returns int language sql immutable as $$ select 5000 $$;
 
--- Event buses the website takes seat requests for, with their days, areas and departure times.
+-- Event buses the website takes seat requests for: days, pick-up points and departure times.
+-- Abuja Tech Week 2026: free buses (official ride partner), one 7:00 AM departure from each point.
 create or replace function public.waitlist_event(p_slug text) returns jsonb language sql immutable as $$
   select case p_slug
     when 'abuja-tech-week-2026' then jsonb_build_object(
       'days', jsonb_build_array('2026-11-24', '2026-11-25', '2026-11-26'),
-      'slots', jsonb_build_array('07:00', '08:00', '09:00'),
-      'areas', jsonb_build_array('Kubwa', 'Gwarinpa', 'Lugbe', 'Nyanya', 'Karu', 'Lokogoma', 'Life Camp', 'Jabi', 'Wuse', 'Maitama', 'Garki', 'Gwagwalada', 'Bwari', 'Kuje'),
-      'seats_per_bus', 14)
+      'slots', jsonb_build_array('07:00'),
+      'areas', jsonb_build_array(
+        'University of Abuja, Gwagwalada',
+        'Nnamdi Azikiwe Airport',
+        'Old Parade Ground (corps members)',
+        'Nile University',
+        'Police Signboard, Lugbe',
+        'Checkpoint, Maraba–Nyanya'),
+      'seats_per_bus', 0)
   end
 $$;
 
@@ -148,19 +155,30 @@ end;
 $$;
 
 -- Ask for a seat on an event bus: one request per person per event day, changeable.
-create or replace function public.request_event_seat(p_code text, p_event text, p_day date, p_area text, p_slot text) returns jsonb
+-- Name and phone, when given, fill in the waitlist entry (the boarding list needs them).
+create or replace function public.request_event_seat(
+  p_code text, p_event text, p_day date, p_area text, p_slot text, p_name text default null, p_phone text default null
+) returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare
   w public.waitlist;
   ev jsonb := public.waitlist_event(p_event);
   v_riders int;
+  v_phone text := nullif(regexp_replace(coalesce(p_phone, ''), '[^0-9+]', '', 'g'), '');
 begin
   if ev is null then raise exception 'This event is not taking seat requests.' using errcode = 'P0002'; end if;
   select * into w from public.waitlist where code = upper(trim(coalesce(p_code, '')));
   if not found then raise exception 'Join the waitlist first, then pick your seat.' using errcode = 'P0002'; end if;
   if not (ev -> 'days') ? p_day::text then raise exception 'Pick one of the event days.' using errcode = '22023'; end if;
-  if not (ev -> 'areas') ? p_area then raise exception 'Pick an area from the list.' using errcode = '22023'; end if;
+  if not (ev -> 'areas') ? p_area then raise exception 'Pick a pick-up point from the list.' using errcode = '22023'; end if;
   if not (ev -> 'slots') ? p_slot then raise exception 'Pick one of the departure times.' using errcode = '22023'; end if;
+  if v_phone is not null and (length(v_phone) < 10 or length(v_phone) > 15) then
+    raise exception 'Enter a valid phone number, e.g. 0803 123 4567.' using errcode = '22023';
+  end if;
+  update public.waitlist set
+    name = coalesce(nullif(left(trim(coalesce(p_name, '')), 80), ''), name),
+    phone = coalesce(v_phone, phone)
+  where id = w.id returning * into w;
 
   insert into public.event_seat_requests (waitlist_id, event_slug, day, area, slot)
   values (w.id, p_event, p_day, p_area, p_slot)
@@ -187,6 +205,27 @@ language sql stable security definer set search_path = public as $$
     'total', (select count(*) from public.event_seat_requests where event_slug = p_event)
   )
   where public.waitlist_event(p_event) is not null
+$$;
+
+-- ------------------------------------------------------------------ admin dashboard
+-- Everything collected on the website, for platform admins only.
+create or replace function public.admin_waitlist() returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+begin
+  if coalesce(public.my_role(), '') <> 'admin' then
+    raise exception 'Only platform admins can see the waitlist.' using errcode = '42501';
+  end if;
+  return coalesce((
+    select jsonb_agg(jsonb_build_object(
+      'id', w.id, 'email', w.email, 'name', w.name, 'phone', w.phone, 'area', w.area, 'role', w.role,
+      'code', w.code, 'referred_by', w.referred_by, 'referrals', w.referrals, 'source', w.source,
+      'created_at', w.created_at, 'credited_at', w.credited_at,
+      'seats', coalesce((
+        select jsonb_agg(jsonb_build_object('event', s.event_slug, 'day', s.day, 'area', s.area, 'slot', s.slot, 'created_at', s.created_at) order by s.day)
+        from public.event_seat_requests s where s.waitlist_id = w.id), '[]'::jsonb)
+    ) order by w.created_at desc)
+    from public.waitlist w), '[]'::jsonb);
+end;
 $$;
 
 -- ------------------------------------------------------------------ free first ride
@@ -218,6 +257,8 @@ revoke all on public.waitlist, public.event_seat_requests from anon, authenticat
 revoke execute on function public._waitlist_summary(public.waitlist), public._waitlist_code(), public.credit_waitlist_ride() from public, anon, authenticated;
 grant execute on function public.join_waitlist(text, text, text, text, text, text, text) to anon, authenticated;
 grant execute on function public.waitlist_status(text) to anon, authenticated;
-grant execute on function public.request_event_seat(text, text, date, text, text) to anon, authenticated;
+grant execute on function public.request_event_seat(text, text, date, text, text, text, text) to anon, authenticated;
+revoke execute on function public.admin_waitlist() from public, anon;
+grant execute on function public.admin_waitlist() to authenticated;
 grant execute on function public.event_seat_demand(text) to anon, authenticated;
 grant execute on function public.waitlist_event(text), public.waitlist_free_ride(), public.waitlist_free_ride_cap() to anon, authenticated;

@@ -7,6 +7,7 @@ import 'events_portal_page.dart';
 import 'insights_page.dart';
 import 'manage_pages.dart';
 import 'portal_shell.dart';
+import 'waitlist_page.dart';
 
 export 'portal_shell.dart' show PortalSection;
 
@@ -27,5 +28,6 @@ Widget portalPageFor(PortalSection section, Map<String, String> query) => switch
       '/portal/insights' => InsightsPage(providerId: query['provider']),
       '/portal/applications' => const ApplicationsPage(),
       '/portal/events' => const EventsPortalPage(),
+      '/portal/waitlist' => const WaitlistPage(),
       _ => const OverviewPage(),
     };

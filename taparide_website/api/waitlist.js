@@ -81,6 +81,8 @@ export default async function handler(req, res) {
         p_day: str(b.day, 10),
         p_area: str(b.area, 40),
         p_slot: str(b.slot, 5),
+        p_name: str(b.name, 80) ?? null,
+        p_phone: str(b.phone, 30) ?? null,
       });
       return send(res, 200, { ...out, preview: isPreview() });
     }

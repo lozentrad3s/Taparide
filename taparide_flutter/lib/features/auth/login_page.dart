@@ -1,22 +1,34 @@
+import 'dart:math' as math;
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../app/app_mode.dart';
 import '../../app/theme.dart';
 import '../../core/app_state.dart';
 import '../../core/backend/backend.dart';
 import '../../core/backend/demo_seed.dart';
+import '../../core/live_models.dart';
 import '../../core/models.dart';
 import '../../core/photos.dart';
 import '../../shared/brand.dart';
 import '../../shared/ui.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key, required this.portal, this.from, this.startInRegister = false});
+  const LoginPage({super.key, required this.portal, this.from, this.startInRegister = false, this.email, this.mode = AppMode.all});
   final Portal portal;
   final String? from;
   final bool startInRegister;
+
+  /// Filled in from a link (e.g. "Open my account" on the website).
+  final String? email;
+
+  /// Rider app, dashboards, or both (decides which choices are shown).
+  final AppMode mode;
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -36,6 +48,12 @@ class _LoginPageState extends State<LoginPage> {
   bool _agreed = false;
   bool _busy = false;
   BackendException? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.email != null) _email.text = widget.email!.trim();
+  }
 
   @override
   void didUpdateWidget(covariant LoginPage oldWidget) {
@@ -81,6 +99,23 @@ class _LoginPageState extends State<LoginPage> {
       if (mounted) setState(() => _error = e);
     } catch (_) {
       if (mounted) setState(() => _error = const BackendException(BackendErrorKind.unknown, 'Something went wrong. Please try again.'));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _social(SocialProvider provider) async {
+    setState(() {
+      _error = null;
+      _busy = true;
+    });
+    try {
+      // Comes back to this page's address (e.g. taparide.com/app/) signed in.
+      await context.read<AppState>().signInWithProvider(provider, redirectTo: kIsWeb ? Uri.base.removeFragment().toString() : null);
+    } on BackendException catch (e) {
+      if (mounted) setState(() => _error = e);
+    } catch (_) {
+      if (mounted) setState(() => _error = BackendException(BackendErrorKind.unknown, 'Could not open ${provider.label}. Please try again.'));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -173,20 +208,34 @@ class _LoginPageState extends State<LoginPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            SegmentedButton<Portal>(
-              segments: const [
-                ButtonSegment(value: Portal.passenger, icon: Icon(Icons.person_outline_rounded), label: Text('Passenger')),
-                ButtonSegment(value: Portal.partner, icon: Icon(Icons.business_center_outlined), label: Text('Partner portal')),
-              ],
-              selected: {_portal},
-              showSelectedIcon: false,
-              onSelectionChanged: (s) => _setPortal(s.first),
-            ),
-            const SizedBox(height: 28),
+            if (widget.mode == AppMode.all) ...[
+              SegmentedButton<Portal>(
+                segments: const [
+                  ButtonSegment(value: Portal.passenger, icon: Icon(Icons.person_outline_rounded), label: Text('Passenger')),
+                  ButtonSegment(value: Portal.partner, icon: Icon(Icons.business_center_outlined), label: Text('Partner portal')),
+                ],
+                selected: {_portal},
+                showSelectedIcon: false,
+                onSelectionChanged: (s) => _setPortal(s.first),
+              ),
+              const SizedBox(height: 28),
+            ],
             Text(title, style: text.headlineLarge),
             const SizedBox(height: 6),
             Text(subtitle, style: text.bodyMedium),
             const SizedBox(height: 24),
+            if (!partner) ...[
+              _SocialButton(provider: SocialProvider.google, onPressed: _busy ? null : () => _social(SocialProvider.google)),
+              const SizedBox(height: 10),
+              _SocialButton(provider: SocialProvider.apple, onPressed: _busy ? null : () => _social(SocialProvider.apple)),
+              const SizedBox(height: 18),
+              Row(children: [
+                const Expanded(child: Divider()),
+                Padding(padding: const EdgeInsets.symmetric(horizontal: 12), child: Text('or with email', style: text.bodySmall)),
+                const Expanded(child: Divider()),
+              ]),
+              const SizedBox(height: 18),
+            ],
             if (_register) ...[
               TextFormField(
                 controller: _name,
@@ -272,15 +321,20 @@ class _LoginPageState extends State<LoginPage> {
                   : Text(_register ? 'Create account' : 'Sign in'),
             ),
             const SizedBox(height: 10),
-            if (!partner)
+            if (!partner) ...[
               TextButton(
                 onPressed: () => setState(() {
                   _register = !_register;
                   _error = null;
                 }),
                 child: Text(_register ? 'Already have an account? Sign in' : 'New to Tap A Ride? Create an account'),
-              )
-            else ...[
+              ),
+              if (widget.mode == AppMode.rider)
+                TextButton(
+                  onPressed: () => launchUrl(Uri.parse(AppMode.dashboardUrl), webOnlyWindowName: '_self'),
+                  child: const Text('Partner, operator or FCTA? Open the dashboard'),
+                ),
+            ] else ...[
               OutlinedButton.icon(
                 onPressed: () => context.go('/partner/apply'),
                 icon: const Icon(Icons.handshake_rounded, size: 18),
@@ -427,24 +481,32 @@ class _SidePhoto extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     return Stack(fit: StackFit.expand, children: [
-      PhotoView(
-        partner ? AppPhoto.expressway : AppPhoto.cityGateAerial,
-        alignment: partner ? Alignment.center : const Alignment(0.3, 0),
-        semanticLabel: partner ? 'Abuja expressway with Aso Rock in the distance' : 'Abuja City Gate with green lawns and flags',
-        overlay: const LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xA606331F), Color(0x1106331F), Color(0x2206331F), Color(0xEE06331F)], stops: [0, 0.22, 0.5, 1]),
-      ),
+      if (partner)
+        const PhotoView(
+          AppPhoto.expressway,
+          semanticLabel: 'Abuja expressway with Aso Rock in the distance',
+          overlay: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xA606331F), Color(0x1106331F), Color(0x2206331F), Color(0xEE06331F)], stops: [0, 0.22, 0.5, 1]),
+        )
+      else ...[
+        Image.asset('assets/onboarding/move.jpg', fit: BoxFit.cover, alignment: const Alignment(0, -0.4), excludeFromSemantics: true),
+        const DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0x99000000), Color(0x00000000), Color(0x11000000), Color(0xE0000000)], stops: [0, 0.25, 0.5, 1]),
+          ),
+        ),
+      ],
       Padding(
         padding: const EdgeInsets.all(40),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           InkWell(onTap: onHome, borderRadius: BorderRadius.circular(8), child: const Padding(padding: EdgeInsets.all(4), child: BrandLockup(height: 38, onDark: true))),
           const Spacer(),
-          Text(partner ? 'Every trip.\nEvery naira.\nEvery verified vehicle.' : 'Ride. Connect. Go.', style: text.displayMedium?.copyWith(color: Colors.white)),
+          Text(partner ? 'Every trip.\nEvery naira.\nEvery verified vehicle.' : 'Move more.\nWorry less.', style: text.displayMedium?.copyWith(color: Colors.white)),
           const SizedBox(height: 14),
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 440),
             child: Text(
-              partner ? 'Run routes, fleets and oversight for the FCT from one place.' : 'Fixed fares, published departures and cashless boarding across Abuja.',
-              style: text.bodyLarge?.copyWith(color: AppColors.onForestMuted),
+              partner ? 'Run routes, fleets and oversight for the FCT from one place.' : 'Bus rides, event rides and shared trips across Abuja.',
+              style: text.bodyLarge?.copyWith(color: partner ? AppColors.onForestMuted : Colors.white.withValues(alpha: 0.88)),
             ),
           ),
         ]),
@@ -463,10 +525,9 @@ class _MobileHeader extends StatelessWidget {
     return SizedBox(
       height: 190 + top,
       child: Stack(fit: StackFit.expand, children: [
-        const PhotoView(
-          AppPhoto.cityGateAerial,
-          alignment: Alignment(0.3, 0),
-          overlay: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0x8806331F), Color(0xCC06331F)]),
+        Image.asset('assets/onboarding/move.jpg', fit: BoxFit.cover, alignment: const Alignment(0, -0.35), excludeFromSemantics: true),
+        const DecoratedBox(
+          decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0x88000000), Color(0xCC000000)])),
         ),
         Padding(
           padding: EdgeInsets.fromLTRB(16, top + 8, 16, 18),
@@ -479,4 +540,58 @@ class _MobileHeader extends StatelessWidget {
       ]),
     );
   }
+}
+
+/// "Continue with Google / Apple".
+class _SocialButton extends StatelessWidget {
+  const _SocialButton({required this.provider, required this.onPressed});
+  final SocialProvider provider;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final apple = provider == SocialProvider.apple;
+    return OutlinedButton(
+      onPressed: onPressed,
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size.fromHeight(52),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        backgroundColor: apple ? Colors.black : Colors.white,
+        foregroundColor: apple ? Colors.white : AppColors.ink,
+        side: BorderSide(color: apple ? Colors.black : AppColors.lineStrong),
+        shape: const StadiumBorder(),
+        textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+      ),
+      child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        apple ? const Icon(Icons.apple, size: 22) : const SizedBox(width: 20, height: 20, child: CustomPaint(painter: _GoogleMark())),
+        const SizedBox(width: 12),
+        Flexible(child: Text('Continue with ${provider.label}', maxLines: 1, overflow: TextOverflow.ellipsis)),
+      ]),
+    );
+  }
+}
+
+/// The four-colour Google "G", drawn so no image is needed.
+class _GoogleMark extends CustomPainter {
+  const _GoogleMark();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final stroke = w * 0.2;
+    final rect = Rect.fromCircle(center: Offset(w / 2, w / 2), radius: w / 2 - stroke / 2);
+    Paint arc(Color c) => Paint()
+      ..color = c
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke;
+    const deg = math.pi / 180;
+    canvas.drawArc(rect, -40 * deg, -100 * deg, false, arc(const Color(0xFFEA4335)));
+    canvas.drawArc(rect, -140 * deg, -90 * deg, false, arc(const Color(0xFFFBBC05)));
+    canvas.drawArc(rect, 130 * deg, -90 * deg, false, arc(const Color(0xFF34A853)));
+    canvas.drawArc(rect, 40 * deg, -40 * deg, false, arc(const Color(0xFF4285F4)));
+    canvas.drawRect(Rect.fromLTWH(w / 2, w / 2 - stroke / 2, w / 2 - stroke / 4, stroke), Paint()..color = const Color(0xFF4285F4));
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

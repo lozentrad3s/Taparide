@@ -254,6 +254,41 @@ class DemoBackend implements Backend {
     _save();
   }
 
+  @override
+  Future<void> signInWithProvider(SocialProvider provider, {String? redirectTo}) async {
+    await _wait();
+    throw BackendException(BackendErrorKind.validation, 'Continue with ${provider.label} works on the live app. In this demo, sign in with email.');
+  }
+
+  /// The real list lives in the live database (filled from the website). The demo shows a few
+  /// clearly-labelled sample sign-ups so the admin page can be tried.
+  @override
+  Future<List<WaitlistEntry>> fetchWaitlist() async {
+    await _wait();
+    _require(_me.role == UserRole.admin, 'see the waitlist');
+    final now = _clock();
+    WaitlistEntry e(int id, String name, String email, String phone, String area, int refs, int daysAgo, List<(int, String)> seats) => WaitlistEntry(
+          id: id,
+          email: email,
+          name: '$name (sample)',
+          phone: phone,
+          area: area,
+          role: 'rider',
+          code: 'SMPL${id.toString().padLeft(2, '0')}',
+          referrals: refs,
+          source: seats.isEmpty ? 'website' : 'tech-week',
+          joinedAt: now.subtract(Duration(days: daysAgo, hours: id)),
+          seats: [for (final s in seats) WaitlistSeat(event: 'abuja-tech-week-2026', day: DateTime(2026, 11, s.$1), pickup: s.$2, time: '07:00')],
+        );
+    return [
+      e(1, 'Ngozi Eze', 'ngozi.sample@example.com', '08031112222', 'Gwagwalada', 3, 0, [(24, 'University of Abuja, Gwagwalada'), (25, 'University of Abuja, Gwagwalada')]),
+      e(2, 'Ibrahim Bello', 'ibrahim.sample@example.com', '08062223333', 'Lugbe', 1, 0, [(24, 'Police Signboard, Lugbe')]),
+      e(3, 'Chioma Okafor', 'chioma.sample@example.com', '09013334444', 'Garki', 0, 1, [(26, 'Old Parade Ground (corps members)')]),
+      e(4, 'Musa Danladi', 'musa.sample@example.com', '07024445555', 'Nyanya', 2, 1, [(24, 'Checkpoint, Maraba–Nyanya')]),
+      e(5, 'Aisha Lawal', 'aisha.sample@example.com', '08105556666', 'Jabi', 0, 2, const []),
+    ];
+  }
+
   // ------------------------------------------------------------ catalogue
 
   @override

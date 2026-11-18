@@ -40,9 +40,11 @@ class PortalSection {
   static const insights = PortalSection('/portal/insights', 'AI insights', Icons.insights_rounded, _partners, short: 'Insights');
   static const applications = PortalSection('/portal/applications', 'Partner applications', Icons.how_to_reg_rounded, {UserRole.government, UserRole.admin}, short: 'Applications');
 
+  static const waitlist = PortalSection('/portal/waitlist', 'Website sign-ups', Icons.how_to_reg_outlined, {UserRole.admin}, short: 'Sign-ups');
+
   static const events = PortalSection('/portal/events', 'Events & event buses', Icons.celebration_rounded, {UserRole.eventPartner, UserRole.operator, UserRole.government, UserRole.admin}, short: 'Events');
 
-  static const all = [overview, insights, fcta, operator, fleet, events, applications, providers, evs, routes, vehicles, bookings, verification, users, audit];
+  static const all = [overview, waitlist, insights, fcta, operator, fleet, events, applications, providers, evs, routes, vehicles, bookings, verification, users, audit];
 
   /// The operator dashboard as private drivers see it (same page, driver wording).
   static const driver = PortalSection('/portal/operator', 'Driver dashboard', Icons.directions_car_rounded, {UserRole.operator, UserRole.government, UserRole.admin}, short: 'Driver');

@@ -20,7 +20,7 @@ Future<void> signIn(WidgetTester tester, String email, {bool partner = false}) a
 void main() {
   testWidgets('passenger signs in, books a seat and sees it in their trips', (tester) async {
     final state = await pumpApp(tester);
-    expect(find.text('Get Started'), findsWidgets);
+    expect(find.text('Next'), findsOneWidget, reason: 'opens on the onboarding');
 
     await tester.tap(find.text('Log in').first);
     await tester.pumpAndSettle();

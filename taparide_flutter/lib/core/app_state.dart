@@ -166,6 +166,12 @@ class AppState extends ChangeNotifier {
 
   Future<void> sendPasswordReset(String email) => backend.sendPasswordReset(email);
 
+  /// Continue with Google or Apple. On the web the page leaves and comes back signed in.
+  Future<void> signInWithProvider(SocialProvider provider, {String? redirectTo}) => backend.signInWithProvider(provider, redirectTo: redirectTo);
+
+  /// Website sign-ups (waitlist and Tech Week seats), for the admin dashboard.
+  Future<List<WaitlistEntry>> fetchWaitlist() => backend.fetchWaitlist();
+
   Future<void> signOut() async {
     _pending?.cancel();
     _shareTicker?.cancel();

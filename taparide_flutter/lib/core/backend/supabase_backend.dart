@@ -117,6 +117,22 @@ class SupabaseBackend implements Backend {
   @override
   Future<void> signOut() => _guard(() => _client.auth.signOut());
 
+  @override
+  Future<void> signInWithProvider(SocialProvider provider, {String? redirectTo}) => _guard(() async {
+        // Needs the provider switched on in Supabase (Authentication → Providers) with our
+        // Google / Apple client IDs, and [redirectTo] listed under Redirect URLs.
+        await _client.auth.signInWithOAuth(
+          provider == SocialProvider.google ? OAuthProvider.google : OAuthProvider.apple,
+          redirectTo: redirectTo,
+        );
+      });
+
+  @override
+  Future<List<WaitlistEntry>> fetchWaitlist() => _guard(() async {
+        final rows = await _client.rpc('admin_waitlist');
+        return [for (final r in (rows as List? ?? const [])) WaitlistEntry.fromJson(Map<String, dynamic>.from(r as Map))];
+      });
+
   // ------------------------------------------------------------ catalogue
 
   @override

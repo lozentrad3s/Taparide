@@ -431,3 +431,77 @@ class TopUpResult {
   final TopUpStatus status;
   final int amount;
 }
+
+/// Sign in with an outside account.
+enum SocialProvider {
+  google('Google'),
+  apple('Apple');
+
+  const SocialProvider(this.label);
+  final String label;
+}
+
+/// An event-bus seat someone reserved on the website.
+class WaitlistSeat {
+  const WaitlistSeat({required this.event, required this.day, required this.pickup, required this.time});
+  final String event;
+  final DateTime day;
+  final String pickup;
+  final String time;
+
+  factory WaitlistSeat.fromJson(Map<String, dynamic> j) => WaitlistSeat(
+        event: j['event'] as String,
+        day: DateTime.parse(j['day'] as String),
+        pickup: j['area'] as String,
+        time: j['slot'] as String,
+      );
+}
+
+/// Someone who joined on the website: the waitlist, their invite code and any Tech Week seats.
+class WaitlistEntry {
+  const WaitlistEntry({
+    required this.id,
+    required this.email,
+    this.name,
+    this.phone,
+    this.area,
+    required this.role,
+    required this.code,
+    this.referredBy,
+    required this.referrals,
+    this.source,
+    required this.joinedAt,
+    this.creditedAt,
+    this.seats = const [],
+  });
+
+  final int id;
+  final String email;
+  final String? name;
+  final String? phone;
+  final String? area;
+  final String role;
+  final String code;
+  final String? referredBy;
+  final int referrals;
+  final String? source;
+  final DateTime joinedAt;
+  final DateTime? creditedAt;
+  final List<WaitlistSeat> seats;
+
+  factory WaitlistEntry.fromJson(Map<String, dynamic> j) => WaitlistEntry(
+        id: (j['id'] as num).toInt(),
+        email: j['email'] as String,
+        name: j['name'] as String?,
+        phone: j['phone'] as String?,
+        area: j['area'] as String?,
+        role: (j['role'] as String?) ?? 'rider',
+        code: j['code'] as String,
+        referredBy: j['referred_by'] as String?,
+        referrals: (j['referrals'] as num?)?.toInt() ?? 0,
+        source: j['source'] as String?,
+        joinedAt: DateTime.parse(j['created_at'] as String),
+        creditedAt: j['credited_at'] == null ? null : DateTime.parse(j['credited_at'] as String),
+        seats: [for (final s in (j['seats'] as List? ?? const [])) WaitlistSeat.fromJson(Map<String, dynamic>.from(s as Map))],
+      );
+}

@@ -40,9 +40,16 @@ const ROLES = ["rider", "driver", "operator", "ev_owner", "event_organiser", "ot
 const EVENTS = {
   "abuja-tech-week-2026": {
     days: ["2026-11-24", "2026-11-25", "2026-11-26"],
-    slots: ["07:00", "08:00", "09:00"],
-    areas: ["Kubwa", "Gwarinpa", "Lugbe", "Nyanya", "Karu", "Lokogoma", "Life Camp", "Jabi", "Wuse", "Maitama", "Garki", "Gwagwalada", "Bwari", "Kuje"],
-    seats_per_bus: 14,
+    slots: ["07:00"],
+    areas: [
+      "University of Abuja, Gwagwalada",
+      "Nnamdi Azikiwe Airport",
+      "Old Parade Ground (corps members)",
+      "Nile University",
+      "Police Signboard, Lugbe",
+      "Checkpoint, Maraba–Nyanya",
+    ],
+    seats_per_bus: 0,
   },
 };
 
@@ -120,15 +127,20 @@ const preview = {
     return summary(db, w);
   },
 
-  request_event_seat({ p_code, p_event, p_day, p_area, p_slot }) {
+  request_event_seat({ p_code, p_event, p_day, p_area, p_slot, p_name, p_phone }) {
     const db = load();
     const ev = EVENTS[p_event];
     if (!ev) throw missing("This event is not taking seat requests.");
     const w = db.waitlist.find((o) => o.code === String(p_code || "").trim().toUpperCase());
     if (!w) throw missing("Join the waitlist first, then pick your seat.");
     if (!ev.days.includes(p_day)) throw bad("Pick one of the event days.");
-    if (!ev.areas.includes(p_area)) throw bad("Pick an area from the list.");
+    if (!ev.areas.includes(p_area)) throw bad("Pick a pick-up point from the list.");
     if (!ev.slots.includes(p_slot)) throw bad("Pick one of the departure times.");
+    const phone = String(p_phone || "").replace(/[^0-9+]/g, "") || null;
+    if (phone && (phone.length < 10 || phone.length > 15)) throw bad("Enter a valid phone number, e.g. 0803 123 4567.");
+    const name = String(p_name || "").trim().slice(0, 80);
+    if (name) w.name = name;
+    if (phone) w.phone = phone;
     const mine = db.seats.find((s) => s.waitlist_id === w.id && s.event === p_event && s.day === p_day);
     if (mine) Object.assign(mine, { area: p_area, slot: p_slot });
     else db.seats.push({ waitlist_id: w.id, event: p_event, day: p_day, area: p_area, slot: p_slot });

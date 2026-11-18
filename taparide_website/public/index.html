@@ -40,6 +40,10 @@
   <symbol id="i-car" viewBox="0 0 24 24"><path d="M5 16.5V12l2-5h10l2 5v4.5"/><path d="M3.5 12h17v4.5h-17zM7 19.5v-3M17 19.5v-3M7 14h.01M17 14h.01"/></symbol>
   <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M3.5 7.5A1.5 1.5 0 015 6h14a1.5 1.5 0 011.5 1.5V10a2 2 0 000 4v2.5A1.5 1.5 0 0119 18H5a1.5 1.5 0 01-1.5-1.5V14a2 2 0 000-4V7.5z"/><path d="M14 6v12" stroke-dasharray="2 2"/></symbol>
   <symbol id="i-megaphone" viewBox="0 0 24 24"><path d="M3.5 10v4a1 1 0 001 1H7l7 4.5v-15L7 9H4.5a1 1 0 00-1 1zM17.5 9a4 4 0 010 6"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7l8.5 6 8.5-6"/></symbol>
+  <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M5 19c0-8 5-14 15-14 0 10-6 15-14 15"/><path d="M5 19l7-7"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 5l12 7-12 7V5z"/></symbol>
   <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M19 7V5.5A1.5 1.5 0 0017.5 4h-12A2.5 2.5 0 003 6.5v11A2.5 2.5 0 005.5 20h13a1.5 1.5 0 001.5-1.5V15"/><path d="M21 9h-5a3 3 0 000 6h5V9z"/></symbol>
 </svg>
 
@@ -68,7 +72,7 @@
       <a href="#partners">Partners</a>
     </nav>
     <div class="top-cta">
-      <a class="btn btn-line hide-sm" href="/app" data-app="/#/app">Open the app</a>
+      <a class="btn btn-line hide-sm" href="/app" data-app="/">Open the app</a>
       <a class="btn btn-go" href="#join">Get ₦1,000 free</a>
       <button class="menu-btn" type="button" aria-expanded="false" aria-controls="menu" data-menu-btn>
         <svg class="ic" aria-hidden="true"><use href="#i-menu"/></svg><span class="sr">Menu</span>
@@ -89,15 +93,20 @@
     <a href="#faq">Questions</a>
   </nav>
   <a class="btn btn-go btn-lg" href="#join">Get your free ride</a>
-  <a class="btn btn-line btn-lg" href="/app" data-app="/#/app">Open the app</a>
+  <a class="btn btn-line btn-lg" href="/app" data-app="/">Open the app</a>
 </div>
 
 <main id="main">
 
 <!-- ============================================================ HERO -->
 <section class="hero" aria-labelledby="hero-title">
-  <div class="hero-frame">
-    <img class="hero-bg" src="/img/photos/back-seat.jpg" width="1200" height="600" alt="" fetchpriority="high">
+  <div class="hero-frame" data-hero>
+    <div class="hero-slides" aria-hidden="true">
+      <img class="hero-bg is-on" src="/img/photos/back-seat.jpg" width="1200" height="600" alt="" fetchpriority="high" data-slide>
+      <img class="hero-bg pos-top" src="/img/photos/event-crowd.jpg" width="1082" height="673" alt="" loading="lazy" data-slide>
+      <img class="hero-bg pos-face" src="/img/photos/rider-in-car.jpg" width="1080" height="1350" alt="" loading="lazy" data-slide>
+      <img class="hero-bg pos-face" src="/img/photos/tap-to-pay.jpg" width="989" height="1591" alt="" loading="lazy" data-slide>
+    </div>
     <div class="hero-in">
       <h1 id="hero-title">Move more.<br>Worry less.</h1>
       <p class="hero-lede">Bus rides, event rides and shared trips across Abuja. Fixed fares, verified drivers, pay with a tap.</p>
@@ -111,6 +120,13 @@
         <p class="form-msg" role="status" aria-live="polite" data-msg></p>
       </form>
       <p class="hero-offer"><svg class="ic" aria-hidden="true"><use href="#i-ticket"/></svg>Join the waitlist and your first ride is free, up to ₦1,000.</p>
+    </div>
+    <div class="hero-tabs" role="group" aria-label="What Tap A Ride does">
+      <a href="#bus" class="hero-tab is-on" data-tab="0"><span class="bar"><i></i></span>Everyday rides</a>
+      <a href="#tech-week" class="hero-tab" data-tab="1"><span class="bar"><i></i></span>Free Tech Week buses</a>
+      <a href="#tagalong" class="hero-tab" data-tab="2"><span class="bar"><i></i></span>Share the ride</a>
+      <a href="#tap-pay" class="hero-tab" data-tab="3"><span class="bar"><i></i></span>Tap to Pay</a>
+      <button class="hero-pause" type="button" aria-label="Pause slideshow" data-hero-pause><svg class="ic" aria-hidden="true"><use href="#i-pause"/></svg></button>
     </div>
   </div>
 </section>
@@ -154,22 +170,39 @@
       <div class="event-intro">
         <p class="badge-partner"><svg class="ic" aria-hidden="true"><use href="#i-shield"/></svg>Official ride partner · Abuja Tech Week 2026</p>
         <h2 id="tw-title">Free buses to Abuja Tech Week.</h2>
-        <p class="lede">Pick your area and a departure time. We pick you up and drop you at the Velodrome, National Stadium, at no cost.</p>
+        <p class="lede">Six pick-up points across Abuja. Buses leave at 7:00 AM sharp, 24–26 November, and drop you at the Velodrome, National Stadium.</p>
+        <p class="powered"><svg class="ic" aria-hidden="true"><use href="#i-leaf"/></svg>Powered by <strong>Pi CNG &amp; EV</strong></p>
         <dl class="event-facts">
           <div><dt><svg class="ic" aria-hidden="true"><use href="#i-calendar"/></svg>Dates</dt><dd>24–26 Nov 2026</dd></div>
+          <div><dt><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg>Departure</dt><dd>7:00 AM sharp</dd></div>
           <div><dt><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg>Drop-off</dt><dd>Velodrome, National Stadium</dd></div>
-          <div><dt><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg>Starts in</dt><dd data-countdown>a few days</dd></div>
-          <div><dt><svg class="ic" aria-hidden="true"><use href="#i-ticket"/></svg>Fare</dt><dd>Free</dd></div>
+          <div><dt><svg class="ic" aria-hidden="true"><use href="#i-ticket"/></svg>Fare</dt><dd>Free · starts in <span data-countdown>a few days</span></dd></div>
         </dl>
       </div>
       <figure class="event-flyer">
-        <img src="/img/flyers/tech-week.jpg" width="900" height="1125" alt="Flyer: Abuja Tech Week x Taparide presents Event Ride. Rate: free. 24th to 26th November. Meeting point: Abuja Velodrome Stadium. Departure time 9:00 AM. More details to follow." loading="lazy">
+        <img src="/img/flyers/tech-week.jpg" width="900" height="1125" alt="Flyer: Abuja Tech Week x Taparide presents Event Ride. Rate: free. 24th to 26th November. Meeting point: Abuja Velodrome Stadium. Departure time 9:00 AM." loading="lazy">
       </figure>
     </div>
 
     <div class="event-grid">
+      <div class="points card">
+        <div class="points-head">
+          <h3>Pick-up points</h3>
+          <p class="points-day" data-points-day>Seats registered for Tue 24 Nov</p>
+        </div>
+        <ol class="point-list">
+          <li><button type="button" class="point" data-point="University of Abuja, Gwagwalada"><span class="point-pin"><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg></span><span class="point-text"><strong>University of Abuja, Gwagwalada</strong><span>Main campus gate</span></span><span class="point-count" data-count="University of Abuja, Gwagwalada">–</span></button><a class="point-map" href="https://www.google.com/maps/search/?api=1&amp;query=University+of+Abuja+main+campus+Gwagwalada" target="_blank" rel="noopener" aria-label="Open University of Abuja, Gwagwalada in Google Maps"><svg class="ic" aria-hidden="true"><use href="#i-map"/></svg></a></li>
+          <li><button type="button" class="point" data-point="Nnamdi Azikiwe Airport"><span class="point-pin"><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg></span><span class="point-text"><strong>Nnamdi Azikiwe Airport</strong><span>Airport arrivals area</span></span><span class="point-count" data-count="Nnamdi Azikiwe Airport">–</span></button><a class="point-map" href="https://www.google.com/maps/search/?api=1&amp;query=Nnamdi+Azikiwe+International+Airport+Abuja" target="_blank" rel="noopener" aria-label="Open Nnamdi Azikiwe Airport in Google Maps"><svg class="ic" aria-hidden="true"><use href="#i-map"/></svg></a></li>
+          <li><button type="button" class="point" data-point="Old Parade Ground (corps members)"><span class="point-pin"><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg></span><span class="point-text"><strong>Old Parade Ground (corps members)</strong><span>For NYSC corps members</span></span><span class="point-count" data-count="Old Parade Ground (corps members)">–</span></button><a class="point-map" href="https://www.google.com/maps/search/?api=1&amp;query=Old+Parade+Ground+Garki+Abuja" target="_blank" rel="noopener" aria-label="Open Old Parade Ground (corps members) in Google Maps"><svg class="ic" aria-hidden="true"><use href="#i-map"/></svg></a></li>
+          <li><button type="button" class="point" data-point="Nile University"><span class="point-pin"><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg></span><span class="point-text"><strong>Nile University</strong><span>Main gate, Jabi Airport Road</span></span><span class="point-count" data-count="Nile University">–</span></button><a class="point-map" href="https://www.google.com/maps/search/?api=1&amp;query=Nile+University+of+Nigeria+Abuja" target="_blank" rel="noopener" aria-label="Open Nile University in Google Maps"><svg class="ic" aria-hidden="true"><use href="#i-map"/></svg></a></li>
+          <li><button type="button" class="point" data-point="Police Signboard, Lugbe"><span class="point-pin"><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg></span><span class="point-text"><strong>Police Signboard, Lugbe</strong><span>Airport Road, Lugbe</span></span><span class="point-count" data-count="Police Signboard, Lugbe">–</span></button><a class="point-map" href="https://www.google.com/maps/search/?api=1&amp;query=Police+Signboard+Lugbe+Abuja" target="_blank" rel="noopener" aria-label="Open Police Signboard, Lugbe in Google Maps"><svg class="ic" aria-hidden="true"><use href="#i-map"/></svg></a></li>
+          <li><button type="button" class="point" data-point="Checkpoint, Maraba–Nyanya"><span class="point-pin"><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg></span><span class="point-text"><strong>Checkpoint, Maraba–Nyanya</strong><span>Between Maraba and Nyanya</span></span><span class="point-count" data-count="Checkpoint, Maraba–Nyanya">–</span></button><a class="point-map" href="https://www.google.com/maps/search/?api=1&amp;query=Checkpoint+Maraba+Nyanya" target="_blank" rel="noopener" aria-label="Open Checkpoint, Maraba–Nyanya in Google Maps"><svg class="ic" aria-hidden="true"><use href="#i-map"/></svg></a></li>
+        </ol>
+        <p class="fine">Be at your pick-up point by 7:00 AM. Buses leave on time.</p>
+      </div>
+
       <form class="seat card" data-seat novalidate>
-        <h3>Reserve your free seat</h3>
+        <h3>Get your free seat</h3>
         <fieldset>
           <legend>Day</legend>
           <div class="chips" data-days>
@@ -179,42 +212,38 @@
           </div>
         </fieldset>
         <div class="field">
-          <label for="seat-area">Pick-up area</label>
-          <select id="seat-area" name="area" required data-areas>
-            <option value="">Choose your area</option>
-            <option>Kubwa</option><option>Gwarinpa</option><option>Lugbe</option><option>Nyanya</option><option>Karu</option>
-            <option>Lokogoma</option><option>Life Camp</option><option>Jabi</option><option>Wuse</option><option>Maitama</option>
-            <option>Garki</option><option>Gwagwalada</option><option>Bwari</option><option>Kuje</option>
+          <label for="seat-area">Pick-up point</label>
+          <select id="seat-area" name="area" required>
+            <option value="">Choose your pick-up point</option>
+            <option>University of Abuja, Gwagwalada</option>
+            <option>Nnamdi Azikiwe Airport</option>
+            <option>Old Parade Ground (corps members)</option>
+            <option>Nile University</option>
+            <option>Police Signboard, Lugbe</option>
+            <option>Checkpoint, Maraba–Nyanya</option>
           </select>
         </div>
-        <fieldset>
-          <legend>Departure time</legend>
-          <div class="chips" data-slots>
-            <label><input type="radio" name="slot" value="07:00"><span>7:00 AM</span></label>
-            <label><input type="radio" name="slot" value="08:00"><span>8:00 AM</span></label>
-            <label><input type="radio" name="slot" value="09:00" checked><span>9:00 AM</span></label>
-          </div>
-        </fieldset>
+        <input type="hidden" name="slot" value="07:00">
+        <div class="field">
+          <label for="seat-name">Full name</label>
+          <input id="seat-name" name="name" autocomplete="name" placeholder="As it should appear on the boarding list" required>
+        </div>
+        <div class="field">
+          <label for="seat-phone">WhatsApp number</label>
+          <input id="seat-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="0803 123 4567" required>
+        </div>
         <div class="field" data-seat-email>
           <label for="seat-email">Email</label>
           <input id="seat-email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com">
         </div>
-        <div class="field" data-seat-phone>
-          <label for="seat-phone">WhatsApp number <span class="opt">(optional)</span></label>
-          <input id="seat-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="0803 123 4567">
-        </div>
         <input class="hp" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
-        <button class="btn btn-go btn-lg btn-block" type="submit"><span>Reserve my seat</span><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+        <button class="btn btn-go btn-lg btn-block" type="submit"><span>Reserve my free seat</span><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></button>
         <p class="form-msg" role="status" aria-live="polite" data-msg></p>
+        <div class="seat-done" hidden data-seat-done>
+          <a class="btn btn-wa" href="#" target="_blank" rel="noopener" data-seat-wa><svg class="ic" aria-hidden="true"><use href="#i-chat"/></svg>Invite colleagues on WhatsApp</a>
+          <button class="btn btn-line" type="button" data-seat-again>Reserve another day</button>
+        </div>
       </form>
-
-      <div class="demand card" aria-live="polite">
-        <h3>Seats reserved so far</h3>
-        <p class="demand-sub" data-demand-sub>A bus leaves when 14 people from one area pick the same day and time.</p>
-        <ol class="demand-list" data-demand>
-          <li class="demand-empty">Loading…</li>
-        </ol>
-      </div>
     </div>
   </div>
 </section>
@@ -364,22 +393,22 @@
 <section class="partners" id="partners" data-story aria-labelledby="partners-title">
   <div class="wrap">
     <h2 id="partners-title" class="center">Grow with Tap A Ride.</h2>
-    <p class="lede center">Drivers, transport companies, event organisers and brands use Tap A Ride to reach Abuja on the move.</p>
+    <p class="lede center">Drivers, transport companies, event organisers and brands use Tap A Ride to reach Abuja on the move. Write to <a href="mailto:partnership@taparide.com">partnership@taparide.com</a>.</p>
     <div class="partner-grid">
-      <a class="partner-card" href="/partners/apply" data-app="/#/partner/apply?type=privateDriver">
+      <a class="partner-card" href="/partners/apply" data-dash="/#/partner/apply?type=privateDriver">
         <img src="/img/photos/tagalong.jpg" width="1122" height="378" alt="" loading="lazy">
         <span class="partner-body"><strong>Drive with us</strong><span>Host Tagalong rides or drive on fixed routes.</span><em>Apply to drive<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></em></span>
       </a>
-      <a class="partner-card" href="/partners/apply" data-app="/#/partner/apply?type=busOperator">
+      <a class="partner-card" href="/partners/apply" data-dash="/#/partner/apply?type=busOperator">
         <img src="/img/photos/bus.jpg" width="1122" height="470" alt="" loading="lazy">
         <span class="partner-body"><strong>Run buses and fleets</strong><span>Put routes, fares and times online and fill seats.</span><em>Partner as an operator<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></em></span>
       </a>
-      <a class="partner-card" href="#join" data-role-link="event_organiser">
+      <a class="partner-card" href="mailto:partnership@taparide.com?subject=Event%20buses%20for%20my%20event">
         <img src="/img/photos/festival.jpg" width="1056" height="1008" alt="" loading="lazy">
         <span class="partner-body"><strong>Bring guests to your event</strong><span>Event buses booked by area and time.</span><em>Talk to us<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></em></span>
       </a>
     </div>
-    <a class="ad-banner" href="#join" data-role-link="other">
+    <a class="ad-banner" href="mailto:partnership@taparide.com?subject=Advertising%20on%20Tap%20A%20Ride">
       <img src="/img/flyers/advertise.jpg" width="1400" height="467" alt="Taparide promotion: Put your brand in front of Abuja commuters. Advertise now." loading="lazy">
     </a>
   </div>
@@ -489,11 +518,15 @@
       </details>
       <details>
         <summary>Are the Abuja Tech Week buses really free?</summary>
-        <p>Yes. Tap A Ride is the official ride partner of Abuja Tech Week 2026, and the event buses cost nothing. Reserve a seat for each day you're going.</p>
+        <p>Yes. Tap A Ride is the official ride partner of Abuja Tech Week 2026, and the buses, powered by Pi CNG &amp; EV, cost nothing. Reserve a seat for each day you're going.</p>
       </details>
       <details>
-        <summary>When is my Tech Week bus confirmed?</summary>
-        <p>When 14 people from the same area pick the same day and time. Invite colleagues from your area to fill it faster. We confirm by email, and on WhatsApp if you gave your number.</p>
+        <summary>Where and when do the Tech Week buses leave?</summary>
+        <p>From six pick-up points: University of Abuja (Gwagwalada), Nnamdi Azikiwe Airport, Old Parade Ground (for corps members), Nile University, Police Signboard in Lugbe, and the checkpoint between Maraba and Nyanya. Every bus leaves at 7:00 AM sharp on 24, 25 and 26 November, so be there by 7.</p>
+      </details>
+      <details>
+        <summary>How do I contact Tap A Ride?</summary>
+        <p>Chat with us on WhatsApp at <a href="https://wa.me/2349110502561" target="_blank" rel="noopener">+234 911 050 2561</a>, or email <a href="mailto:info@taparide.com">info@taparide.com</a>. For partnerships and advertising, email <a href="mailto:partnership@taparide.com">partnership@taparide.com</a>.</p>
       </details>
       <details>
         <summary>Who checks the drivers and vehicles?</summary>
@@ -520,23 +553,25 @@
     <nav class="foot-links" aria-label="Footer">
       <div>
         <h3>Ride</h3>
-        <a href="#bus">Bus rides</a><a href="#tech-week">Event rides</a><a href="#tagalong">Tagalong</a><a href="#tap-pay">Tap to Pay</a>
+        <a href="#bus">Bus rides</a><a href="#tech-week">Event rides</a><a href="#tagalong">Tagalong</a><a href="#tap-pay">Tap to Pay</a><a href="/app" data-app="/">Open the app</a>
       </div>
       <div>
         <h3>Partners</h3>
-        <a href="/partners/apply" data-app="/#/partner/apply?type=privateDriver">Drivers</a><a href="/partners/apply" data-app="/#/partner/apply?type=busOperator">Operators</a><a href="#partners">Event organisers</a><a href="#partners">Advertise</a>
+        <a href="/partners/apply" data-dash="/#/partner/apply?type=privateDriver">Drive with us</a><a href="/partners/apply" data-dash="/#/partner/apply?type=busOperator">Operators</a><a href="mailto:partnership@taparide.com?subject=Event%20buses">Event organisers</a><a href="mailto:partnership@taparide.com?subject=Advertising">Advertise</a><a href="/dashboard" data-dash="/">Partner dashboard</a>
       </div>
       <div>
-        <h3>Tap A Ride</h3>
-        <a href="/app" data-app="/#/app">Open the app</a><a href="#safety">Safety</a><a href="#faq">Questions</a><a href="/privacy">Privacy</a>
+        <h3>Contact</h3>
+        <a href="https://wa.me/2349110502561" target="_blank" rel="noopener">WhatsApp +234 911 050 2561</a><a href="mailto:info@taparide.com">info@taparide.com</a><a href="mailto:partnership@taparide.com">partnership@taparide.com</a><a href="/privacy">Privacy</a>
       </div>
     </nav>
   </div>
   <div class="wrap foot-base">
     <p>© 2026 Tap A Ride. All rights reserved.</p>
-    <p><a href="/privacy">Privacy</a></p>
+    <p>Abuja, Nigeria</p>
   </div>
 </footer>
+
+<a class="wa-float" href="https://wa.me/2349110502561?text=Hi%20Tap%20A%20Ride" target="_blank" rel="noopener" aria-label="Chat with Tap A Ride on WhatsApp"><svg class="ic" aria-hidden="true"><use href="#i-chat"/></svg><span>Chat with us</span></a>
 
 <p class="preview-flag" hidden data-preview-flag>Preview mode: sign-ups are saved on this computer only.</p>
 </body>

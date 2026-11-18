@@ -30,6 +30,13 @@ abstract class Backend {
   Future<void> sendPasswordReset(String email);
   Future<void> signOut();
 
+  /// Continue with Google or Apple. On the web this leaves the page and comes back signed in
+  /// to [redirectTo]; new accounts are created as passengers.
+  Future<void> signInWithProvider(SocialProvider provider, {String? redirectTo});
+
+  /// Everyone who joined on the website (waitlist, Tech Week seats). Admins only.
+  Future<List<WaitlistEntry>> fetchWaitlist();
+
   /// Active routes of verified providers, readable before sign-in (landing page).
   Future<List<TransitRoute>> fetchPublicRoutes();
 
