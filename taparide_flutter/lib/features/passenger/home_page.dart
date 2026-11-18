@@ -343,7 +343,7 @@ class _EvSection extends StatelessWidget {
         onTap: () => context.push('/ev'),
         semanticLabel: 'Book an electric vehicle, ${vehicles.length} available nearby',
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const SizedBox(height: 150, child: PhotoView(AppPhoto.evCharging, alignment: Alignment(0.2, 0.3), semanticLabel: 'Electric car plugged in at a charging point')),
+          const SizedBox(height: 150, child: PhotoView(evPhoto, alignment: Alignment(0.2, 0.3), semanticLabel: 'Electric car plugged in at a charging point')),
           Padding(
             padding: const EdgeInsets.all(14),
             child: vehicles.isEmpty
@@ -387,7 +387,7 @@ class _TagAlongBanner extends StatelessWidget {
       onTap: onOpen,
       semanticLabel: 'Tag Along. Share rides, save more.',
       child: Row(children: [
-        const SizedBox(width: 128, height: 156, child: PhotoView(AppPhoto.taxis, alignment: Alignment(-0.3, 0.1))),
+        const SizedBox(width: 128, height: 156, child: PhotoView(AppPhoto.shareRideRider, alignment: Alignment(0.1, -0.2), semanticLabel: 'A smiling rider looking back from the front seat of a shared car')),
         Expanded(
           child: Padding(
             padding: const EdgeInsets.all(16),

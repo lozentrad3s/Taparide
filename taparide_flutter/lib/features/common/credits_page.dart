@@ -27,7 +27,7 @@ class CreditsPage extends StatelessWidget {
         children: [
           MaxWidth(
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              Text('Real photographs of Abuja and electric transport, used under open licences from Wikimedia Commons. Thank you to the photographers.', style: text.bodyLarge),
+              Text("Tap A Ride's own photographs, plus real photographs of Abuja and electric transport used under open licences from Wikimedia Commons. Thank you to the photographers.", style: text.bodyLarge),
               const SizedBox(height: 20),
               GridView.count(
                 crossAxisCount: columns,
@@ -40,8 +40,8 @@ class CreditsPage extends StatelessWidget {
                   for (final c in photoCredits)
                     Panel(
                       padding: EdgeInsets.zero,
-                      onTap: () => launchUrl(Uri.parse(c.source)),
-                      semanticLabel: '${c.title} by ${c.author}, ${c.license}. Opens the source page.',
+                      onTap: c.isOwn ? null : () => launchUrl(Uri.parse(c.source)),
+                      semanticLabel: c.isOwn ? "${c.title}. Tap A Ride's own image." : '${c.title} by ${c.author}, ${c.license}. Opens the source page.',
                       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                         Expanded(child: PhotoView(c.photo)),
                         Padding(
@@ -49,9 +49,11 @@ class CreditsPage extends StatelessWidget {
                           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                             Text(c.title, style: text.titleSmall, maxLines: 1, overflow: TextOverflow.ellipsis),
                             const SizedBox(height: 2),
-                            Text('${c.author} · ${c.license}', style: text.bodySmall),
-                            const SizedBox(height: 4),
-                            Text('View source', style: text.labelMedium?.copyWith(color: AppColors.forest)),
+                            Text(c.isOwn ? c.license : '${c.author} · ${c.license}', style: text.bodySmall),
+                            if (!c.isOwn) ...[
+                              const SizedBox(height: 4),
+                              Text('View source', style: text.labelMedium?.copyWith(color: AppColors.forest)),
+                            ],
                           ]),
                         ),
                       ]),
