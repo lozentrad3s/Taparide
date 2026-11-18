@@ -66,7 +66,7 @@ class _DemandHeatmapState extends State<DemandHeatmap> {
         if (!r.isEmpty) ...[
           Align(
             alignment: Alignment.centerLeft,
-            child: PillTabs<DemandMode>(values: DemandMode.values, labelOf: (m) => m == DemandMode.estimated ? 'Estimated riders' : 'App bookings', selected: _mode, onChanged: (m) => setState(() => _mode = m)),
+            child: FittedBox(fit: BoxFit.scaleDown, child: PillTabs<DemandMode>(values: DemandMode.values, labelOf: (m) => m == DemandMode.estimated ? 'Estimated riders' : 'App bookings', selected: _mode, onChanged: (m) => setState(() => _mode = m))),
           ),
           const SizedBox(height: 14),
         ],

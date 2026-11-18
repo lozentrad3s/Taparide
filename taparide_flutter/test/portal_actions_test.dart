@@ -15,6 +15,7 @@ Future<AppState> _signedIn(WidgetTester tester, String email, {Size size = const
   tester.view.physicalSize = size;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
+  await tester.runAsync(loadAppFonts);
   final (state, _) = (await tester.runAsync(freshState))!;
   await tester.runAsync(() => state.signIn(email: email, password: DemoSeed.password, portal: Portal.partner));
   await tester.pumpWidget(TapARideApp(state: state, mode: AppMode.dashboard));
@@ -31,7 +32,7 @@ Future<void> _go(WidgetTester tester, String path) async {
 
 /// Taps a widget after scrolling the page until it is on screen.
 Future<void> _tap(WidgetTester tester, Finder finder) async {
-  await tester.scrollUntilVisible(finder, 300, scrollable: find.byType(Scrollable).first);
+  await tester.ensureVisible(finder);
   await tester.pumpAndSettle();
   await tester.tap(finder);
   await tester.pumpAndSettle();
@@ -92,6 +93,8 @@ void main() {
     await tester.tap(find.text('More'));
     await tester.pumpAndSettle();
     expect(find.text('OVERSIGHT'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Audit log'), 200, scrollable: find.descendant(of: find.byType(BottomSheet), matching: find.byType(Scrollable)).first);
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Audit log'));
     await tester.pumpAndSettle();
     expect(find.text('Every approval, suspension, fare change and role change, with who made it'), findsOneWidget);
