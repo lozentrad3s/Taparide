@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="en-NG">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tap A Ride Pitch Deck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700;800&family=Fira+Sans:wght@400;500;600&display=swap">
+<style>
+/* Tap A Ride · National Innovation Challenge deck.
+   Present: open in Chrome, press F for full screen, arrows / space to move, N for speaker notes.
+   PDF: Ctrl+P → Save as PDF, Landscape, Margins none, Background graphics on (one slide per page). */
+:root {
+  --deep: #06331F; --forest: #0B5A3A; --leaf: #4DB52A; --leaf-text: #237A2E;
+  --paper: #F4F8F3; --mint: #E6F2EA; --card: #FFFFFF; --ink: #111814; --soft: #4A5A52;
+  --on-dark: #F4F8F3; --on-dark-soft: #B9D5C5; --card-dark: #0B4A31; --ph: #8A5A00; --ph-dark: #F2C14E;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: #0A1410; }
+body { font-family: 'Fira Sans', Arial, sans-serif; color: var(--ink); overflow: hidden; }
+.stage { position: fixed; inset: 0; display: grid; place-items: center; }
+.slide {
+  position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px;
+  transform-origin: 0 0; padding: 128px 128px 160px; background: var(--paper); color: var(--ink);
+  display: none; flex-direction: column; gap: 40px; overflow: hidden; counter-increment: page;
+}
+.slide.on { display: flex; }
+.slide.dark { background: var(--deep); color: var(--on-dark); }
+.slide.accent { background: var(--leaf); color: var(--deep); }
+h1, h2, h3 { font-family: 'Barlow', Arial, sans-serif; margin: 0; letter-spacing: -0.5px; }
+h1 { font-size: 112px; font-weight: 800; line-height: 1.0; }
+h2 { font-size: 72px; font-weight: 700; line-height: 1.05; color: var(--deep); }
+h3 { font-size: 32px; font-weight: 700; line-height: 1.15; color: var(--deep); }
+p { margin: 0; font-size: 32px; line-height: 1.4; }
+ul { margin: 0; padding-left: 1.1em; }
+li { font-size: 26px; line-height: 1.45; color: var(--soft); margin: 4px 0; }
+.dark h2, .dark h3 { color: var(--on-dark); }
+.dark li { color: var(--on-dark-soft); }
+.eyebrow { font-family: 'Barlow', Arial, sans-serif; font-size: 24px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--leaf-text); }
+.dark .eyebrow { color: var(--leaf); }
+.accent .eyebrow { color: var(--deep); }
+.lede { font-size: 32px; color: var(--soft); max-width: 1450px; }
+.dark .lede { color: var(--on-dark-soft); }
+.small { font-size: 24px; line-height: 1.45; color: var(--soft); }
+.dark .small { color: var(--on-dark-soft); }
+.head { display: flex; flex-direction: column; gap: 16px; }
+.foot { position: absolute; left: 128px; bottom: 64px; width: 1664px; display: flex; justify-content: space-between; align-items: center; }
+.foot p { font-size: 24px; color: var(--soft); }
+.dark .foot p { color: var(--on-dark-soft); }
+.accent .foot p { color: var(--deep); }
+.foot img { height: 30px; }
+.grid { display: grid; gap: 28px; }
+.c2 { grid-template-columns: 1fr 1fr; } .c3 { grid-template-columns: 1fr 1fr 1fr; } .c4 { grid-template-columns: repeat(4, 1fr); }
+.card { background: var(--card); border-radius: 24px; padding: 36px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 1px 0 rgba(6,51,31,.08), 0 18px 40px -28px rgba(6,51,31,.35); }
+.card .body { font-size: 24px; line-height: 1.45; color: var(--soft); }
+.dark .card { background: var(--card-dark); box-shadow: none; }
+.dark .card .body { color: var(--on-dark-soft); }
+.tag { font-family: 'Barlow', Arial, sans-serif; font-size: 24px; font-weight: 700; color: var(--leaf-text); letter-spacing: .5px; }
+.dark .tag { color: var(--leaf); }
+.num { font-family: 'Barlow', Arial, sans-serif; font-size: 96px; font-weight: 800; line-height: 1; color: var(--forest); font-variant-numeric: tabular-nums; }
+.dark .num { color: var(--leaf); }
+.label { font-size: 24px; line-height: 1.4; color: var(--soft); }
+.dark .label { color: var(--on-dark-soft); }
+.src { font-size: 22px; line-height: 1.4; color: var(--soft); }
+.dark .src { color: var(--on-dark-soft); }
+.ph { color: var(--ph); font-weight: 600; }
+.dark .ph { color: var(--ph-dark); }
+table { border-collapse: collapse; width: 100%; font-size: 26px; }
+th { text-align: left; font-family: 'Barlow', Arial, sans-serif; font-size: 24px; letter-spacing: 1px; text-transform: uppercase; color: var(--soft); padding: 14px 18px; border-bottom: 2px solid var(--deep); }
+td { padding: 16px 18px; border-bottom: 1px solid #CDE6D5; vertical-align: top; line-height: 1.35; }
+tr.us td { background: var(--mint); font-weight: 600; color: var(--deep); }
+.yes { color: var(--leaf-text); font-weight: 600; } .no { color: #8A9890; }
+.pill { display: inline-block; font-family: 'Barlow', Arial, sans-serif; font-weight: 700; font-size: 22px; letter-spacing: 1px; text-transform: uppercase; padding: 8px 16px; border-radius: 999px; background: var(--mint); color: var(--forest); }
+.dark .pill { background: rgba(77,181,42,.18); color: var(--leaf); }
+.photo { border-radius: 28px; object-fit: cover; }
+.rise { animation: rise 560ms cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(var(--i, 0) * 110ms); }
+@keyframes rise { from { opacity: 0; transform: translateY(24px); } }
+@media (prefers-reduced-motion: reduce) { .rise { animation: none; } }
+.notes { display: none; }
+.hud { position: fixed; right: 16px; bottom: 12px; font: 13px/1 'Fira Sans', Arial, sans-serif; color: #8FB3A0; z-index: 5; }
+.notepanel { position: fixed; left: 0; right: 0; bottom: 0; max-height: 34vh; overflow: auto; background: #FBFBF8; color: #111814; font: 18px/1.5 'Fira Sans', Arial, sans-serif; padding: 18px 24px; border-top: 4px solid #4DB52A; display: none; z-index: 6; }
+body.show-notes .notepanel { display: block; }
+@media print {
+  @page { size: 1920px 1080px; margin: 0; }
+  html, body { background: none; overflow: visible; height: auto; }
+  .stage { position: static; display: block; }
+  .slide { display: flex !important; position: relative; left: 0; top: 0; transform: none !important; page-break-after: always; break-after: page; }
+  .hud, .notepanel { display: none !important; }
+  .rise { animation: none; }
+}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+
+<!-- 1 COVER -->
+<section class="slide dark" style="padding:0">
+  <img src="../taparide_website/public/img/photos/event-crowd.jpg" alt="A crowd at an event in Abuja." style="position:absolute;inset:0;width:1920px;height:1080px;object-fit:cover">
+  <div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(6,51,31,.97) 0%,rgba(6,51,31,.9) 50%,rgba(6,51,31,.35) 100%)"></div>
+  <div style="position:absolute;left:128px;top:128px;width:1120px;height:824px;display:flex;flex-direction:column;justify-content:space-between">
+    <img src="../taparide_website/public/img/brand/taparide_wordmark_white.png" alt="Tap A Ride" style="width:402px;height:60px;object-fit:contain;object-position:left">
+    <div style="display:flex;flex-direction:column;gap:32px">
+      <p class="eyebrow rise" style="--i:0">National Innovation Challenge · Abuja Tech Week 2026</p>
+      <h1 class="rise" style="--i:1;color:#F4F8F3">Safe, cashless rides for Abuja.</h1>
+      <p class="rise" style="--i:2;color:#B9D5C5;max-width:980px">One app to book verified buses, share rides with trusted drivers and tap to pay. Official ride partner of Abuja Tech Week 2026.</p>
+    </div>
+    <p class="small">taparide.com · <span class="ph">[Presenter name, title]</span></p>
+  </div>
+  <div class="notes">Open (15 s): “Good morning. I’m [name], founder of Tap A Ride. This week, everyone who rode our free buses to the Velodrome has already used what we built.” Then straight to the problem.</div>
+</section>
+
+<!-- 2 PROBLEM -->
+<section class="slide">
+  <div class="head">
+    <p class="eyebrow">The problem</p>
+    <h2>Getting around Abuja is costly, cash-only and unsafe.</h2>
+  </div>
+  <div class="grid c3" style="flex:1">
+    <div class="card rise" style="--i:0">
+      <p class="num">₦1,431</p>
+      <p class="label">Average city bus trip in Nigeria, May 2026: up 38.6% in a year.</p>
+      <p class="src" style="margin-top:auto">NBS Transport Fare Watch, May 2026 (via Premium Times)</p>
+    </div>
+    <div class="card rise" style="--i:1">
+      <p class="num">“One chance”</p>
+      <p class="label">FCT Police warn residents not to board unpainted taxis, and run a dedicated Anti-One-Chance unit. People can’t tell a safe ride from a dangerous one.</p>
+      <p class="src" style="margin-top:auto">FCT Police Command, reported by NAN and ICIR</p>
+    </div>
+    <div class="card rise" style="--i:2">
+      <p class="num">~4.0M</p>
+      <p class="label">People in metro Abuja, one of Africa’s fastest-growing cities. Buses run on cash, with no booking, no schedule and no data for planners.</p>
+      <p class="src" style="margin-top:auto">Macrotrends / World Population Review, 2024 metro estimate</p>
+    </div>
+  </div>
+  <div class="foot"><p>Tap A Ride · National Innovation Challenge</p><p class="pnum"></p></div>
+  <div class="notes">(35 s) Three pains. One: price. City bus fares rose almost 40% in a year (NBS). Two: safety. “One chance” robberies are common enough that FCT Police have a dedicated unit and tell people to avoid unpainted taxis. Three: chaos. Cash only, no booking, no schedule, and the FCTA has no live data to plan with. Commuters pay more and still don’t know if their ride is safe.</div>
+</section>
+
+<!-- 3 SOLUTION -->
+<section class="slide dark">
+  <div class="head">
+    <p class="eyebrow">Our answer</p>
+    <h2>One app for every shared ride in Abuja.</h2>
+    <p class="lede">Riders book a verified seat and tap to pay. Operators fill their buses. Government sees how the city moves.</p>
+  </div>
+  <div class="grid c4" style="flex:1">
+    <div class="card rise" style="--i:0"><p class="tag">01 · Event rides</p><h3>Book a seat to any big event</h3><p class="body">Organisers get buses, attendees get a personal pass with a QR code.</p></div>
+    <div class="card rise" style="--i:1"><p class="tag">02 · Tap to pay</p><h3>No cash, no change wahala</h3><p class="body">Pay from the in-app wallet. The fare is held, then paid to the operator after the trip, so refunds are instant.</p></div>
+    <div class="card rise" style="--i:2"><p class="tag">03 · Tag Along</p><h3>Share rides with verified people</h3><p class="body">Car owners heading your way offer seats; the host approves who rides. Split the cost.</p></div>
+    <div class="card rise" style="--i:3"><p class="tag">04 · Verified network</p><h3>Every vehicle checked</h3><p class="body">Operators, fleet owners and drivers onboard with licence, plate, VIN and insurance checks.</p></div>
+  </div>
+  <div class="foot"><p>Tap A Ride · National Innovation Challenge</p><p class="pnum"></p></div>
+  <div class="notes">(30 s) Tap A Ride brings buses, shared cars and event transport into one app. Every vehicle is verified, every payment is cashless, and every seat is booked. The rider gets safety and a fair price, the operator gets full buses and guaranteed payment, the FCTA gets data.</div>
+</section>
+
+<!-- 4 PRODUCT -->
+<section class="slide">
+  <div class="head">
+    <p class="eyebrow">The product, live today</p>
+    <h2>Three sides, one platform.</h2>
+  </div>
+  <div style="display:grid;grid-template-columns:560px 1fr;gap:56px;flex:1;min-height:0">
+    <img class="photo rise" src="../taparide_website/public/img/photos/tap-to-pay.jpg" alt="A rider holding her phone, smiling." style="width:560px;height:620px">
+    <div style="display:flex;flex-direction:column;gap:24px">
+      <div class="card rise" style="--i:1"><p class="tag">Riders · taparide.com/app</p><p class="body">Find routes and fares, book event seats, Tag Along, live map, share your trip with family, ₦1,000 ride credit for the first 5,000 sign-ups.</p></div>
+      <div class="card rise" style="--i:2"><p class="tag">Operators, fleet owners & drivers · /dashboard</p><p class="body">Apply with documents (AI-assisted checks), manage vehicles and drivers, see bookings and a collection wallet that fills after each trip.</p></div>
+      <div class="card rise" style="--i:3"><p class="tag">Organisers, FCTA & admin · /dashboard</p><p class="body">Event organisers see bookings by day, pick-up point and time. FCTA sees ridership, verified vehicles and route demand. Admin approves partners.</p></div>
+    </div>
+  </div>
+  <div class="foot"><p>Tap A Ride · National Innovation Challenge</p><p class="pnum"></p></div>
+  <div class="notes">(20 s) This is not a mock-up. The rider app, the partner dashboards and the payments are live at taparide.com. If the judges want, show the app on your phone here: book, pass, tap to pay.</div>
+</section>
+
+<!-- 5 TRACTION -->
+<section class="slide accent">
+  <div class="head">
+    <p class="eyebrow">Traction</p>
+    <h2>Official ride partner of Abuja Tech Week 2026.</h2>
+  </div>
+  <div class="grid c4">
+    <div class="stat rise" style="--i:0"><p class="num" style="color:#06331F">6</p><p class="label" style="color:#06331F">Free-bus pick-up points, 24–26 Nov, every morning</p></div>
+    <div class="stat rise" style="--i:1"><p class="num" style="color:#06331F"><span class="ph" style="color:#5A3A00">[N]</span></p><p class="label" style="color:#06331F">Website sign-ups as of <span class="ph" style="color:#5A3A00">[23 Nov]</span></p></div>
+    <div class="stat rise" style="--i:2"><p class="num" style="color:#06331F"><span class="ph" style="color:#5A3A00">[N]</span></p><p class="label" style="color:#06331F">Personal bus passes issued</p></div>
+    <div class="stat rise" style="--i:3"><p class="num" style="color:#06331F"><span class="ph" style="color:#5A3A00">[N]</span></p><p class="label" style="color:#06331F">Riders carried to the Velodrome</p></div>
+  </div>
+  <div class="grid c3 rise" style="--i:4;gap:16px">
+    <p class="pill" style="background:rgba(6,51,31,.12);color:#06331F;text-transform:none;letter-spacing:0;font-size:24px;text-align:center">University of Abuja, Gwagwalada</p>
+    <p class="pill" style="background:rgba(6,51,31,.12);color:#06331F;text-transform:none;letter-spacing:0;font-size:24px;text-align:center">Nnamdi Azikiwe Airport</p>
+    <p class="pill" style="background:rgba(6,51,31,.12);color:#06331F;text-transform:none;letter-spacing:0;font-size:24px;text-align:center">Old Parade Ground</p>
+    <p class="pill" style="background:rgba(6,51,31,.12);color:#06331F;text-transform:none;letter-spacing:0;font-size:24px;text-align:center">Nile University</p>
+    <p class="pill" style="background:rgba(6,51,31,.12);color:#06331F;text-transform:none;letter-spacing:0;font-size:24px;text-align:center">Police Signboard, Lugbe</p>
+    <p class="pill" style="background:rgba(6,51,31,.12);color:#06331F;text-transform:none;letter-spacing:0;font-size:24px;text-align:center">Checkpoint, Maraba–Nyanya</p>
+  </div>
+  <div class="grid c2" style="margin-top:auto">
+    <ul style="padding-left:1em">
+      <li style="color:#06331F">Live: website, waitlist with invite links, QR bus passes</li>
+      <li style="color:#06331F">Live: rider app and partner dashboards at taparide.com</li>
+    </ul>
+    <ul style="padding-left:1em">
+      <li style="color:#06331F">Live payments through Bachs (card and bank transfer)</li>
+      <li style="color:#06331F">Tech Week buses run with Pi-CNG; formal fleet onboarding next</li>
+    </ul>
+  </div>
+  <div class="foot"><p>Tap A Ride · National Innovation Challenge</p><p class="pnum"></p></div>
+  <div class="notes">(35 s) Fill the [N] numbers on the morning of the pitch from the admin dashboard. Say: “We were chosen as the official ride partner of this event. Free buses ran every morning from University of Abuja Gwagwalada, the airport, Old Parade Ground, Nile University, Police Signboard Lugbe and Maraba–Nyanya. [N] people signed up, [N] got personal passes, and we carried [N] riders.” Only say numbers you can show on the dashboard.</div>
+</section>
+
+<!-- 6 MARKET -->
+<section class="slide">
+  <div class="head">
+    <p class="eyebrow">The opportunity</p>
+    <h2>Abuja first: a ₦850 billion-a-year trip market.</h2>
+  </div>
+  <div class="grid c3">
+    <div class="card rise" style="--i:0"><p class="tag">Nigeria · app ride-hailing</p><p class="num">$303M</p><p class="body">2025, growing ~12% a year to $477M by 2029. Cars only; buses and shared rides are not in this number.</p><p class="src">Statista Mobility Market Outlook, via BusinessDay</p></div>
+    <div class="card rise" style="--i:1"><p class="tag">Abuja · paid city trips (estimate)</p><p class="num">₦858B</p><p class="body">a year: 4.0M people × 0.5 paid trips a day × ₦1,431 × 300 days. Method, not a published figure.</p><p class="src">Our estimate from NBS fares and the metro population</p></div>
+    <div class="card rise" style="--i:2"><p class="tag">Our year-3 goal</p><p class="num">~2%</p><p class="body">of those paid trips through Tap A Ride: about 11.5M trips and ₦19.6B in fares (illustrative plan, appendix).</p><p class="src">Assumptions in the business model document</p></div>
+  </div>
+  <p class="small" style="margin-top:auto">Then: Lagos, Port Harcourt and Kano follow the same playbook (events → commuters → operators → government).</p>
+  <div class="foot"><p>Tap A Ride · National Innovation Challenge</p><p class="pnum"></p></div>
+  <div class="notes">(25 s) The published ride-hailing figure only counts private cars. Most Abuja trips are buses and shared cars paid in cash. Our own estimate: about ₦858 billion a year in paid city trips in metro Abuja. Be clear it’s an estimate and show the method if asked. We only need 2% to build a ₦2 billion revenue business by year three.</div>
+</section>
+
+<!-- 7 BUSINESS MODEL -->
+<section class="slide dark">
+  <div class="head">
+    <p class="eyebrow">How we make money</p>
+    <h2>Six revenue streams, one network.</h2>
+  </div>
+  <div class="grid c3" style="flex:1">
+    <div class="card rise" style="--i:0"><p class="tag">Tap-to-pay commission</p><h3>5–10% of every fare</h3><p class="body">Taken when the held fare is released to the operator. Plan uses 7%.</p></div>
+    <div class="card rise" style="--i:1"><p class="tag">Event mobility contracts</p><h3>Per bus or per attendee</h3><p class="body">Organisers pay us to move their guests; passes, check-in and live counts included.</p></div>
+    <div class="card rise" style="--i:2"><p class="tag">Operator software</p><h3>Monthly subscription</h3><p class="body">Fleet, driver and booking dashboard for operators and fleet owners.</p></div>
+    <div class="card rise" style="--i:3"><p class="tag">Tag Along</p><h3>Small booking fee</h3><p class="body">A flat fee per shared seat; hosts keep the cost share.</p></div>
+    <div class="card rise" style="--i:4"><p class="tag">Government data</p><h3>Annual licence</h3><p class="body">Ridership, route demand and vehicle verification for the FCTA and agencies.</p></div>
+    <div class="card rise" style="--i:5"><p class="tag">Later</p><h3>Ads and fleet finance</h3><p class="body">Sponsored placements; referral fees for EV and CNG vehicle financing.</p></div>
+  </div>
+  <div class="foot"><p>Tap A Ride · National Innovation Challenge</p><p class="pnum"></p></div>
+  <div class="notes">(30 s) The core is a commission on every tap-to-pay fare: the rider pays in the app, we hold the fare, and release it to the operator after the trip, minus our cut. On top: event contracts, operator software, Tag Along fees, and a data licence for government. Ads and vehicle-finance referrals come later. Stored money is handled through our licensed payment partner, Bachs.</div>
+</section>
+
+<!-- 8 COMPETITION -->
+<section class="slide">
+  <div class="head">
+    <p class="eyebrow">Competition</p>
+    <h2>Others move cars. We move the city.</h2>
+  </div>
+  <table class="rise">
+    <tr><th style="width:26%"></th><th>Shared buses &amp; seats</th><th>Verified vehicles</th><th>Cashless</th><th>Events</th><th>Government data</th></tr>
+    <tr><td>Bolt, Uber, inDrive</td><td class="no">No: private cars</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td></tr>
+    <tr><td>Local buses &amp; taxis</td><td class="yes">Yes</td><td class="no">Often not</td><td class="no">Cash</td><td class="no">No</td><td class="no">No</td></tr>
+    <tr><td>Cowry card (Lagos)</td><td class="yes">Yes, Lagos only</td><td class="yes">State-run</td><td class="yes">Yes</td><td class="no">No</td><td>State agency</td></tr>
+    <tr><td>Moove</td><td class="no">Finance for drivers</td><td>n/a</td><td>n/a</td><td class="no">No</td><td class="no">No</td></tr>
+    <tr class="us"><td>Tap A Ride</td><td>Yes, Abuja first</td><td>Yes, checked</td><td>Yes, tap to pay</td><td>Yes</td><td>Yes</td></tr>
+  </table>
+  <p class="small" style="margin-top:auto">Our edge: affordable shared seats instead of private-car fares, trust through verification, and an operator-and-government network that is hard to copy.</p>
+  <div class="foot"><p>Tap A Ride · National Innovation Challenge</p><p class="pnum"></p></div>
+  <div class="notes">(20 s) Ride-hailing apps sell private car trips most commuters can’t afford daily. Local buses are affordable but cash-only and unverified. Lagos proved with the Cowry card that cashless transit works, but there’s nothing like it in Abuja and it doesn’t include private operators. We sit in the middle: shared, verified, cashless, with events and government data built in.</div>
+</section>
+
+<!-- 9 GO-TO-MARKET -->
+<section class="slide">
+  <div class="head">
+    <p class="eyebrow">Go to market</p>
+    <h2>Events bring the riders. Riders bring the operators.</h2>
+  </div>
+  <div class="grid c4" style="flex:1">
+    <div class="card rise" style="--i:0"><p class="pill">Step 1 · now</p><h3>Events</h3><p class="body">Official ride partner deals. Thousands try the app in one weekend; organisers pay.</p></div>
+    <div class="card rise" style="--i:1"><p class="pill">Step 2</p><h3>Daily commuters</h3><p class="body">Ride credit and invite links turn event riders into daily users on the busiest corridors.</p></div>
+    <div class="card rise" style="--i:2"><p class="pill">Step 3</p><h3>Operators</h3><p class="body">Bus and fleet owners join for full buses, cashless collection and free software.</p></div>
+    <div class="card rise" style="--i:3"><p class="pill">Step 4</p><h3>FCTA</h3><p class="body">Verified-vehicle data and ridership dashboards for planning and enforcement.</p></div>
+  </div>
+  <div class="foot"><p>Tap A Ride · National Innovation Challenge</p><p class="pnum"></p></div>
+  <div class="notes">(20 s) Events are our wedge: one event puts the app on thousands of phones, and the organiser pays for it. The ₦1,000 ride credit and invite links convert them into commuters. Commuter demand on a corridor is what convinces operators to join. And once enough vehicles run through us, the FCTA gets the data it has never had.</div>
+</section>
+
+<!-- 10 ROADMAP -->
+<section class="slide dark">
+  <div class="head">
+    <p class="eyebrow">Roadmap</p>
+    <h2>From one event to the city’s ride network.</h2>
+  </div>
+  <div class="grid c4" style="flex:1">
+    <div class="card rise" style="--i:0"><p class="tag">Nov 2026 · done</p><h3>Launch</h3><ul><li>Web app and dashboards live</li><li>Tech Week free buses</li><li>Bachs payments</li></ul></div>
+    <div class="card rise" style="--i:1"><p class="tag">Q1 2027</p><h3>Native apps</h3><ul><li>Android and iPhone apps</li><li>NFC tap-to-pay</li><li>Wallet top-ups on</li></ul></div>
+    <div class="card rise" style="--i:2"><p class="tag">Q2 2027</p><h3>Operators</h3><ul><li>First verified operators and fleets onboarded</li><li>Event contracts</li><li><span class="ph">[FCTA data pilot]</span></li></ul></div>
+    <div class="card rise" style="--i:3"><p class="tag">H2 2027</p><h3>Scale</h3><ul><li>EV and CNG fleet partners</li><li>Hausa, Yoruba, Igbo</li><li><span class="ph">[Second city]</span></li></ul></div>
+  </div>
+  <div class="foot"><p>Tap A Ride · National Innovation Challenge</p><p class="pnum"></p></div>
+  <div class="notes">(15 s) What’s done, what the money unlocks. Native apps unlock NFC tap-to-pay. The FCTA pilot and second city are goals, not agreements: say so if asked.</div>
+</section>
+
+<!-- 11 TEAM -->
+<section class="slide">
+  <div class="head">
+    <p class="eyebrow">Team</p>
+    <h2>Built in Abuja, by people who ride in Abuja.</h2>
+  </div>
+  <div class="grid c3" style="flex:1">
+    <div class="card"><p class="tag"><span class="ph">[Role, e.g. Founder &amp; CEO]</span></p><h3><span class="ph">[Full name]</span></h3><p class="body"><span class="ph">[One line: the experience that makes you the right person]</span></p></div>
+    <div class="card"><p class="tag"><span class="ph">[Role]</span></p><h3><span class="ph">[Full name]</span></h3><p class="body"><span class="ph">[One line]</span></p></div>
+    <div class="card"><p class="tag"><span class="ph">[Role]</span></p><h3><span class="ph">[Full name]</span></h3><p class="body"><span class="ph">[One line]</span></p></div>
+  </div>
+  <p class="small">Advisers and partners: <span class="ph">[only people who have agreed to be named]</span></p>
+  <div class="foot"><p>Tap A Ride · National Innovation Challenge</p><p class="pnum"></p></div>
+  <div class="notes">(15 s) Fill in real names and one credential each. Judges back teams: say why you specifically will win Abuja. Don’t list advisers who haven’t agreed in writing.</div>
+</section>
+
+<!-- 12 ASK -->
+<section class="slide accent">
+  <div class="head">
+    <p class="eyebrow">The ask</p>
+    <h2>Raising <span class="ph" style="color:#5A3A00">[₦___ / $___]</span> pre-seed to own Abuja’s shared rides.</h2>
+  </div>
+  <div class="grid c4" style="flex:1">
+    <div class="stat rise" style="--i:0"><p class="num" style="color:#06331F">40%</p><p class="label" style="color:#06331F">Native apps and NFC tap-to-pay</p></div>
+    <div class="stat rise" style="--i:1"><p class="num" style="color:#06331F">25%</p><p class="label" style="color:#06331F">Operator onboarding and field team</p></div>
+    <div class="stat rise" style="--i:2"><p class="num" style="color:#06331F">20%</p><p class="label" style="color:#06331F">Rider growth through events</p></div>
+    <div class="stat rise" style="--i:3"><p class="num" style="color:#06331F">15%</p><p class="label" style="color:#06331F">Compliance, security and operations</p></div>
+  </div>
+  <p style="font-size:28px;color:#06331F">Milestones in 18 months: <span class="ph" style="color:#5A3A00">[40,000 monthly riders · 60 operators · first government data licence]</span></p>
+  <div class="foot"><p>Tap A Ride · National Innovation Challenge</p><p class="pnum"></p></div>
+  <div class="notes">(20 s) State the amount clearly and what it buys. The split is a suggestion: change it to your real budget. Tie the money to milestones the judges can check later.</div>
+</section>
+
+<!-- 13 VISION -->
+<section class="slide dark" style="padding:0">
+  <img src="../taparide_website/public/img/photos/bus.jpg" alt="A bus on an Abuja road." style="position:absolute;inset:0;width:1920px;height:1080px;object-fit:cover">
+  <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(6,51,31,.97) 0%,rgba(6,51,31,.75) 55%,rgba(6,51,31,.35) 100%)"></div>
+  <div style="position:absolute;left:128px;bottom:128px;width:1500px;display:flex;flex-direction:column;gap:28px">
+    <p class="eyebrow">Our vision</p>
+    <h1 style="color:#F4F8F3;font-size:96px">Every ride in Nigeria: safe, shared and one tap away.</h1>
+    <p style="color:#B9D5C5">taparide.com · info@taparide.com · WhatsApp +234 911 050 2561</p>
+  </div>
+  <img src="../taparide_website/public/img/brand/taparide_wordmark_white.png" alt="Tap A Ride" style="position:absolute;left:128px;top:112px;width:335px;height:50px;object-fit:contain;object-position:left">
+  <div class="notes">(10 s) Close: “Abuja first, then every Nigerian city. Thank you.” Pause; don’t rush to the Q&amp;A slide.</div>
+</section>
+
+<!-- APPENDIX -->
+<section class="slide dark">
+  <div style="margin:auto 0;display:flex;flex-direction:column;gap:24px">
+    <p class="eyebrow">Appendix</p>
+    <h1 style="color:#F4F8F3">For questions</h1>
+    <p class="lede">Unit economics · three-year plan · regulation and risks</p>
+  </div>
+  <div class="notes">Keep these slides hidden unless a judge asks.</div>
+</section>
+
+<section class="slide">
+  <div class="head">
+    <p class="eyebrow">Appendix · unit economics (illustrative)</p>
+    <h2>Each trip earns ₦67; a rider pays back in about 4 months.</h2>
+  </div>
+  <div class="grid c2" style="flex:1">
+    <table>
+      <tr><th>Per tap-to-pay trip</th><th style="text-align:right">₦</th></tr>
+      <tr><td>Average fare (assumption)</td><td style="text-align:right">1,500</td></tr>
+      <tr><td>Our commission, 7%</td><td style="text-align:right">105</td></tr>
+      <tr><td>Payment cost, ~1.5% (assumption)</td><td style="text-align:right">−22.5</td></tr>
+      <tr><td>Servers, SMS, support (assumption)</td><td style="text-align:right">−15</td></tr>
+      <tr class="us"><td>Contribution per trip</td><td style="text-align:right">67.5</td></tr>
+    </table>
+    <table>
+      <tr><th>Per rider</th><th style="text-align:right">Value</th></tr>
+      <tr><td>Paid trips a month (assumption)</td><td style="text-align:right">6</td></tr>
+      <tr><td>Contribution a month</td><td style="text-align:right">₦405</td></tr>
+      <tr><td>Cost to win a rider (assumption)</td><td style="text-align:right">₦1,500</td></tr>
+      <tr><td>Free ride credit (first 5,000)</td><td style="text-align:right">₦1,000</td></tr>
+      <tr class="us"><td>Payback without credit</td><td style="text-align:right">~3.7 months</td></tr>
+    </table>
+  </div>
+  <p class="src">All figures are planning assumptions, not results. Event contracts and subscriptions come on top.</p>
+  <div class="foot"><p>Tap A Ride · Appendix</p><p class="pnum"></p></div>
+  <div class="notes">If asked about profitability: per-trip contribution is positive from day one because we take a percentage of a fare that is already paid. The cost is rider acquisition; events lower it because organisers pay us to bring riders.</div>
+</section>
+
+<section class="slide">
+  <div class="head">
+    <p class="eyebrow">Appendix · three-year plan and regulation</p>
+    <h2>₦96M → ₦578M → ₦2.0B revenue (illustrative).</h2>
+  </div>
+  <div class="grid c2" style="flex:1">
+    <table>
+      <tr><th>Year</th><th style="text-align:right">Riders/mo</th><th style="text-align:right">Fares</th><th style="text-align:right">Revenue</th></tr>
+      <tr><td>1 · 2027</td><td style="text-align:right">8,000</td><td style="text-align:right">₦0.86B</td><td style="text-align:right">₦96M</td></tr>
+      <tr><td>2 · 2028</td><td style="text-align:right">40,000</td><td style="text-align:right">₦5.4B</td><td style="text-align:right">₦578M</td></tr>
+      <tr class="us"><td>3 · 2029</td><td style="text-align:right">120,000</td><td style="text-align:right">₦19.6B</td><td style="text-align:right">₦2.04B</td></tr>
+    </table>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <h3>Regulation we plan for</h3>
+      <ul>
+        <li>Wallet money held through a licensed payment partner (Bachs); no interest earned on balances unless a licence allows it (CBN).</li>
+        <li>Registration with the Nigeria Data Protection Commission and a named data protection officer before full launch.</li>
+        <li>Only operators with valid FCTA permits and vehicle papers go live.</li>
+      </ul>
+    </div>
+  </div>
+  <p class="src">Revenue = fare commission + Tag Along fees + event contracts + subscriptions + data licences + ads + finance referrals. Assumptions in the business model document.</p>
+  <div class="foot"><p>Tap A Ride · Appendix</p><p class="pnum"></p></div>
+  <div class="notes">Stress these are plans with stated assumptions. If a judge challenges the numbers, explain the levers: riders, trips per rider, average fare and take rate.</div>
+</section>
+
+</div>
+<div class="hud" id="hud"></div>
+<div class="notepanel" id="notes"></div>
+<script>
+(() => {
+  const slides = [...document.querySelectorAll('.slide')];
+  let i = Math.max(0, Math.min(slides.length - 1, (parseInt(location.hash.slice(1), 10) || 1) - 1));
+  const fit = () => {
+    const s = Math.min(innerWidth / 1920, innerHeight / 1080);
+    for (const el of slides) el.style.transform = `scale(${s}) translate(-50%, -50%)`;
+  };
+  const show = (n) => {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((el, k) => el.classList.toggle('on', k === i));
+    document.getElementById('hud').textContent = `${i + 1} / ${slides.length} · N notes · F full screen`;
+    document.getElementById('notes').textContent = slides[i].querySelector('.notes')?.textContent || '';
+    history.replaceState(null, '', '#' + (i + 1));
+  };
+  slides.forEach((el, k) => { const p = el.querySelector('.pnum'); if (p) p.textContent = String(k + 1); });
+  addEventListener('resize', fit);
+  addEventListener('keydown', (e) => {
+    if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(e.key)) show(i + 1);
+    else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) show(i - 1);
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key.toLowerCase() === 'n') document.body.classList.toggle('show-notes');
+    else if (e.key.toLowerCase() === 'f') (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()).catch(() => {});
+  });
+  addEventListener('click', (e) => { if (!e.target.closest('a, .notepanel')) show(e.clientX > innerWidth / 3 ? i + 1 : i - 1); });
+  fit(); show(i);
+})();
+</script>
+</body>
+</html>

@@ -8,6 +8,7 @@ import 'fleet_driver_dashboard.dart';
 import 'fleet_drivers_page.dart';
 import 'insights_page.dart';
 import 'manage_pages.dart';
+import 'money_page.dart';
 import 'portal_shell.dart';
 import 'waitlist_page.dart';
 
@@ -31,6 +32,7 @@ Widget portalPageFor(PortalSection section, Map<String, String> query) => switch
       '/portal/applications' => const ApplicationsPage(),
       '/portal/events' => const EventsPortalPage(),
       '/portal/waitlist' => const WaitlistPage(),
+      '/portal/money' => const MoneyPage(),
       '/portal/drivers' => FleetDriversPage(providerId: query['provider']),
       '/portal/driver' => FleetDriverDashboard(driverId: query['driver']),
       _ => const OverviewPage(),

@@ -9,6 +9,7 @@ import '../../core/live_models.dart';
 import '../../core/models.dart';
 import '../../shared/ui.dart';
 import '../events/events_page.dart' show EventDateBlock;
+import 'money_page.dart' show SeatBookingsPanel;
 import 'portal_widgets.dart';
 
 /// Events in the partner portal.
@@ -70,6 +71,9 @@ class _PartnerEvents extends StatelessWidget {
           FigureCard(label: 'Ticket revenue', value: Fmt.naira(ticketRevenue), icon: Icons.payments_rounded),
           FigureCard(label: 'Bus seats booked', value: Fmt.count(seats), icon: Icons.directions_bus_rounded, caption: '${buses.length} buses from ${{for (final b in buses) b.origin}.length} areas'),
         ]),
+        const SizedBox(height: PortalSpace.gap),
+        // Free buses Tap A Ride runs for this organiser's events (booked on taparide.com).
+        const SeatBookingsPanel(),
         const SizedBox(height: PortalSpace.gap),
         if (mine.isEmpty)
           const Panel(child: EmptyState(icon: Icons.celebration_rounded, title: 'No events yet', message: 'Post your first event. Riders see it on the Events page, buy tickets and book buses from their area.'))
@@ -632,6 +636,7 @@ class _AllEvents extends StatelessWidget {
           FigureCard(label: 'Bus riders', value: Fmt.count(state.eventBuses.fold<int>(0, (a, b) => a + b.riders)), icon: Icons.groups_rounded),
         ]),
         const SizedBox(height: PortalSpace.gap),
+        if (admin || state.user!.role == UserRole.government) ...[const SeatBookingsPanel(), const SizedBox(height: PortalSpace.gap)],
         if (events.isEmpty)
           const Panel(child: EmptyState(icon: Icons.event_busy_rounded, title: 'No events', message: 'Partner events appear here.'))
         else

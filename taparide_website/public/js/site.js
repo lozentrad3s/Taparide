@@ -226,13 +226,11 @@
     $(".ticket-value", ticket).textContent = naira(me.free_ride || 1000);
     $("[data-t-note]", ticket).textContent = me.free_ride_left === false
       ? "The free rides have all been claimed, but your place in line is saved."
-      : "Open your Tap A Ride account with this email and the ride lands in your wallet.";
-    const seats = (me.seats || []).filter((s) => s.event === EVENT);
+      : "Open your Tap A Ride account with this email and it shows as ride credit.";
+    const pass = passFrom(me);
     const seatEl = $("[data-t-seat]", ticket);
-    seatEl.hidden = !seats.length;
-    if (seats.length) {
-      seatEl.textContent = "Tech Week passes: " + seats.map((s) => `${dayLabel(s.day)}, ${shortPoint(s.area)}${s.ticket ? ` (${s.ticket})` : ""}`).join(" · ") + ". Be there by 7:00 AM.";
-    }
+    seatEl.hidden = !pass;
+    if (pass) seatEl.textContent = `Tech Week pass ${pass.code}: ${daysLabel(pass.days)}, ${shortPoint(pass.area)}. Be there by 7:00 AM.`;
 
     const link = inviteLink(me.code);
     $("[data-t-link]", ticket).value = link;
@@ -250,7 +248,7 @@
       ticket.classList.add("printing");
     }
     if (store.get("tar.access")) $("[data-seat-email]")?.setAttribute("hidden", "");
-    savePasses(me.seats || []);
+    savePass(passFrom(me));
   }
 
   $("[data-copy]", ticket)?.addEventListener("click", async (e) => {
@@ -277,17 +275,39 @@
   const saved = store.get("tar.code");
   if (saved) api("GET", null, "?code=" + encodeURIComponent(saved)).then((d) => renderTicket(d)).catch(() => store.del("tar.code"));
 
-  // ---------------------------------------------------------------- personal bus passes
-  function getPasses() {
-    try { return JSON.parse(store.get("tar.passes") || "[]"); } catch { return []; }
+  // ---------------------------------------------------------------- personal bus pass
+  // One pass per person per event, valid on every day listed on it (stored as {code,name,days,area,slot}).
+  const daysLabel = (days) => {
+    const d = [...(days || [])].sort();
+    const parts = d.map((x) => new Date(x + "T12:00:00+01:00").toLocaleDateString("en-NG", { weekday: "short", day: "numeric", timeZone: "Africa/Lagos" }));
+    const month = d.length ? new Date(d[d.length - 1] + "T12:00:00+01:00").toLocaleDateString("en-NG", { month: "short", timeZone: "Africa/Lagos" }) : "";
+    return parts.join(" · ") + (month ? " " + month : "");
+  };
+  /** The pass from the server's view of this person: `passes` (new) or per-day `seats` rows (older answers). */
+  function passFrom(data) {
+    const p = (data?.passes || []).find((x) => x && x.event === EVENT);
+    if (p) return { code: p.code, name: p.name || data.name || "", days: p.days || [], area: p.area, slot: p.slot };
+    const seats = (data?.seats || []).filter((x) => x.event === EVENT && x.ticket);
+    if (!seats.length) return null;
+    const code = seats[seats.length - 1].ticket;
+    const mine = seats.filter((x) => x.ticket === code);
+    return { code, name: data.name || "", days: mine.map((x) => x.day), area: mine[mine.length - 1].area, slot: mine[0].slot };
   }
-  /** Keeps one pass per day (the newest), from the server's view of this person's seats. */
-  function savePasses(seats) {
-    const fresh = seats.filter((s) => s.event === EVENT && s.ticket).map((s) => ({ code: s.ticket, name: me?.name || store.get("tar.fullname") || "", day: s.day, area: s.area, slot: s.slot }));
-    if (!fresh.length) return;
-    const byDay = new Map(getPasses().map((p) => [p.day, p]));
-    for (const p of fresh) byDay.set(p.day, { ...byDay.get(p.day), ...p, name: p.name || byDay.get(p.day)?.name || "" });
-    store.set("tar.passes", JSON.stringify([...byDay.values()].sort((a, b) => a.day.localeCompare(b.day))));
+  function getPass() {
+    let raw;
+    try { raw = JSON.parse(store.get("tar.passes") || "null"); } catch { raw = null; }
+    if (!raw) return null;
+    if (!Array.isArray(raw)) return raw.code ? raw : null;
+    // Older pages stored one entry per day; group them into one pass (the newest pass ID wins).
+    if (!raw.length) return null;
+    const last = raw[raw.length - 1];
+    return { code: last.code, name: last.name || "", days: [...new Set(raw.map((p) => p.day))].sort(), area: last.area, slot: last.slot };
+  }
+  function savePass(pass) {
+    if (!pass || !pass.code) return renderPasses();
+    const old = getPass();
+    const next = { ...pass, name: pass.name || old?.name || store.get("tar.fullname") || "" };
+    store.set("tar.passes", JSON.stringify(next));
     renderPasses();
   }
   let qrReady;
@@ -299,34 +319,33 @@
   async function renderPasses() {
     const box = $("[data-passes]");
     if (!box) return;
-    const passes = getPasses();
-    box.hidden = !passes.length;
+    const p = getPass();
+    box.hidden = !p;
     const list = $("[data-pass-list]", box);
     list.innerHTML = "";
-    for (const p of passes) {
-      const el = document.createElement("article");
-      el.className = "pass";
-      el.innerHTML = `<div class="pass-top"><img src="/img/brand/taparide_wordmark_white.png" width="120" height="18" alt="Tap A Ride"><span class="pass-tag">Free bus pass</span></div>
-        <div class="pass-body"><div><p class="pass-event">Abuja Tech Week 2026</p><dl>
-          <div><dt>Name</dt><dd class="pass-name"></dd></div>
-          <div><dt>Date</dt><dd class="pass-day"></dd></div>
-          <div><dt>Pick-up point</dt><dd class="pass-area"></dd></div>
-          <div><dt>Pass ID</dt><dd class="pass-id"></dd></div>
-        </dl></div><div class="pass-qr" aria-hidden="true"></div></div>
-        <p class="pass-rules">Valid only for the person named above, with a photo ID. Not transferable: a copied or shared pass is refused at boarding. Be there by 7:00 AM; the bus leaves on time.</p>`;
-      $(".pass-name", el).textContent = p.name || "Your name";
-      $(".pass-day", el).textContent = `${dayLabel(p.day)} · 7:00 AM sharp`;
-      $(".pass-area", el).textContent = p.area;
-      $(".pass-id", el).textContent = p.code;
-      el.setAttribute("aria-label", `Free bus pass ${p.code} for ${p.name}, ${dayLabel(p.day)} from ${p.area}`);
-      list.append(el);
-      loadQr().then(() => {
-        const q = window.qrcode(0, "M");
-        q.addData(`TAPARIDE PASS ${p.code} | ${p.name} | ${p.day} | ${p.area}`);
-        q.make();
-        $(".pass-qr", el).innerHTML = q.createSvgTag({ cellSize: 4, margin: 0, scalable: true });
-      }).catch(() => {});
-    }
+    if (!p) return;
+    const el = document.createElement("article");
+    el.className = "pass";
+    el.innerHTML = `<div class="pass-top"><img src="/img/brand/taparide_wordmark_white.png" width="120" height="18" alt="Tap A Ride"><span class="pass-tag">Free bus pass</span></div>
+      <div class="pass-body"><div><p class="pass-event">Abuja Tech Week 2026</p><dl>
+        <div><dt>Name</dt><dd class="pass-name"></dd></div>
+        <div><dt>Valid on</dt><dd class="pass-days"></dd></div>
+        <div><dt>Pick-up point</dt><dd class="pass-area"></dd></div>
+        <div><dt>Pass ID</dt><dd class="pass-id"></dd></div>
+      </dl></div><div class="pass-qr" aria-hidden="true"></div></div>
+      <p class="pass-rules">One pass for every day listed. Valid only for the person named above, with a photo ID. Not transferable: a copied or shared pass is refused at boarding. Be there by 7:00 AM; the bus leaves on time.</p>`;
+    $(".pass-name", el).textContent = p.name || "Your name";
+    $(".pass-days", el).textContent = `${daysLabel(p.days)} · 7:00 AM sharp`;
+    $(".pass-area", el).textContent = p.area;
+    $(".pass-id", el).textContent = p.code;
+    el.setAttribute("aria-label", `Free bus pass ${p.code} for ${p.name}, valid ${daysLabel(p.days)}, from ${p.area}`);
+    list.append(el);
+    loadQr().then(() => {
+      const q = window.qrcode(0, "M");
+      q.addData(`TAPARIDE PASS ${p.code} | ${p.name} | ${[...p.days].sort().join(",")} | ${p.area}`);
+      q.make();
+      $(".pass-qr", el).innerHTML = q.createSvgTag({ cellSize: 4, margin: 0, scalable: true });
+    }).catch(() => {});
   }
   $("[data-print-pass]")?.addEventListener("click", () => window.print());
   renderPasses();
@@ -336,6 +355,7 @@
     if (data.access) store.set("tar.access", data.access);
     if (fields.name) store.set("tar.name", fields.name.trim().split(/\s+/)[0]);
     if (fields.email) store.set("tar.email", fields.email.trim().toLowerCase());
+    else if (data.email) store.set("tar.email", data.email);
     renderTicket(data, { print: true });
     return data;
   }
@@ -388,7 +408,9 @@
   const pointButtons = $$("[data-point]");
   let demand = [];
 
-  function selectedDay() { return seatForm?.day.value || "2026-11-24"; }
+  // Seat counts are shown for one day at a time (the switcher above the pick-up points).
+  function selectedDay() { return $("input[name=countday]:checked")?.value || "2026-11-24"; }
+  const chosenDays = () => $$("input[name=day]:checked", seatForm || document).map((d) => d.value);
   function renderCounts() {
     const day = selectedDay();
     const dayEl = $("[data-points-day]");
@@ -410,6 +432,7 @@
       io.observe(seatForm);
     } else loadDemand();
   }
+  for (const r of $$("input[name=countday]")) r.addEventListener("change", renderCounts);
 
   function pickPoint(name) {
     if (!seatForm) return;
@@ -422,30 +445,42 @@
     if (innerWidth < 960) seatForm.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "start" });
   });
   seatForm?.area.addEventListener("change", () => pickPoint(seatForm.area.value));
-  for (const r of $$("input[name=day]", seatForm || document)) r.addEventListener("change", renderCounts);
+
+  // Returning with a pass: fill the form so changing days or the pick-up point is quick.
+  function fillFromPass() {
+    const p = getPass();
+    if (!seatForm || !p) return;
+    for (const d of $$("input[name=day]", seatForm)) d.checked = p.days.includes(d.value);
+    pickPoint(p.area);
+    if (p.name && !seatForm.name.value) seatForm.name.value = p.name;
+  }
+  fillFromPass();
 
   seatForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const f = seatForm;
     for (const el of $$("[aria-invalid]", f)) el.removeAttribute("aria-invalid");
-    const day = selectedDay(), area = f.area.value;
+    const days = chosenDays(), area = f.area.value;
+    if (!days.length) return invalid($("input[name=day]", f), f, "Pick at least one day you'll ride.");
     if (!area) return invalid(f.area, f, "Choose your pick-up point.");
     if (f.name.value.trim().split(/\s+/).length < 2) return invalid(f.name, f, "Enter your first and last name for the boarding list.");
     if (!phoneOk(f.phone.value)) return invalid(f.phone, f, "Enter your WhatsApp number so we can send bus updates.");
-    if (!store.get("tar.access") && !emailOk(f.email.value)) return invalid(f.email, f, "Enter your email to get your pass.");
+    if (!store.get("tar.access") && !emailOk(f.email.value)) return invalid(f.email, f, "Enter your email; we send your pass there.");
     if (!agreed(f)) return;
     busy(f, true);
     say(f, "");
     try {
       if (!store.get("tar.access")) await join({ email: f.email.value, name: f.name.value, phone: f.phone.value, company: f.company.value }, "tech-week");
-      const r = await api("POST", { action: "seat", access: store.get("tar.access"), event: EVENT, day, area, slot: "07:00", name: f.name.value, phone: f.phone.value });
+      const r = await api("POST", { action: "seat", access: store.get("tar.access"), event: EVENT, days, area, slot: "07:00", name: f.name.value, phone: f.phone.value });
+      const pass = r.pass;
       store.set("tar.name", f.name.value.trim().split(/\s+/)[0]);
-      store.set("tar.fullname", r.ticket.name);
+      store.set("tar.fullname", pass.name);
       renderTicket(r.summary);
-      savePasses([{ ...r.ticket, ticket: r.ticket.code, event: EVENT }]);
-      say(f, `Your free bus pass is ready: ${r.ticket.code}, ${dayLabel(day)}, ${shortPoint(area)}, 7:00 AM sharp. It's below; save or screenshot it.`, "ok");
+      savePass({ code: pass.code, name: pass.name, days: pass.days, area: pass.area, slot: pass.slot });
+      const emailed = r.emailed ? " We've also emailed it to you." : "";
+      say(f, `Your free bus pass is ready: ${pass.code}, valid ${daysLabel(pass.days)}, from ${shortPoint(pass.area)}, 7:00 AM sharp. It's below; save or screenshot it.${emailed}`, "ok");
       $("[data-passes]")?.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "start" });
-      const msg = `I'm riding the free Tap A Ride bus to Abuja Tech Week (24–26 Nov, 7:00 AM). Get your free seat: ${inviteLink(me.code)}`;
+      const msg = `I'm riding the free Tap A Ride bus to Abuja Tech Week (24–26 Nov, 7:00 AM). Get your free pass: ${inviteLink(me.code)}`;
       $("[data-seat-wa]", f).href = "https://wa.me/?text=" + encodeURIComponent(msg);
       $("[data-seat-done]", f).hidden = false;
       loadDemand();
@@ -456,13 +491,12 @@
     }
   });
   $("[data-seat-again]")?.addEventListener("click", () => {
-    const days = $$("input[name=day]", seatForm);
-    const next = days.find((d) => !(me?.seats || []).some((s) => s.event === EVENT && s.day === d.value));
-    if (next) { next.checked = true; renderCounts(); }
+    fillFromPass();
     $("[data-seat-done]", seatForm).hidden = true;
-    say(seatForm, "");
-    seatForm.area.focus();
+    say(seatForm, "Change your days or pick-up point, then send again. Your pass ID stays the same.");
+    $("input[name=day]", seatForm)?.focus();
   });
+
   // ---------------------------------------------------------------- cookie & storage notice
   // The site sets no advertising or tracking cookies. It keeps the visitor's own sign-up, invite code
   // and bus passes on their device (essential: they asked for them). Optional anonymous visit statistics
@@ -478,7 +512,7 @@
     box.setAttribute("aria-labelledby", "cookie-title");
     box.innerHTML = `
       <h2 id="cookie-title">Cookies and your device</h2>
-      <p>We don't use advertising or tracking cookies. We keep your sign-up, invite code and free bus passes on this device so they're here when you come back. With your OK we may also count visits anonymously. <a href="/privacy#cookies">Details</a></p>
+      <p>We don't use advertising or tracking cookies. We keep your sign-up, invite code and free bus pass on this device so they're here when you come back. With your OK we may also count visits anonymously. <a href="/privacy#cookies">Details</a></p>
       <div class="cookie-actions">
         <button type="button" class="btn btn-ink" data-consent="all">Allow statistics</button>
         <button type="button" class="btn btn-line" data-consent="essential">Essential only</button>
@@ -497,4 +531,16 @@
   };
   if (!readConsent()) showCookies();
   for (const a of $$("[data-cookie-settings]")) a.addEventListener("click", (e) => { e.preventDefault(); showCookies(); });
+
+  // ---------------------------------------------------------------- statistics (only with consent)
+  // Vercel Web Analytics: cookieless, anonymous page counts. Loaded only after "Allow statistics".
+  let statsOn = false;
+  const startStats = () => {
+    if (statsOn || !window.tarConsent()) return;
+    statsOn = true;
+    window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    document.head.append(Object.assign(document.createElement("script"), { defer: true, src: "/_vercel/insights/script.js" }));
+  };
+  startStats();
+  addEventListener("tar:consent", startStats);
 })();

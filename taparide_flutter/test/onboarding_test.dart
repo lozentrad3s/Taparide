@@ -18,7 +18,7 @@ Future<void> go(WidgetTester tester, String location) async {
 }
 
 void main() {
-  testWidgets('first visit: three onboarding pages, then sign-up with Google, Apple or email', (tester) async {
+  testWidgets('first visit: three onboarding pages, then sign-up with Google or email (no Apple until we have a developer account)', (tester) async {
     await pumpApp(tester, mode: AppMode.rider);
     expect(find.text('Move more.\nWorry less.'), findsOneWidget);
     await tester.tap(find.text('Next'));
@@ -32,7 +32,7 @@ void main() {
 
     expect(find.text('Create your rider account'), findsOneWidget);
     expect(find.text('Continue with Google'), findsOneWidget);
-    expect(find.text('Continue with Apple'), findsOneWidget);
+    expect(find.text('Continue with Apple'), findsNothing);
     expect(find.text('Partner portal'), findsNothing, reason: 'the rider app has no partner sign-in');
 
     // The demo has no Google: it says so instead of failing silently.

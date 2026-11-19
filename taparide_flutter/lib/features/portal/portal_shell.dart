@@ -43,13 +43,16 @@ class PortalSection {
 
   static const waitlist = PortalSection('/portal/waitlist', 'Website sign-ups', Icons.how_to_reg_outlined, {UserRole.admin}, short: 'Sign-ups');
 
+  /// Master admin: wallets, top-ups, held fares and partner collection wallets.
+  static const money = PortalSection('/portal/money', 'Money', Icons.payments_rounded, {UserRole.admin});
+
   static const events = PortalSection('/portal/events', 'Events & event buses', Icons.celebration_rounded, {UserRole.eventPartner, UserRole.operator, UserRole.government, UserRole.admin}, short: 'Events');
 
   /// Drivers employed by a fleet owner or operator: their dashboard, and the page their managers use.
   static const driverShift = PortalSection('/portal/driver', 'Driver dashboard', Icons.badge_rounded, {UserRole.fleetDriver, UserRole.admin}, short: 'Dashboard');
   static const drivers = PortalSection('/portal/drivers', 'Drivers', Icons.groups_2_rounded, {UserRole.operator, UserRole.fleetOwner, UserRole.admin});
 
-  static const all = [overview, waitlist, insights, fcta, operator, fleet, events, applications, providers, evs, routes, vehicles, drivers, driverShift, bookings, verification, users, audit];
+  static const all = [overview, waitlist, money, insights, fcta, operator, fleet, events, applications, providers, evs, routes, vehicles, drivers, driverShift, bookings, verification, users, audit];
 
   /// The operator dashboard as private drivers see it (same page, driver wording).
   static const driver = PortalSection('/portal/operator', 'Driver dashboard', Icons.directions_car_rounded, {UserRole.operator, UserRole.government, UserRole.admin}, short: 'Driver');

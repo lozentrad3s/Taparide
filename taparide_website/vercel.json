@@ -11,8 +11,13 @@
     "api/insights.js": { "maxDuration": 60 },
     "api/geocode.js": { "maxDuration": 15 },
     "api/tiles.js": { "maxDuration": 10 },
-    "api/pay.js": { "maxDuration": 30 }
+    "api/pay.js": { "maxDuration": 30 },
+    "api/notify.js": { "maxDuration": 15 },
+    "api/daily-summary.js": { "maxDuration": 20 }
   },
+  "crons": [
+    { "path": "/api/daily-summary", "schedule": "0 6 * * *" }
+  ],
   "redirects": [
     { "source": "/", "has": [{ "type": "host", "value": "www.taparide.com" }], "destination": "https://taparide.com/", "permanent": true },
     { "source": "/", "has": [{ "type": "host", "value": "dashboard.taparide.com" }], "destination": "https://taparide.com/dashboard/", "permanent": false },

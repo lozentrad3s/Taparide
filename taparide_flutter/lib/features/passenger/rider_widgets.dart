@@ -7,6 +7,7 @@ import '../../app/theme.dart';
 import '../../core/app_state.dart';
 import '../../core/format.dart';
 import '../../core/models.dart';
+import '../../shared/coming_soon.dart';
 import '../../shared/ui.dart';
 
 /// A route in a list: the route line, fare, time and next departures.
@@ -72,7 +73,9 @@ class TapCardView extends StatelessWidget {
     return Semantics(
       button: onTap != null,
       selected: selected,
-      label: 'Tap card, balance ${w == null ? 'loading' : Fmt.naira(w.balance)}',
+      label: w == null
+          ? 'Tap card, balance loading'
+          : 'Tap card, wallet ${Fmt.naira(w.cash)}${w.rideCredit > 0 ? ', plus ${Fmt.naira(w.rideCredit)} ride credit, used first' : ''}',
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
@@ -97,9 +100,20 @@ class TapCardView extends StatelessWidget {
                     if (trailing != null) trailing! else const Icon(Icons.contactless_rounded, color: Colors.white, size: 30),
                   ]),
                   const SizedBox(height: 22),
-                  Text('Balance', style: text.labelSmall?.copyWith(color: AppColors.onForestMuted)),
+                  Text('Wallet', style: text.labelSmall?.copyWith(color: AppColors.onForestMuted)),
                   const SizedBox(height: 2),
-                  Text(w == null ? '—' : Fmt.naira(w.balance), style: text.headlineLarge?.copyWith(color: Colors.white, fontFeatures: tabular)),
+                  Text(w == null ? '—' : Fmt.naira(w.cash), style: text.headlineLarge?.copyWith(color: Colors.white, fontFeatures: tabular)),
+                  if (w != null && w.rideCredit > 0) ...[
+                    const SizedBox(height: 6),
+                    Row(children: [
+                      const Icon(Icons.local_activity_rounded, size: 16, color: AppColors.leaf),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text('+ ${Fmt.naira(w.rideCredit)} ride credit · used first',
+                            style: text.labelMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.w700), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      ),
+                    ]),
+                  ],
                   const SizedBox(height: 10),
                   Text(w == null ? '' : 'Card ${w.maskedCard}', style: text.labelMedium?.copyWith(color: AppColors.onForestMuted, letterSpacing: 1)),
                 ]),
@@ -132,6 +146,48 @@ class TicketQr extends StatelessWidget {
       );
 }
 
+/// The rider's free ride credit, shown on its own (it is not wallet money and can't be withdrawn).
+class RideCreditCard extends StatelessWidget {
+  const RideCreditCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final w = context.watch<AppState>().wallet;
+    if (w == null || w.rideCredit <= 0) return const SizedBox.shrink();
+    final text = Theme.of(context).textTheme;
+    return Semantics(
+      container: true,
+      label: 'Ride credit ${Fmt.naira(w.rideCredit)}. Used first when you tap to pay.',
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        decoration: BoxDecoration(
+          color: AppColors.mint,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: AppColors.mintStrong),
+        ),
+        child: ExcludeSemantics(
+          child: Row(children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(color: AppColors.forest, borderRadius: BorderRadius.circular(AppRadius.md)),
+              child: const Icon(Icons.local_activity_rounded, color: Colors.white),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('Ride credit', style: text.labelMedium?.copyWith(color: AppColors.forest, fontWeight: FontWeight.w700)),
+                Text(Fmt.naira(w.rideCredit), style: text.headlineSmall?.copyWith(color: AppColors.forestDeep, fontWeight: FontWeight.w800, fontFeatures: tabular)),
+                Text('Used first when you tap to pay for a seat.', style: text.bodySmall?.copyWith(color: AppColors.inkSoft)),
+              ]),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
 /// Bottom sheet to add money to the tap card.
 Future<void> showTopUpSheet(BuildContext context, {int? suggested}) {
   return showModalBottomSheet<void>(
@@ -158,6 +214,27 @@ class _TopUpSheetState extends State<_TopUpSheet> {
     final text = Theme.of(context).textTheme;
     final state = context.watch<AppState>();
     const options = [500, 1000, 2000, 5000, 10000];
+    if (!AppState.walletTopUpsOpen) {
+      final credit = state.wallet?.rideCredit ?? 0;
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Row(children: [
+            Expanded(child: Text('Adding money is coming soon', style: text.headlineSmall)),
+            const SoonTag(),
+          ]),
+          const SizedBox(height: 8),
+          Text(
+            credit > 0
+                ? 'Card and bank top-ups open shortly. Until then, tap to pay uses your ${Fmt.naira(credit)} ride credit first, then any money already in your wallet.'
+                : 'Card and bank top-ups open shortly. We will let you know in the app the moment they are on.',
+            style: text.bodyMedium,
+          ),
+          const SizedBox(height: 18),
+          FilledButton(onPressed: () => Navigator.of(context).pop(), child: const Text('OK')),
+        ]),
+      );
+    }
     return Padding(
       padding: EdgeInsets.fromLTRB(24, 0, 24, 24 + MediaQuery.viewInsetsOf(context).bottom),
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -241,7 +318,10 @@ Future<void> showTapAndPaySheet(BuildContext context) {
           const SizedBox(height: 4),
           Text('Show this QR code to the conductor or at the terminal.', style: text.bodySmall, textAlign: TextAlign.center),
           const SizedBox(height: 18),
-          OutlinedButton.icon(onPressed: () => showTopUpSheet(sheet), icon: const Icon(Icons.add_rounded), label: const Text('Top up card')),
+          if (AppState.walletTopUpsOpen)
+            OutlinedButton.icon(onPressed: () => showTopUpSheet(sheet), icon: const Icon(Icons.add_rounded), label: const Text('Top up card'))
+          else
+            Text('Ride credit is used first. Adding money by card or bank is coming soon.', style: text.bodySmall, textAlign: TextAlign.center),
         ]),
       );
     },

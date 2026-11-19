@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../fleet_drivers.dart';
@@ -10,7 +11,24 @@ import 'backend.dart';
 /// every write goes through a `security definer` SQL function that re-checks the
 /// caller's role (see `supabase/migrations`).
 class SupabaseBackend implements Backend {
-  SupabaseBackend(this._client);
+  SupabaseBackend(this._client) {
+    // A password-reset link signs the visitor in with this event; they then choose a new password.
+    _client.auth.onAuthStateChange.listen((s) {
+      if (s.event == AuthChangeEvent.passwordRecovery) _recovery = true;
+    });
+    if (kIsWeb && Uri.base.queryParameters['reset'] == '1') _recovery = true;
+  }
+
+  bool _recovery = false;
+
+  /// Where email links (confirm account, reset password) bring people back to: this same app
+  /// (taparide.com/app/ or taparide.com/dashboard/), never Supabase's default Site URL.
+  /// Each must be listed under Authentication → URL Configuration → Redirect URLs.
+  static String? _returnUrl([Map<String, String>? query]) {
+    if (!kIsWeb) return null;
+    final base = Uri.base;
+    return Uri(scheme: base.scheme, host: base.host, port: base.hasPort ? base.port : null, path: base.path, queryParameters: query).toString();
+  }
 
   static Future<SupabaseBackend> create({required String url, required String anonKey}) async {
     await Supabase.initialize(url: url, publishableKey: anonKey);
@@ -100,6 +118,7 @@ class SupabaseBackend implements Backend {
         final response = await _client.auth.signUp(
           email: email.trim(),
           password: password,
+          emailRedirectTo: _returnUrl(),
           data: {'full_name': fullName.trim(), 'phone': phone.trim(), 'organisation': organisation?.trim()},
         );
         // Supabase answers a repeat sign-up with a user that has no identities instead of an error.
@@ -113,7 +132,16 @@ class SupabaseBackend implements Backend {
       });
 
   @override
-  Future<void> sendPasswordReset(String email) => _guard(() => _client.auth.resetPasswordForEmail(email.trim()));
+  Future<void> sendPasswordReset(String email) => _guard(() => _client.auth.resetPasswordForEmail(email.trim(), redirectTo: _returnUrl({'reset': '1'})));
+
+  @override
+  bool get passwordRecovery => _recovery && _client.auth.currentUser != null;
+
+  @override
+  Future<void> setNewPassword(String password) => _guard(() async {
+        await _client.auth.updateUser(UserAttributes(password: password));
+        _recovery = false;
+      });
 
   @override
   Future<void> signOut() => _guard(() => _client.auth.signOut());
@@ -157,6 +185,37 @@ class SupabaseBackend implements Backend {
   Future<List<WaitlistEntry>> fetchWaitlist() => _guard(() async {
         final rows = await _client.rpc('admin_waitlist');
         return [for (final r in (rows as List? ?? const [])) WaitlistEntry.fromJson(Map<String, dynamic>.from(r as Map))];
+      });
+
+  static String _isoDay(DateTime d) => '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  @override
+  Future<void> setSignupContacted(int id, {required bool contacted, String? note}) =>
+      _guard(() => _client.rpc('admin_set_contacted', params: {'p_id': id, 'p_contacted': contacted, 'p_note': note}));
+
+  @override
+  Future<void> updateEventPass({required int id, required String event, required String pickup, required List<DateTime> days, String? name, String? phone}) => _guard(() => _client.rpc(
+        'admin_update_event_pass',
+        params: {'p_id': id, 'p_event': event, 'p_area': pickup, 'p_days': [for (final d in days) _isoDay(d)], 'p_name': name, 'p_phone': phone},
+      ));
+
+  @override
+  Future<void> cancelEventPass(int id, String event) => _guard(() => _client.rpc('admin_cancel_event_pass', params: {'p_id': id, 'p_event': event}));
+
+  @override
+  Future<void> removeSignup(int id) => _guard(() => _client.rpc('admin_remove_signup', params: {'p_id': id}));
+
+  @override
+  Future<MoneyOverview> fetchMoney() => _guard(() async => MoneyOverview.fromJson(Map<String, dynamic>.from((await _client.rpc('admin_money')) as Map)));
+
+  @override
+  Future<CollectionWallet> fetchCollectionWallet() =>
+      _guard(() async => CollectionWallet.fromJson(Map<String, dynamic>.from((await _client.rpc('my_collection_wallet')) as Map)));
+
+  @override
+  Future<List<EventSeatBookings>> fetchOrganiserSeatBookings() => _guard(() async {
+        final rows = await _client.rpc('organiser_seat_bookings');
+        return [for (final r in (rows as List? ?? const [])) EventSeatBookings.fromJson(Map<String, dynamic>.from(r as Map))];
       });
 
   // ------------------------------------------------------------ catalogue

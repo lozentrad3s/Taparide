@@ -503,6 +503,10 @@ class WaitlistEntry {
     required this.joinedAt,
     this.creditedAt,
     this.seats = const [],
+    this.contactedAt,
+    this.note,
+    this.dupPhone = false,
+    this.dupName = false,
   });
 
   final int id;
@@ -519,6 +523,34 @@ class WaitlistEntry {
   final DateTime? creditedAt;
   final List<WaitlistSeat> seats;
 
+  /// When an admin marked this person as contacted, and the admin's private note.
+  final DateTime? contactedAt;
+  final String? note;
+
+  /// Another sign-up has the same WhatsApp number / the same full name.
+  final bool dupPhone;
+  final bool dupName;
+
+  bool get possibleDuplicate => dupPhone || dupName;
+
+  /// One pass per event: every day of a person's pass carries the same pass ID.
+  List<EventPass> get passes {
+    final byEvent = <String, List<WaitlistSeat>>{};
+    for (final s in seats) {
+      byEvent.putIfAbsent(s.event, () => []).add(s);
+    }
+    return [
+      for (final e in byEvent.entries)
+        EventPass(
+          event: e.key,
+          code: e.value.map((s) => s.ticket).whereType<String>().firstOrNull,
+          days: [for (final s in e.value) s.day]..sort(),
+          pickup: e.value.first.pickup,
+          time: e.value.first.time,
+        ),
+    ];
+  }
+
   factory WaitlistEntry.fromJson(Map<String, dynamic> j) => WaitlistEntry(
         id: (j['id'] as num).toInt(),
         email: j['email'] as String,
@@ -533,7 +565,185 @@ class WaitlistEntry {
         joinedAt: DateTime.parse(j['created_at'] as String),
         creditedAt: j['credited_at'] == null ? null : DateTime.parse(j['credited_at'] as String),
         seats: [for (final s in (j['seats'] as List? ?? const [])) WaitlistSeat.fromJson(Map<String, dynamic>.from(s as Map))],
+        contactedAt: _date(j['contacted_at']),
+        note: j['note'] as String?,
+        dupPhone: j['dup_phone'] == true,
+        dupName: j['dup_name'] == true,
       );
+}
+
+DateTime? _date(Object? v) => v == null ? null : DateTime.tryParse('$v');
+int _num(Object? v) => v is num ? v.toInt() : int.tryParse('${v ?? ''}') ?? 0;
+
+/// A person's free event-bus pass: one pass ID, valid on each of [days].
+class EventPass {
+  const EventPass({required this.event, required this.code, required this.days, required this.pickup, required this.time});
+  final String event;
+  final String? code;
+  final List<DateTime> days;
+  final String pickup;
+  final String time;
+}
+
+/// Money a partner has collected through tap to pay. Fares are held until the trip is over.
+class CollectionWallet {
+  const CollectionWallet({required this.available, required this.paidOut, required this.held, this.recent = const []});
+  final int available;
+  final int paidOut;
+  final int held;
+  final List<CollectionPayment> recent;
+
+  static const empty = CollectionWallet(available: 0, paidOut: 0, held: 0);
+
+  factory CollectionWallet.fromJson(Map<String, dynamic> j) => CollectionWallet(
+        available: _num(j['available']),
+        paidOut: _num(j['paid_out']),
+        held: _num(j['held']),
+        recent: [for (final r in (j['recent'] as List? ?? const [])) CollectionPayment.fromJson(Map<String, dynamic>.from(r as Map))],
+      );
+}
+
+class CollectionPayment {
+  const CollectionPayment({required this.bookingId, required this.amount, required this.status, required this.createdAt, this.releaseAt, this.title});
+  final String bookingId;
+  final int amount;
+
+  /// held, released or refunded.
+  final String status;
+  final DateTime createdAt;
+  final DateTime? releaseAt;
+  final String? title;
+
+  factory CollectionPayment.fromJson(Map<String, dynamic> j) => CollectionPayment(
+        bookingId: '${j['booking'] ?? ''}',
+        amount: _num(j['amount']),
+        status: '${j['status'] ?? 'held'}',
+        createdAt: _date(j['created_at']) ?? DateTime.now(),
+        releaseAt: _date(j['release_at']),
+        title: j['title'] as String?,
+      );
+}
+
+typedef CollectionRow = ({String provider, String kind, int available, int paidOut});
+typedef TopUpRow = ({String reference, int amount, String status, String? channel, DateTime createdAt, String? name});
+
+/// Money across the platform, for the master admin.
+class MoneyOverview {
+  const MoneyOverview({
+    required this.walletCount,
+    required this.walletBalance,
+    required this.rideCredit,
+    required this.topupsPaid,
+    required this.topupsPaidAmount,
+    required this.topupsPending,
+    required this.topupsFailed,
+    required this.held,
+    required this.released,
+    required this.refunded,
+    this.collection = const [],
+    this.recentTopups = const [],
+  });
+  final int walletCount;
+  final int walletBalance;
+  final int rideCredit;
+  final int topupsPaid;
+  final int topupsPaidAmount;
+  final int topupsPending;
+  final int topupsFailed;
+  final int held;
+  final int released;
+  final int refunded;
+  final List<CollectionRow> collection;
+  final List<TopUpRow> recentTopups;
+
+  static const empty = MoneyOverview(
+      walletCount: 0, walletBalance: 0, rideCredit: 0, topupsPaid: 0, topupsPaidAmount: 0, topupsPending: 0, topupsFailed: 0, held: 0, released: 0, refunded: 0);
+
+  factory MoneyOverview.fromJson(Map<String, dynamic> j) {
+    Map<String, dynamic> m(String k) => Map<String, dynamic>.from((j[k] as Map?) ?? const {});
+    final w = m('wallets'), t = m('topups'), p = m('payouts');
+    return MoneyOverview(
+      walletCount: _num(w['count']),
+      walletBalance: _num(w['balance']),
+      rideCredit: _num(w['ride_credit']),
+      topupsPaid: _num(t['paid']),
+      topupsPaidAmount: _num(t['paid_amount']),
+      topupsPending: _num(t['pending']),
+      topupsFailed: _num(t['failed']),
+      held: _num(p['held']),
+      released: _num(p['released']),
+      refunded: _num(p['refunded']),
+      collection: [
+        for (final c in (j['collection'] as List? ?? const []))
+          (provider: '${(c as Map)['provider'] ?? ''}', kind: '${c['kind'] ?? ''}', available: _num(c['available']), paidOut: _num(c['paid_out'])),
+      ],
+      recentTopups: [
+        for (final r in (j['recent_topups'] as List? ?? const []))
+          (
+            reference: '${(r as Map)['reference'] ?? ''}',
+            amount: _num(r['amount']),
+            status: '${r['status'] ?? ''}',
+            channel: r['channel'] as String?,
+            createdAt: _date(r['created_at']) ?? DateTime.now(),
+            name: r['name'] as String?,
+          ),
+      ],
+    );
+  }
+}
+
+typedef SeatCount = ({DateTime day, String area, String slot, int riders});
+
+/// Free-bus bookings for one event an organiser runs: people per day, pick-up point and time.
+class EventSeatBookings {
+  const EventSeatBookings({
+    required this.eventId,
+    required this.title,
+    required this.venue,
+    required this.startsAt,
+    this.endsAt,
+    required this.people,
+    required this.rows,
+    this.lastBooking,
+    this.days = const [],
+    this.areas = const [],
+    this.slots = const [],
+  });
+  final String eventId;
+  final String title;
+  final String venue;
+  final DateTime startsAt;
+  final DateTime? endsAt;
+  final int people;
+  final List<SeatCount> rows;
+  final DateTime? lastBooking;
+  final List<DateTime> days;
+  final List<String> areas;
+  final List<String> slots;
+
+  int ridersOn(DateTime day, [String? area]) => rows
+      .where((r) => r.day.year == day.year && r.day.month == day.month && r.day.day == day.day && (area == null || r.area == area))
+      .fold(0, (a, r) => a + r.riders);
+
+  factory EventSeatBookings.fromJson(Map<String, dynamic> j) {
+    final config = Map<String, dynamic>.from((j['config'] as Map?) ?? const {});
+    return EventSeatBookings(
+      eventId: '${j['event_id'] ?? ''}',
+      title: '${j['title'] ?? ''}',
+      venue: '${j['venue'] ?? ''}',
+      startsAt: _date(j['starts_at']) ?? DateTime.now(),
+      endsAt: _date(j['ends_at']),
+      people: _num(j['people']),
+      lastBooking: _date(j['last_booking']),
+      rows: [
+        for (final r in (j['rows'] as List? ?? const []))
+          (day: DateTime.parse('${(r as Map)['day']}'), area: '${r['area'] ?? ''}', slot: '${r['slot'] ?? ''}', riders: _num(r['riders'])),
+      ],
+      days: [for (final d in (config['days'] as List? ?? const [])) DateTime.parse('$d')],
+      areas: [for (final a in (config['areas'] as List? ?? const [])) '$a'],
+      slots: [for (final s in (config['slots'] as List? ?? const [])) '$s'],
+    );
+  }
 }
 
 /// Two-step sign-in (authenticator app) for platform admins and FCTA staff.

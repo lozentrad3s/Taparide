@@ -28,7 +28,7 @@ void main() {
     await tester.runAsync(() => state.signIn(email: 'aisha@taparide.demo', password: DemoSeed.password, portal: Portal.passenger));
     await tester.pumpAndSettle();
     expect(find.byType(AdArt), findsOneWidget);
-    expect(find.textContaining('Watch the ad'), findsOneWidget);
+    expect(find.textContaining('Watch the ad'), findsNothing); // no sponsored ads yet: rewards are off
     expect(tester.takeException(), isNull);
   });
 }

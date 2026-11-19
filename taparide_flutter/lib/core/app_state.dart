@@ -110,7 +110,7 @@ class AppState extends ChangeNotifier {
   DateTime get now => _clock();
 
   /// True once card and bank top-ups are switched on; until then wallet money is test money.
-  bool get paymentsLive => services['payments'] == 'paystack';
+  bool get paymentsLive => services['payments'] == 'paystack' || services['payments'] == 'bachs';
   bool get signedIn => user != null;
   bool get isPartner => user?.role.isPartner ?? false;
 
@@ -201,11 +201,41 @@ class AppState extends ChangeNotifier {
 
   Future<void> sendPasswordReset(String email) => backend.sendPasswordReset(email);
 
+  /// Arrived from a password-reset email: the router shows "Choose a new password" first.
+  bool get passwordRecovery => backend.passwordRecovery;
+
+  Future<void> setNewPassword(String password) async {
+    await backend.setNewPassword(password);
+    _notify();
+  }
+
   /// Continue with Google or Apple. On the web the page leaves and comes back signed in.
   Future<void> signInWithProvider(SocialProvider provider, {String? redirectTo}) => backend.signInWithProvider(provider, redirectTo: redirectTo);
 
   /// Website sign-ups (waitlist and Tech Week seats), for the admin dashboard.
   Future<List<WaitlistEntry>> fetchWaitlist() => backend.fetchWaitlist();
+
+  Future<void> setSignupContacted(int id, {required bool contacted, String? note}) => backend.setSignupContacted(id, contacted: contacted, note: note);
+
+  Future<void> updateEventPass({required int id, required String event, required String pickup, required List<DateTime> days, String? name, String? phone}) =>
+      backend.updateEventPass(id: id, event: event, pickup: pickup, days: days, name: name, phone: phone);
+
+  Future<void> cancelEventPass(int id, String event) => backend.cancelEventPass(id, event);
+
+  Future<void> removeSignup(int id) => backend.removeSignup(id);
+
+  /// Master admin: wallets, top-ups, held fares and collection wallets.
+  Future<MoneyOverview> fetchMoney() => backend.fetchMoney();
+
+  /// Partners: their own collection wallet (tap-to-pay fares, held until each trip ends).
+  Future<CollectionWallet> fetchCollectionWallet() => backend.fetchCollectionWallet();
+
+  /// Event organisers: free-bus bookings for their events (counts only).
+  Future<List<EventSeatBookings>> fetchOrganiserSeatBookings() => backend.fetchOrganiserSeatBookings();
+
+  /// Wallet top-ups (card / bank) stay "coming soon" until every payment path is proven end to end.
+  /// Riders pay with ride credit (and any balance they already have) meanwhile.
+  static const walletTopUpsOpen = false;
 
   Future<void> signOut() async {
     twoStepPending = false;
@@ -410,6 +440,8 @@ class AppState extends ChangeNotifier {
   Future<void> reviewApplication(PartnerApplication app, ApplicationStatus decision, String note) async {
     final updated = await backend.reviewPartnerApplication(app.id, decision, note);
     partnerApplications = [for (final a in partnerApplications) a.id == updated.id ? updated : a];
+    // Tell the applicant by email (sent by the server). Never blocks or undoes the decision.
+    if (!backend.isDemo) unawaited(api.notify({'type': 'application', 'id': updated.id}));
     if (decision == ApplicationStatus.approved) {
       final results = await Future.wait<Object>([backend.fetchProviders(), backend.fetchVehicles(), backend.fetchAuditLog()]);
       providers = results[0] as List<TransportProvider>;
@@ -536,7 +568,7 @@ class AppState extends ChangeNotifier {
     final reward = await backend.claimAdReward(view.id);
     adRewardsLeft = reward.left;
     final w = wallet;
-    if (w != null) wallet = Wallet(cardNumber: w.cardNumber, balance: reward.balance);
+    if (w != null) wallet = Wallet(cardNumber: w.cardNumber, balance: reward.balance, rideCredit: w.rideCredit);
     _notify();
     return reward;
   }

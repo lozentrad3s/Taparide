@@ -11,6 +11,7 @@ import '../../core/photos.dart';
 import '../../shared/ui.dart';
 import 'demand_widgets.dart';
 import 'driver_dashboard.dart';
+import 'money_page.dart' show CollectionWalletPanel;
 import 'partner_widgets.dart';
 import 'portal_widgets.dart';
 
@@ -352,6 +353,7 @@ class _OperatorPageState extends State<OperatorPage> {
             PartnerAlertsPanel(alerts: partnerAlerts(context, report)),
           ]),
         ),
+        if (user.providerId == d.provider.id) ...[const SizedBox(height: PortalSpace.gap), const CollectionWalletPanel()],
         DemandSection(report: report.demand, title: 'Where and when your riders travel'),
         const SectionLabel('Trips and bookings'),
         TwoUp(
@@ -472,6 +474,7 @@ class _FleetPageState extends State<FleetPage> {
             PartnerAlertsPanel(alerts: partnerAlerts(context, report)),
           ]),
         ),
+        if (state.user?.providerId == d.provider.id) ...[const SizedBox(height: PortalSpace.gap), const CollectionWalletPanel()],
         DemandSection(report: report.demand, title: 'Demand on the routes your vehicles run', showTable: false),
         const SectionLabel('Vehicles and earnings'),
         TwoUp(

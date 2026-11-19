@@ -135,6 +135,15 @@ class ApiClient {
     }
   }
 
+  /// Asks the server to send the emails/webhooks that go with an admin action, e.g.
+  /// `{'type': 'application', 'id': …}` after a partner application is approved or rejected.
+  /// Best effort: a failure here never undoes or blocks the action itself.
+  Future<void> notify(Map<String, Object?> body) async {
+    try {
+      await _post('/api/notify', body, timeout: const Duration(seconds: 15));
+    } catch (_) {}
+  }
+
   /// Starts a card or bank top-up and returns the payment page to send the rider to.
   Future<TopUpStart> startTopUp(int amount) async {
     final data = await _post('/api/pay?action=init', {'amount': amount}, timeout: const Duration(seconds: 30));

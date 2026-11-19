@@ -16,6 +16,7 @@ import '../../core/live_models.dart';
 import '../../core/models.dart';
 import '../../core/photos.dart';
 import '../../shared/brand.dart';
+import '../../shared/password_field.dart';
 import '../../shared/ui.dart';
 
 class LoginPage extends StatefulWidget {
@@ -44,7 +45,6 @@ class _LoginPageState extends State<LoginPage> {
 
   late Portal _portal = widget.portal;
   late bool _register = widget.startInRegister && widget.portal == Portal.passenger;
-  bool _showPassword = false;
   bool _agreed = false;
   bool _busy = false;
   BackendException? _error;
@@ -223,11 +223,27 @@ class _LoginPageState extends State<LoginPage> {
             Text(title, style: text.headlineLarge),
             const SizedBox(height: 6),
             Text(subtitle, style: text.bodyMedium),
+            if (_register && !partner) ...[
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(color: AppColors.mint, borderRadius: BorderRadius.circular(AppRadius.md)),
+                child: Row(children: [
+                  const Icon(Icons.local_activity_rounded, size: 18, color: AppColors.forest),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Joined on taparide.com? Sign up with the same email and your ₦1,000 ride credit is added once you confirm it.',
+                      style: text.bodySmall?.copyWith(color: AppColors.forestDeep, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ]),
+              ),
+            ],
             const SizedBox(height: 24),
             if (!partner) ...[
+              // Apple sign-in comes back once we have an Apple Developer account.
               _SocialButton(provider: SocialProvider.google, onPressed: _busy ? null : () => _social(SocialProvider.google)),
-              const SizedBox(height: 10),
-              _SocialButton(provider: SocialProvider.apple, onPressed: _busy ? null : () => _social(SocialProvider.apple)),
               const SizedBox(height: 18),
               Row(children: [
                 const Expanded(child: Divider()),
@@ -279,28 +295,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ],
             const SizedBox(height: 14),
-            TextFormField(
-              controller: _password,
-              obscureText: !_showPassword,
-              textInputAction: TextInputAction.done,
-              autofillHints: [_register ? AutofillHints.newPassword : AutofillHints.password],
-              onFieldSubmitted: (_) => _submit(),
-              decoration: InputDecoration(
-                labelText: 'Password',
-                helperText: _register ? 'At least 8 characters, with a number.' : null,
-                prefixIcon: const Icon(Icons.lock_outline_rounded),
-                suffixIcon: IconButton(
-                  tooltip: _showPassword ? 'Hide password' : 'Show password',
-                  icon: Icon(_showPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
-                  onPressed: () => setState(() => _showPassword = !_showPassword),
-                ),
-              ),
-              validator: (v) {
-                if (v == null || v.isEmpty) return 'Enter your password.';
-                if (_register && (v.length < 8 || !RegExp(r'\d').hasMatch(v))) return 'Use at least 8 characters, including a number.';
-                return null;
-              },
-            ),
+            PasswordField(controller: _password, isNew: _register, onSubmitted: (_) => _submit()),
             if (!_register)
               Align(alignment: Alignment.centerRight, child: TextButton(onPressed: _forgotPassword, child: const Text('Forgot password?')))
             else ...[

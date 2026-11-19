@@ -128,6 +128,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 const SizedBox(height: 22),
                 SectionHeader(title: 'Payment methods', subtitle: 'Spent on trips so far: ${Fmt.naira(spent)}'),
                 TapCardView(wallet: state.wallet, onTap: () => showTapAndPaySheet(context)),
+                if ((state.wallet?.rideCredit ?? 0) > 0) ...[const SizedBox(height: 10), const RideCreditCard()],
                 if (_confirming)
                   Padding(
                     padding: const EdgeInsets.only(top: 10),
@@ -139,7 +140,11 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 const SizedBox(height: 10),
                 Row(children: [
-                  Expanded(child: FilledButton.icon(onPressed: () => showTopUpSheet(context), icon: const Icon(Icons.add_rounded), label: const Text('Top up'))),
+                  Expanded(
+                    child: AppState.walletTopUpsOpen
+                        ? FilledButton.icon(onPressed: () => showTopUpSheet(context), icon: const Icon(Icons.add_rounded), label: const Text('Top up'))
+                        : OutlinedButton.icon(onPressed: () => showTopUpSheet(context), icon: const Icon(Icons.schedule_rounded), label: const Text('Top up · soon')),
+                  ),
                   const SizedBox(width: 10),
                   Expanded(child: OutlinedButton.icon(onPressed: () => showTapAndPaySheet(context), icon: const Icon(Icons.qr_code_2_rounded), label: const Text('Show my QR'))),
                 ]),

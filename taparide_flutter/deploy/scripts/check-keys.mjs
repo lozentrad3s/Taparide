@@ -68,7 +68,8 @@ await check('CARTO geocoding (LDS)', 'CARTO_API_KEY', async (k) => {
 
 await check('Supabase REST', 'SUPABASE_URL', async (url) => {
   if (!env.SUPABASE_ANON_KEY) throw new Error('SUPABASE_ANON_KEY not set');
-  const r = await fetch(`${url.replace(/\/$/, '')}/auth/v1/settings`, { headers: { apikey: env.SUPABASE_ANON_KEY } });
+  const base = /^[a-z0-9]{20}$/.test(url) ? `https://${url}.supabase.co` : url.replace(/\/$/, '');
+  const r = await fetch(`${base}/auth/v1/settings`, { headers: { apikey: env.SUPABASE_ANON_KEY } });
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   const s = await r.json();
   return `auth reachable · email confirmation ${s.mailer_autoconfirm ? 'off (auto-confirm)' : 'ON'}`;
@@ -79,6 +80,62 @@ await check('Supabase database URL', 'SUPABASE_DB_URL', async (u) => {
   if (!/^postgres(ql)?:$/.test(parsed.protocol)) throw new Error('not a postgres:// URL');
   return `host ${parsed.hostname.replace(/^[^.]+/, '***')}`;
 });
+
+await check('Upstash Redis', 'UPSTASH_REDIS_REST_URL', async (u) => {
+  if (!env.UPSTASH_REDIS_REST_TOKEN) throw new Error('UPSTASH_REDIS_REST_TOKEN not set');
+  const r = await fetch(`${u.replace(/\/$/, '')}/ping`, { headers: { Authorization: `Bearer ${env.UPSTASH_REDIS_REST_TOKEN}` } });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return `answers ${(await r.json()).result}`;
+});
+
+await check('Sentry DSN', 'SENTRY_DSN', async (dsn) => {
+  const u = new URL(dsn);
+  if (!u.username || !/^\/?\d+$/.test(u.pathname)) throw new Error('not a Sentry DSN (https://key@oXXX.ingest.sentry.io/123)');
+  return `host ${u.host.replace(/^o\d+\./, 'o***.')}`;
+});
+
+await check('MapTiler tiles', 'MAPTILER_API_KEY', async (k) => {
+  const r = await fetch(`https://api.maptiler.com/maps/streets-v2/256/13/4266/3889.png?key=${encodeURIComponent(k)}`);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return `${r.headers.get('content-type')}`;
+});
+
+await check('Cloudflare Turnstile', 'TURNSTILE_SECRET_KEY', async (k) => {
+  if (!env.TURNSTILE_SITE_KEY) throw new Error('TURNSTILE_SITE_KEY not set (the website needs both)');
+  const r = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body: new URLSearchParams({ secret: k, response: 'key-check' }) });
+  const codes = (await r.json())['error-codes'] || [];
+  if (codes.includes('invalid-input-secret')) throw new Error('secret key rejected');
+  return 'secret key accepted';
+});
+
+await check('Resend email', 'RESEND_API_KEY', async (k) => {
+  const r = await fetch('https://api.resend.com/domains', { headers: { Authorization: `Bearer ${k}` } });
+  if (r.status === 401) throw new Error('key rejected');
+  // Sending-only keys can't list domains but still send.
+  if (r.status === 403) return 'sending-only key (domain list not visible)';
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const d = ((await r.json()).data || []).find((x) => x.name === 'taparide.com');
+  return d ? `taparide.com ${d.status}` : 'taparide.com NOT added in Resend > Domains yet';
+});
+
+await check('Supabase access token (local set-up)', 'SUPABASE_ACCESS_TOKEN', async (k) => {
+  const ref = (env.SUPABASE_URL || '').match(/[a-z0-9]{20}/)?.[0];
+  if (!ref) throw new Error('SUPABASE_URL has no project ref');
+  const r = await fetch(`https://api.supabase.com/v1/projects/${ref}`, { headers: { Authorization: `Bearer ${k}` } });
+  if (!r.ok) throw new Error(`HTTP ${r.status}${r.status === 401 ? ' (token rejected)' : r.status === 403 || r.status === 404 ? ' (token belongs to another account)' : ''}`);
+  return `project "${(await r.json()).name}" reachable`;
+});
+
+for (const [name, key, ok] of [
+  ['Daily summary recipients', 'ADMIN_NOTIFY_EMAIL', (v) => v.split(',').every((e) => /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(e.trim()))],
+  ['Sender address', 'MAIL_FROM', (v) => /@taparide\.com>?\s*$/i.test(v)],
+  ['Cron secret', 'CRON_SECRET', (v) => v.length >= 24],
+  ['Google OAuth client', 'GOOGLE_OAUTH_CLIENT_ID', (v) => /\.apps\.googleusercontent\.com$/.test(v) && !!env.GOOGLE_OAUTH_CLIENT_SECRET],
+  ['Summary webhook', 'SUMMARY_WEBHOOK_URL', (v) => /^https:\/\//.test(v)],
+]) {
+  if (!env[key]) report(name, null, `${key} not set`);
+  else report(name, ok(env[key]), ok(env[key]) ? 'format ok' : 'check the format');
+}
 
 console.log(results.join('\n'));
 }

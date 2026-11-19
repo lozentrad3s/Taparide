@@ -12,6 +12,7 @@ import '../../core/partner_models.dart';
 import '../../core/places.dart';
 import '../../shared/brand.dart';
 import '../../shared/mascot/mascot.dart';
+import '../../shared/password_field.dart';
 import '../../shared/ui.dart';
 
 /// Partner registration: private drivers (licence + vehicle) and organisations
@@ -355,7 +356,7 @@ class _PartnerApplyPageState extends State<PartnerApplyPage> {
         _field(_fullName, _org ? 'Contact person full name' : 'Full name (as on your licence)', validator: _required, caps: TextCapitalization.words),
         _field(_email, 'Email', keyboard: TextInputType.emailAddress, validator: (v) => RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch((v ?? '').trim()) ? null : 'Enter a valid email.'),
         _field(_phone, 'Phone number', keyboard: TextInputType.phone, validator: _phoneCheck),
-        _field(_password, 'Password', obscure: true, validator: (v) => (v ?? '').length >= 8 && RegExp(r'\d').hasMatch(v!) ? null : 'At least 8 characters, including a number.'),
+        Padding(padding: const EdgeInsets.only(bottom: 12), child: PasswordField(controller: _password, isNew: true, prefixIcon: false, textInputAction: TextInputAction.next)),
         Align(alignment: Alignment.centerLeft, child: TextButton(onPressed: () => context.go('/login?from=/partner/apply'), child: const Text('Already have an account? Sign in'))),
       ],
     ]);

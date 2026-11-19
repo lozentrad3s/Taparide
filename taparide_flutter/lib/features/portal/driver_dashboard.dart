@@ -12,6 +12,7 @@ import '../../shared/ui.dart';
 import '../assistant/assistant_sheet.dart';
 import 'partner_widgets.dart' show LiveTrackerPanel;
 import 'demand_widgets.dart';
+import 'money_page.dart' show CollectionWalletPanel;
 import 'portal_widgets.dart';
 
 /// Dashboard for an approved private driver: go online, run the current ride,
@@ -133,6 +134,8 @@ class DriverDashboard extends StatelessWidget {
               ]),
             ),
         ])),
+        // Only the driver themself has a collection wallet to see (admins look at Money instead).
+        if (state.user?.providerId == provider.id) ...[const SizedBox(height: PortalSpace.gap), const CollectionWalletPanel()],
       ],
     );
   }

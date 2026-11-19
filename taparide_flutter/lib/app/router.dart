@@ -3,8 +3,11 @@ import 'package:go_router/go_router.dart';
 
 import '../core/app_state.dart';
 import '../core/models.dart';
+import '../core/photos.dart';
+import '../shared/coming_soon.dart';
 import 'app_mode.dart';
 import '../features/auth/login_page.dart';
+import '../features/auth/set_password_page.dart';
 import '../features/auth/two_step_page.dart';
 import '../features/common/credits_page.dart';
 import '../features/ev/ev_page.dart';
@@ -63,6 +66,8 @@ GoRouter buildRouter(AppState state, {AppMode? mode}) {
       final portal = path.startsWith('/portal');
       if (path == '/moved') return null;
       // Admins and FCTA staff pass the authenticator step before anything else opens.
+      if (user != null && state.passwordRecovery) return path == '/set-password' ? null : '/set-password';
+      if (path == '/set-password') return user == null ? '/login' : homeFor(user);
       if (user != null && state.twoStepPending) return path == '/two-step' ? null : '/two-step';
       if (path == '/two-step') return user == null ? '/login?portal=partner' : homeFor(user);
       // Each production build serves one side; links to the other side are sent across.
@@ -115,6 +120,7 @@ GoRouter buildRouter(AppState state, {AppMode? mode}) {
         builder: (context, s) => LoginPage(portal: Portal.passenger, startInRegister: true, from: s.uri.queryParameters['from'], email: s.uri.queryParameters['email'], mode: appMode),
       ),
       GoRoute(path: '/two-step', builder: (context, s) => const TwoStepPage()),
+      GoRoute(path: '/set-password', builder: (context, s) => const SetPasswordPage()),
       GoRoute(path: '/switch-account', builder: (context, s) => SwitchAccountPage(query: s.uri.queryParameters)),
       GoRoute(
         path: '/moved',
@@ -152,8 +158,32 @@ GoRouter buildRouter(AppState state, {AppMode? mode}) {
         ],
       ),
       GoRoute(path: '/ticket/:bookingId', parentNavigatorKey: _rootKey, builder: (context, s) => TicketPage(bookingId: s.pathParameters['bookingId']!)),
-      GoRoute(path: '/ev', parentNavigatorKey: _rootKey, builder: (context, s) => const EvPage()),
-      GoRoute(path: '/live', parentNavigatorKey: _rootKey, builder: (context, s) => const LiveMapPage()),
+      GoRoute(
+        path: '/ev',
+        parentNavigatorKey: _rootKey,
+        builder: (context, s) => Launch.electric
+            ? const EvPage()
+            : const ComingSoonPage(
+                title: 'Electric rides',
+                icon: Icons.electric_car_rounded,
+                photo: AppPhoto.evCharging,
+                photoLabel: 'An electric car charging at a public charging point',
+                message: 'Quiet, clean electric cars door to door, with the fare fixed before you confirm. We are onboarding verified EV operators now; booking opens as soon as the first cars are on the road.',
+              ),
+      ),
+      GoRoute(
+        path: '/live',
+        parentNavigatorKey: _rootKey,
+        builder: (context, s) => Launch.liveMap
+            ? const LiveMapPage()
+            : const ComingSoonPage(
+                title: 'Live map',
+                icon: Icons.radar_rounded,
+                photo: AppPhoto.brtBerger,
+                photoLabel: 'Buses at the BRT park at Berger Bridge, Abuja',
+                message: 'See buses and cars near you move in real time, with arrival times. It switches on once our partner vehicles carry live tracking.',
+              ),
+      ),
       GoRoute(path: '/tag-along', parentNavigatorKey: _rootKey, builder: (context, s) => const TagAlongPage()),
       GoRoute(
         path: '/events',

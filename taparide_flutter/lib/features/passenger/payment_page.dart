@@ -99,6 +99,13 @@ class _PaymentPageState extends State<PaymentPage> {
                     onTap: () => setState(() => _method = PaymentMethod.tapCard),
                     trailing: Icon(_method == PaymentMethod.tapCard ? Icons.check_circle_rounded : Icons.contactless_rounded, color: _method == PaymentMethod.tapCard ? AppColors.leaf : Colors.white, size: 30),
                   ),
+                  if ((wallet?.rideCredit ?? 0) > 0) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'Tap to pay uses your ${Fmt.naira(wallet!.rideCredit)} ride credit first${wallet.rideCredit >= route.fare ? ', so this seat costs you nothing from your wallet.' : ', then your wallet.'}',
+                      style: text.bodySmall?.copyWith(color: AppColors.forest, fontWeight: FontWeight.w600),
+                    ),
+                  ],
                   const SizedBox(height: 14),
                   Row(children: [
                     const Expanded(child: Divider()),
@@ -124,9 +131,11 @@ class _PaymentPageState extends State<PaymentPage> {
                     const SizedBox(height: 6),
                     _Notice(
                       tone: Tone.warning,
-                      message: 'Your balance is ${Fmt.naira(wallet.balance)}. Top up at least ${Fmt.naira(route.fare - wallet.balance)} to pay for this seat.',
-                      action: 'Top up',
-                      onAction: () => showTopUpSheet(context, suggested: route.fare - wallet.balance),
+                      message: AppState.walletTopUpsOpen
+                          ? 'Your balance is ${Fmt.naira(wallet.balance)}. Top up at least ${Fmt.naira(route.fare - wallet.balance)} to pay for this seat.'
+                          : 'You have ${Fmt.naira(wallet.balance)} to spend, ${Fmt.naira(route.fare - wallet.balance)} short of this fare. Adding money by card or bank is coming soon.',
+                      action: AppState.walletTopUpsOpen ? 'Top up' : null,
+                      onAction: AppState.walletTopUpsOpen ? () => showTopUpSheet(context, suggested: route.fare - wallet.balance) : null,
                     ),
                   ],
                   if (_error != null) ...[

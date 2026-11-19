@@ -12,6 +12,9 @@ import '../../core/format.dart';
 import '../../core/live_models.dart';
 import '../../shared/ticking.dart';
 
+/// "Watch an ad, earn ride credit" stays off until there are real sponsors (no paid ads yet).
+const adRewardsOpen = false;
+
 void _openAdLink(BuildContext context, PromoAd ad) {
   final link = ad.ctaLink;
   if (link == null || link.isEmpty) return;
@@ -107,7 +110,7 @@ class _AdStripState extends State<AdStrip> {
                 decoration: BoxDecoration(color: i == _index % ads.length ? AppColors.forest : AppColors.lineStrong, borderRadius: BorderRadius.circular(3)),
               ),
           const Spacer(),
-          if (ad.reward > 0)
+          if (ad.reward > 0 && adRewardsOpen)
             TextButton.icon(
               onPressed: () => showAdWatchSheet(context, ad),
               style: TextButton.styleFrom(visualDensity: VisualDensity.compact, padding: const EdgeInsets.symmetric(horizontal: 6)),
@@ -147,7 +150,7 @@ class _AdStripState extends State<AdStrip> {
                 ]),
               ),
               const SizedBox(width: 8),
-              if (ad.reward > 0)
+              if (ad.reward > 0 && adRewardsOpen)
                 FilledButton.icon(
                   onPressed: () => showAdWatchSheet(context, ad),
                   style: FilledButton.styleFrom(

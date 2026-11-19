@@ -7,8 +7,9 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadEnv } from './check-keys.mjs';
 
-// Only what the serverless functions need. SUPABASE_DB_URL and GITHUB_TOKEN are deliberately excluded.
-const ALLOWED = ['AI_PROVIDER', 'GEMINI_API_KEY', 'GEMINI_MODEL', 'ANTHROPIC_API_KEY', 'CARTO_API_KEY', 'CARTO_LDS_TOKEN', 'CARTO_GEOCODING', 'SUPABASE_URL', 'SUPABASE_ANON_KEY', 'PAYSTACK_SECRET_KEY', 'TOPUP_SIGNING_SECRET', 'BACHS_SECRET_KEY', 'BACHS_WEBHOOK_SECRET', 'MAPTILER_API_KEY', 'MAPTILER_STYLE', 'UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN', 'SENTRY_DSN', 'TURNSTILE_SECRET_KEY'];
+// Only what the serverless functions need. Empty values in .env.local count as not set and are skipped.
+const ALLOWED = ['AI_PROVIDER', 'GEMINI_API_KEY', 'GEMINI_MODEL', 'ANTHROPIC_API_KEY', 'CARTO_API_KEY', 'CARTO_LDS_TOKEN', 'CARTO_GEOCODING', 'SUPABASE_URL', 'SUPABASE_ANON_KEY', 'PAYSTACK_SECRET_KEY', 'TOPUP_SIGNING_SECRET', 'BACHS_SECRET_KEY', 'BACHS_WEBHOOK_SECRET', 'MAPTILER_API_KEY', 'MAPTILER_STYLE', 'UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN', 'SENTRY_DSN', 'TURNSTILE_SECRET_KEY', 'TURNSTILE_SITE_KEY', 'RESEND_API_KEY', 'MAIL_FROM', 'ADMIN_NOTIFY_EMAIL', 'SUMMARY_WEBHOOK_URL', 'CRON_SECRET'];
+// Never synced: SUPABASE_DB_URL, SUPABASE_ACCESS_TOKEN, GOOGLE_OAUTH_* (local set-up only) and GITHUB_TOKEN.
 const env = loadEnv();
 // Generated server-only secrets (see supabase-setup.mjs).
 const serverFile = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '.env.server.local');

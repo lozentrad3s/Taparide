@@ -725,14 +725,22 @@ class Booking {
 }
 
 class Wallet {
-  const Wallet({required this.cardNumber, required this.balance});
+  const Wallet({required this.cardNumber, required this.balance, this.rideCredit = 0});
   final String cardNumber;
+
+  /// Everything the rider can spend: their own money plus [rideCredit].
   final int balance;
+
+  /// Free credit (the ₦1,000 for joining). Spent first, shown apart from the wallet money.
+  final int rideCredit;
+
+  /// The rider's own money in the wallet.
+  int get cash => balance - rideCredit < 0 ? 0 : balance - rideCredit;
 
   String get maskedCard => cardNumber.length <= 4 ? cardNumber : '•••• ${cardNumber.substring(cardNumber.length - 4)}';
 
   factory Wallet.fromJson(Map<String, dynamic> json) =>
-      Wallet(cardNumber: (json['card_number'] as String?) ?? '0000', balance: _int(json['balance']));
+      Wallet(cardNumber: (json['card_number'] as String?) ?? '0000', balance: _int(json['balance']), rideCredit: _int(json['ride_credit']));
 }
 
 // ---------------------------------------------------------------- Tag Along

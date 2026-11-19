@@ -9,21 +9,26 @@ const hits = new Map();
 const ALLOWED_ORIGINS = new Set(["https://taparide.com", "https://www.taparide.com", "https://taparide.vercel.app", ...(process.env.EXTRA_ORIGINS || "").split(",").map((o) => o.trim()).filter(Boolean)]);
 const isAllowedOrigin = (origin) => !origin || ALLOWED_ORIGINS.has(origin) || /^https:\/\/taparide-[a-z0-9-]+-lozen-s-projects\.vercel\.app$/.test(origin) || /^http:\/\/localhost(:\d+)?$/.test(origin);
 
-export async function requireUser(req, { perMinute = 20 } = {}) {
-  if (!isAllowedOrigin(req.headers.origin)) throw new AiError(403, "This service is only available from Tap A Ride.");
+/** Per-IP limit for one service: shared through Redis when it is connected, per server otherwise. */
+export async function limitByIp(req, scope, perMinute) {
   const ip = (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "unknown";
-  const shared = await overLimit(`api:${new URL(req.url, "http://x").pathname}:${ip}`, perMinute);
+  const shared = await overLimit(`api:${scope}:${ip}`, perMinute);
   if (shared === true) throw new AiError(429, "Too many requests. Wait a minute and try again.");
   if (shared === null) {
     const now = Date.now();
     // One counter per service, as in Redis: busy map tiles must not block payments or the assistant.
-    const key = `${new URL(req.url, "http://x").pathname}:${ip}`;
+    const key = `${scope}:${ip}`;
     const recent = (hits.get(key) || []).filter((t) => now - t < 60_000);
     if (recent.length >= perMinute) throw new AiError(429, "Too many requests. Wait a minute and try again.");
     recent.push(now);
     hits.set(key, recent);
     if (hits.size > 5000) hits.clear();
   }
+}
+
+export async function requireUser(req, { perMinute = 20 } = {}) {
+  if (!isAllowedOrigin(req.headers.origin)) throw new AiError(403, "This service is only available from Tap A Ride.");
+  await limitByIp(req, new URL(req.url, "http://x").pathname, perMinute);
 
   const url = process.env.SUPABASE_URL;
   const anon = process.env.SUPABASE_ANON_KEY;

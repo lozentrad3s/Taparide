@@ -113,7 +113,7 @@ class DemoBackend implements Backend {
     _rides = DemoSeed.sharedRides(now);
     _bookings = [...DemoSeed.bookings(now), ...DemoSeed.fleetDriverBookings(now)];
     _audit = DemoSeed.audit(now);
-    _wallets = {DemoSeed.uAisha: const Wallet(cardNumber: '5061004219872500', balance: 2500)};
+    _wallets = {DemoSeed.uAisha: const Wallet(cardNumber: '5061004219872500', balance: 2500, rideCredit: 1000)};
     _applications = DemoSeed.applications(now);
     _drivers = DemoSeed.fleetDrivers();
     _sessionUserId = null;
@@ -197,7 +197,8 @@ class DemoBackend implements Backend {
     if (wallet.balance < amount) {
       throw BackendException(BackendErrorKind.insufficientFunds, 'Your tap card balance is too low for this fare. Top up and try again.');
     }
-    _wallets[userId] = Wallet(cardNumber: wallet.cardNumber, balance: wallet.balance - amount);
+    // Ride credit is spent first, as on the live server.
+    _wallets[userId] = Wallet(cardNumber: wallet.cardNumber, balance: wallet.balance - amount, rideCredit: wallet.rideCredit > amount ? wallet.rideCredit - amount : 0);
   }
 
   // ------------------------------------------------------------ accounts
@@ -258,6 +259,12 @@ class DemoBackend implements Backend {
   }
 
   @override
+  bool get passwordRecovery => false;
+
+  @override
+  Future<void> setNewPassword(String password) async => _wait();
+
+  @override
   Future<void> signOut() async {
     _sessionUserId = null;
     _save();
@@ -280,11 +287,10 @@ class DemoBackend implements Backend {
   Future<void> twoStepVerify({required String factorId, required String code}) async => throw const BackendException(BackendErrorKind.validation, 'Two-step sign-in works on the live dashboard.');
 
   /// The real list lives in the live database (filled from the website). The demo shows a few
-  /// clearly-labelled sample sign-ups so the admin page can be tried.
-  @override
-  Future<List<WaitlistEntry>> fetchWaitlist() async {
-    await _wait();
-    _require(_me.role == UserRole.admin, 'see the waitlist');
+  /// clearly-labelled sample sign-ups so the admin page can be tried; changes last for the session.
+  List<WaitlistEntry>? _signups;
+
+  List<WaitlistEntry> _sampleSignups() {
     final now = _clock();
     WaitlistEntry e(int id, String name, String email, String phone, String area, int refs, int daysAgo, List<(int, String)> seats) => WaitlistEntry(
           id: id,
@@ -297,14 +303,167 @@ class DemoBackend implements Backend {
           referrals: refs,
           source: seats.isEmpty ? 'website' : 'tech-week',
           joinedAt: now.subtract(Duration(days: daysAgo, hours: id)),
-          seats: [for (final s in seats) WaitlistSeat(event: 'abuja-tech-week-2026', day: DateTime(2026, 11, s.$1), pickup: s.$2, time: '07:00', ticket: 'TW${s.$1}-SMPL0$id')],
+          seats: [for (final s in seats) WaitlistSeat(event: 'abuja-tech-week-2026', day: DateTime(2026, 11, s.$1), pickup: s.$2, time: '07:00', ticket: 'TW-SMPL0$id')],
         );
+    const gwagwalada = 'University of Abuja, Gwagwalada';
+    const lugbe = 'Police Signboard, Lugbe';
+    const nyanya = 'Checkpoint, Maraba–Nyanya';
     return [
-      e(1, 'Ngozi Eze', 'ngozi.sample@example.com', '08031112222', 'Gwagwalada', 3, 0, [(24, 'University of Abuja, Gwagwalada'), (25, 'University of Abuja, Gwagwalada')]),
-      e(2, 'Ibrahim Bello', 'ibrahim.sample@example.com', '08062223333', 'Lugbe', 1, 0, [(24, 'Police Signboard, Lugbe')]),
+      e(1, 'Ngozi Eze', 'ngozi.sample@example.com', '08031112222', 'Gwagwalada', 3, 0, [(24, gwagwalada), (25, gwagwalada), (26, gwagwalada)]),
+      e(2, 'Ibrahim Bello', 'ibrahim.sample@example.com', '08062223333', 'Lugbe', 1, 0, [(24, lugbe), (25, lugbe), (26, lugbe)]),
       e(3, 'Chioma Okafor', 'chioma.sample@example.com', '09013334444', 'Garki', 0, 1, [(26, 'Old Parade Ground (corps members)')]),
-      e(4, 'Musa Danladi', 'musa.sample@example.com', '07024445555', 'Nyanya', 2, 1, [(24, 'Checkpoint, Maraba–Nyanya')]),
+      e(4, 'Musa Danladi', 'musa.sample@example.com', '07024445555', 'Nyanya', 2, 1, [(24, nyanya), (25, nyanya)]),
       e(5, 'Aisha Lawal', 'aisha.sample@example.com', '08105556666', 'Jabi', 0, 2, const []),
+    ];
+  }
+
+  List<WaitlistEntry> get _waitlist => _signups ??= _sampleSignups();
+
+  int _signupIndex(int id) {
+    final i = _waitlist.indexWhere((e) => e.id == id);
+    if (i < 0) throw const BackendException(BackendErrorKind.notFound, 'That sign-up no longer exists.');
+    return i;
+  }
+
+  WaitlistEntry _copySignup(WaitlistEntry e, {String? name, String? phone, List<WaitlistSeat>? seats, DateTime? contactedAt, bool clearContacted = false, String? note}) => WaitlistEntry(
+        id: e.id,
+        email: e.email,
+        name: name ?? e.name,
+        phone: phone ?? e.phone,
+        area: e.area,
+        role: e.role,
+        code: e.code,
+        referredBy: e.referredBy,
+        referrals: e.referrals,
+        source: e.source,
+        joinedAt: e.joinedAt,
+        creditedAt: e.creditedAt,
+        seats: seats ?? e.seats,
+        contactedAt: clearContacted ? null : (contactedAt ?? e.contactedAt),
+        note: note ?? e.note,
+        dupPhone: e.dupPhone,
+        dupName: e.dupName,
+      );
+
+  @override
+  Future<List<WaitlistEntry>> fetchWaitlist() async {
+    await _wait();
+    _require(_me.role == UserRole.admin, 'see the waitlist');
+    return List.of(_waitlist);
+  }
+
+  @override
+  Future<void> setSignupContacted(int id, {required bool contacted, String? note}) async {
+    await _wait();
+    _require(_me.role == UserRole.admin, 'update sign-ups');
+    final i = _signupIndex(id);
+    final n = note?.trim();
+    _waitlist[i] = _copySignup(_waitlist[i], contactedAt: contacted ? (_waitlist[i].contactedAt ?? _clock()) : null, clearContacted: !contacted, note: n == null || n.isEmpty ? null : n);
+  }
+
+  @override
+  Future<void> updateEventPass({required int id, required String event, required String pickup, required List<DateTime> days, String? name, String? phone}) async {
+    await _wait();
+    _require(_me.role == UserRole.admin, 'change bus passes');
+    if (days.isEmpty) throw const BackendException(BackendErrorKind.validation, 'Pick at least one day.');
+    final i = _signupIndex(id);
+    final e = _waitlist[i];
+    final code = e.seats.where((s) => s.event == event).map((s) => s.ticket).whereType<String>().firstOrNull ?? 'TW-SMPL0$id';
+    final kept = [for (final s in e.seats) if (s.event != event) s];
+    final n = name?.trim(), p = phone?.trim();
+    _waitlist[i] = _copySignup(
+      e,
+      name: n == null || n.isEmpty ? null : n,
+      phone: p == null || p.isEmpty ? null : p,
+      seats: [...kept, for (final d in days) WaitlistSeat(event: event, day: d, pickup: pickup, time: '07:00', ticket: code)],
+    );
+    _log('Changed bus pass', code);
+  }
+
+  @override
+  Future<void> cancelEventPass(int id, String event) async {
+    await _wait();
+    _require(_me.role == UserRole.admin, 'cancel bus passes');
+    final i = _signupIndex(id);
+    final e = _waitlist[i];
+    final seat = e.seats.where((s) => s.event == event).firstOrNull;
+    if (seat == null) throw const BackendException(BackendErrorKind.notFound, 'That person has no pass for this event.');
+    _waitlist[i] = _copySignup(e, seats: [for (final s in e.seats) if (s.event != event) s]);
+    _log('Cancelled bus pass', seat.ticket ?? e.code);
+  }
+
+  @override
+  Future<void> removeSignup(int id) async {
+    await _wait();
+    _require(_me.role == UserRole.admin, 'remove sign-ups');
+    final i = _signupIndex(id);
+    if (_waitlist[i].creditedAt != null) {
+      throw const BackendException(BackendErrorKind.validation, "This sign-up already received its free ride in an account; it can't be removed.");
+    }
+    _waitlist.removeAt(i);
+    _log('Removed duplicate sign-up', 'waitlist #$id');
+  }
+
+  @override
+  Future<MoneyOverview> fetchMoney() async {
+    await _wait();
+    _require(_me.role == UserRole.admin, 'see money');
+    final wallets = _wallets.values;
+    return MoneyOverview(
+      walletCount: wallets.length,
+      walletBalance: wallets.fold(0, (a, w) => a + w.balance),
+      rideCredit: wallets.fold(0, (a, w) => a + w.rideCredit),
+      topupsPaid: 0,
+      topupsPaidAmount: 0,
+      topupsPending: 0,
+      topupsFailed: 0,
+      held: 0,
+      released: 0,
+      refunded: 0,
+    );
+  }
+
+  @override
+  Future<CollectionWallet> fetchCollectionWallet() async {
+    await _wait();
+    _require(_me.providerId != null, 'see a collection wallet');
+    return CollectionWallet.empty;
+  }
+
+  @override
+  Future<List<EventSeatBookings>> fetchOrganiserSeatBookings() async {
+    await _wait();
+    _require(const {UserRole.admin, UserRole.eventPartner, UserRole.government}.contains(_me.role), 'see event bookings');
+    final counts = <(DateTime, String, String), int>{};
+    final people = <int>{};
+    for (final e in _waitlist) {
+      for (final s in e.seats.where((s) => s.event == 'abuja-tech-week-2026')) {
+        people.add(e.id);
+        final k = (s.day, s.pickup, s.time);
+        counts[k] = (counts[k] ?? 0) + 1;
+      }
+    }
+    return [
+      EventSeatBookings(
+        eventId: 'ev_techweek',
+        title: 'Abuja Tech Week 2026 (sample bookings)',
+        venue: 'Velodrome, National Stadium',
+        startsAt: DateTime(2026, 11, 24, 9),
+        endsAt: DateTime(2026, 11, 26, 17),
+        people: people.length,
+        rows: [for (final c in counts.entries) (day: c.key.$1, area: c.key.$2, slot: c.key.$3, riders: c.value)],
+        lastBooking: _clock(),
+        days: [DateTime(2026, 11, 24), DateTime(2026, 11, 25), DateTime(2026, 11, 26)],
+        areas: const [
+          'University of Abuja, Gwagwalada',
+          'Nnamdi Azikiwe Airport',
+          'Old Parade Ground (corps members)',
+          'Nile University',
+          'Police Signboard, Lugbe',
+          'Checkpoint, Maraba–Nyanya',
+        ],
+        slots: const ['07:00'],
+      ),
     ];
   }
 
@@ -577,7 +736,7 @@ class DemoBackend implements Backend {
     if (!booking.status.isOpen) throw const BackendException(BackendErrorKind.validation, 'This booking can no longer be cancelled.');
     if (booking.paymentMethod != PaymentMethod.splitCost && booking.departureAt.isAfter(_clock())) {
       final wallet = _walletFor(me.id);
-      _wallets[me.id] = Wallet(cardNumber: wallet.cardNumber, balance: wallet.balance + booking.fare);
+      _wallets[me.id] = Wallet(cardNumber: wallet.cardNumber, balance: wallet.balance + booking.fare, rideCredit: wallet.rideCredit);
     }
     if (booking.kind == BookingKind.electric && booking.vehicleId != null) {
       final v = _vehicles.indexWhere((x) => x.id == booking.vehicleId);
@@ -615,7 +774,7 @@ class DemoBackend implements Backend {
     final me = _me;
     if (amount < 100 || amount > 50000) throw const BackendException(BackendErrorKind.validation, 'Top up between ₦100 and ₦50,000.');
     final wallet = _walletFor(me.id);
-    final updated = Wallet(cardNumber: wallet.cardNumber, balance: wallet.balance + amount);
+    final updated = Wallet(cardNumber: wallet.cardNumber, balance: wallet.balance + amount, rideCredit: wallet.rideCredit);
     _wallets[me.id] = updated;
     _save();
     return updated;
@@ -623,7 +782,7 @@ class DemoBackend implements Backend {
 
   void _credit(String userId, int amount) {
     final w = _walletFor(userId);
-    _wallets[userId] = Wallet(cardNumber: w.cardNumber, balance: w.balance + amount);
+    _wallets[userId] = Wallet(cardNumber: w.cardNumber, balance: w.balance + amount, rideCredit: w.rideCredit);
   }
 
   // ------------------------------------------------------------ Tag Along hosting

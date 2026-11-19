@@ -1,4 +1,5 @@
-// Wallet top-ups through Bachs (bachs.io: card, bank transfer) or Paystack. One endpoint, four actions:
+// Wallet top-ups through Bachs (bachs.io: card, bank transfer) or Paystack. One endpoint, five actions:
+//   GET  /api/pay?action=status                -> is the key accepted? (yes/no only, never the key)
 //   POST /api/pay?action=init     { amount }  -> { url, reference }   (signed-in rider)
 //   GET  /api/pay?action=verify&reference=…   -> { status, amount }   (signed-in rider, after returning)
 //   GET  /api/pay?action=return&reference=…   -> redirect back into the app (the provider's callback)
@@ -10,7 +11,7 @@
 // confirms the payment to this server. Keys stay here; the app never sees them.
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { AiError, handleError, send } from "./_lib/ai.js";
-import { requireUser } from "./_lib/auth.js";
+import { limitByIp, requireUser } from "./_lib/auth.js";
 
 const PAYSTACK = "https://api.paystack.co";
 const key = () => process.env.PAYSTACK_SECRET_KEY;
@@ -98,6 +99,22 @@ export default async function handler(req, res) {
       res.statusCode = 302;
       res.setHeader("Location", `/app/#/app/profile?topup=${reference}${checkout ? `.${checkout}` : ""}`);
       return res.end();
+    }
+
+    if (action === "status") {
+      // Set-up check: is the payment key accepted by the provider, and is the webhook secret set?
+      // Looks up a checkout that cannot exist (404 = key accepted, 401/403 = key rejected).
+      // Answers with yes/no only, never a key, and creates nothing.
+      await limitByIp(req, "pay-status", 6);
+      const out = { provider: useBachs() ? "bachs" : key() ? "paystack" : null, mode: null, key: null, webhookSecret: false, signingSecret: !!process.env.TOPUP_SIGNING_SECRET };
+      if (useBachs()) {
+        out.mode = bachsKey().startsWith("sk_live_") ? "live" : bachsKey().startsWith("sk_sandbox_") ? "sandbox" : "unknown";
+        out.webhookSecret = !!process.env.BACHS_WEBHOOK_SECRET;
+        const r = await fetch(`${bachsBase()}/v1/checkout-sessions/chk_taparide_status_check`, { headers: { Authorization: `Bearer ${bachsKey()}` }, signal: AbortSignal.timeout(8000) }).catch(() => null);
+        out.key = !r ? "unreachable" : r.status === 401 || r.status === 403 ? "rejected" : r.status < 500 ? "accepted" : "provider error";
+        out.providerStatus = r?.status ?? null;
+      }
+      return send(res, 200, out);
     }
 
     if (action === "webhook" && (req.headers["x-bachs-signature-v2"] || req.headers["x-bachs-signature"])) {

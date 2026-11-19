@@ -1,11 +1,14 @@
 // /api/waitlist
 //   POST {action:"join", email, name?, phone?, area?, role?, ref?}   -> place in line + invite code
-//   POST {action:"seat", access, event, day, area, slot, name, phone} -> seat + personal bus pass
+//   POST {action:"seat", access, event, days[], area, name, phone}     -> one personal bus pass for those days
+//        (older pages send a single "day": that books every day of the event; one pass covers them all)
 //   GET  ?code=XXXXXX                                                -> place in line
 //   GET  ?event=abuja-tech-week-2026                                 -> seat demand (counts only)
 import { call, isPreview, StoreError } from "./_lib/store.js";
 import { cached, overLimit } from "./_lib/redis.js";
 import { reportError } from "./_lib/sentry.js";
+import { sendMail } from "./_lib/mail.js";
+import { passEmail, welcomeEmail } from "./_lib/emails.js";
 
 // Anti-bot: forms must be filled by a person in a browser.
 // 1. a hidden honeypot field ("company") that people never see;
@@ -71,6 +74,17 @@ async function readBody(req) {
 
 const str = (v, max) => (typeof v === "string" ? v.slice(0, max) : undefined);
 
+/** Event days from the form: up to 3 YYYY-MM-DD strings, or null (= every day of the event). */
+function daysFrom(b) {
+  if (!Array.isArray(b.days)) return null;
+  const days = [...new Set(b.days.filter((d) => typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d)))];
+  if (!days.length || days.length > 3 || days.length !== b.days.length) throw new StoreError(400, "Pick the days you'll ride from the list.");
+  return days;
+}
+
+/** Sends an email but never holds the response for more than a few seconds or fails it. */
+const mailSoon = (msg) => Promise.race([sendMail(msg), new Promise((ok) => setTimeout(() => ok({ sent: false, reason: "slow" }), 6000))]);
+
 export default async function handler(req, res) {
   try {
     if (!allowedOrigin(req.headers.origin)) return send(res, 403, { error: "This form only works on the Tap A Ride website." });
@@ -111,20 +125,27 @@ export default async function handler(req, res) {
         p_source: str(b.source, 40) ?? "website",
         p_terms: "v1",
       });
+      // Tech Week sign-ups get their pass email right after this instead.
+      if (out && out.existing === false && out.email && b.source !== "tech-week") {
+        await mailSoon({ to: out.email, ...welcomeEmail({ name: out.name, code: out.code, position: out.position, freeRideLeft: out.free_ride_left }) });
+      }
       return send(res, 200, { ...out, preview: isPreview() });
     }
     if (b.action === "seat") {
       // The private access key (returned when joining), never the public invite code.
-      const out = await call("reserve_event_seat", {
+      const out = await call("reserve_event_pass", {
         p_access: str(b.access, 80),
         p_event: str(b.event, 60),
-        p_day: str(b.day, 10),
         p_area: str(b.area, 40),
-        p_slot: str(b.slot, 5),
         p_name: str(b.name, 80) ?? null,
         p_phone: str(b.phone, 30) ?? null,
+        p_days: daysFrom(b),
+        p_slot: "07:00",
       });
-      return send(res, 200, { ...out, preview: isPreview() });
+      // The pass goes to the email they joined with, straight away.
+      const to = out?.summary?.email;
+      const mail = out?.pass && to ? await mailSoon({ to, ...passEmail(out.pass) }) : { sent: false };
+      return send(res, 200, { ...out, emailed: mail.sent === true, preview: isPreview() });
     }
     return send(res, 400, { error: "Unknown action." });
   } catch (e) {

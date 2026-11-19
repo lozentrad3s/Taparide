@@ -139,7 +139,7 @@
         </div>
         <div class="story-slide" data-story-slide aria-hidden="true">
           <p class="hero-title">Tap. Pay.<br>You're on your way.</p>
-          <p class="hero-lede">Top up once and pay for every seat with a tap or a QR code. No change wahala, instant confirmation.</p>
+          <p class="hero-lede">Pay for every seat with a tap or a QR code. No change wahala, instant confirmation.</p>
           <a class="hero-link" href="#tap-pay">See Tap to Pay<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
         </div>
       </div>
@@ -222,6 +222,11 @@
         <div class="points-head">
           <h3>Pick-up points</h3>
           <p class="points-day" data-points-day>Seats registered for Tue 24 Nov</p>
+          <div class="chips chips-sm" role="radiogroup" aria-label="Show seats for">
+            <label><input type="radio" name="countday" value="2026-11-24" checked><span>Tue 24</span></label>
+            <label><input type="radio" name="countday" value="2026-11-25"><span>Wed 25</span></label>
+            <label><input type="radio" name="countday" value="2026-11-26"><span>Thu 26</span></label>
+          </div>
         </div>
         <ol class="point-list">
           <li><button type="button" class="point" data-point="University of Abuja, Gwagwalada"><span class="point-pin"><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg></span><span class="point-text"><strong>University of Abuja, Gwagwalada</strong><span>Main campus gate</span></span><span class="point-count" data-count="University of Abuja, Gwagwalada">–</span></button><a class="point-map" href="https://www.google.com/maps/search/?api=1&amp;query=University+of+Abuja+main+campus+Gwagwalada" target="_blank" rel="noopener" aria-label="Open University of Abuja, Gwagwalada in Google Maps"><svg class="ic" aria-hidden="true"><use href="#i-map"/></svg></a></li>
@@ -235,13 +240,14 @@
       </div>
 
       <form class="seat card" data-seat novalidate>
-        <h3>Get your free seat</h3>
+        <h3>Get your free bus pass</h3>
+        <p class="seat-lede">One pass covers every day you pick. No need to book each day.</p>
         <fieldset>
-          <legend>Day</legend>
+          <legend>Days you'll ride</legend>
           <div class="chips" data-days>
-            <label><input type="radio" name="day" value="2026-11-24" checked><span>Tue 24</span></label>
-            <label><input type="radio" name="day" value="2026-11-25"><span>Wed 25</span></label>
-            <label><input type="radio" name="day" value="2026-11-26"><span>Thu 26</span></label>
+            <label><input type="checkbox" name="day" value="2026-11-24" checked><span>Tue 24</span></label>
+            <label><input type="checkbox" name="day" value="2026-11-25" checked><span>Wed 25</span></label>
+            <label><input type="checkbox" name="day" value="2026-11-26" checked><span>Thu 26</span></label>
           </div>
         </fieldset>
         <div class="field">
@@ -267,23 +273,24 @@
         </div>
         <div class="field" data-seat-email>
           <label for="seat-email">Email</label>
-          <input id="seat-email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com">
+          <input id="seat-email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" required>
+          <small class="hint">We email your pass here.</small>
         </div>
         <input class="hp" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
         <label class="agree"><input type="checkbox" name="terms" id="seat-terms" required><span>I agree to the <a href="/terms" target="_blank">Terms</a> and <a href="/privacy" target="_blank">Privacy notice</a>, including the free ride rules.</span></label>
-        <button class="btn btn-go btn-lg btn-block" type="submit"><span>Reserve my free seat</span><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+        <button class="btn btn-go btn-lg btn-block" type="submit"><span>Get my free pass</span><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></button>
         <p class="form-msg" role="status" aria-live="polite" data-msg></p>
         <div class="seat-done" hidden data-seat-done>
           <a class="btn btn-wa" href="#" target="_blank" rel="noopener" data-seat-wa><svg class="ic" aria-hidden="true"><use href="#i-chat"/></svg>Invite colleagues on WhatsApp</a>
-          <button class="btn btn-line" type="button" data-seat-again>Reserve another day</button>
+          <button class="btn btn-line" type="button" data-seat-again>Change my days or pick-up point</button>
         </div>
       </form>
     </div>
 
     <div class="passes" hidden data-passes aria-live="polite">
       <div class="passes-head">
-        <h3>Your free bus passes</h3>
-        <p>Show this pass and a photo ID at the bus. It is valid only for the person named on it.</p>
+        <h3>Your free bus pass</h3>
+        <p>One pass for every day on it. Show it with a photo ID at the bus; it is valid only for the person named on it.</p>
       </div>
       <div class="pass-list" data-pass-list></div>
       <div class="pass-actions">
@@ -317,11 +324,11 @@
   <div class="wrap pay-grid">
     <div class="story-copy">
       <h2 id="pay-title">Tap. Pay. You're on your way.</h2>
-      <p class="lede">Top up your Tap A Ride wallet once, then pay for every seat with a tap or a QR code. No change wahala, and instant confirmation.</p>
+      <p class="lede">Pay for your seat with a tap or a QR code in the app. No change wahala, and instant confirmation. Wallet top-ups are coming soon; your free ride credit works today.</p>
       <ul class="pay-list">
-        <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Your free first ride lands in this wallet</li>
+        <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Your free first ride arrives as ride credit</li>
         <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>A receipt for every trip</li>
-        <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Watch a short ad, earn ride credit</li>
+        <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Your ₦1,000 ride credit is used first</li>
       </ul>
     </div>
     <figure class="pay-media">
@@ -408,7 +415,7 @@
   <div class="wrap join-grid">
     <div class="join-copy">
       <h2 id="join-title">Your first ride is on us.</h2>
-      <p class="lede">Join the waitlist and we save ₦1,000 of ride credit for you. It lands in your wallet when you open your Tap A Ride account with the same email.</p>
+      <p class="lede">Join the waitlist and we save ₦1,000 of ride credit for you. It shows as ride credit in your account when you open Tap A Ride with the same email.</p>
       <ol class="steps">
         <li><span>1</span>Join with your email</li>
         <li><span>2</span>Invite friends to move up the list</li>
@@ -504,7 +511,7 @@
     <div class="faq-list">
       <details>
         <summary>How do I get my free ride?</summary>
-        <p>Join the waitlist, then open your Tap A Ride account with the same email and confirm it. ₦1,000 of ride credit lands in your wallet once. It's for the first 5,000 people who join.</p>
+        <p>Join the waitlist, then open your Tap A Ride account with the same email and confirm it. ₦1,000 of ride credit is added to your account once, and it's used first when you pay. It's for the first 5,000 people who join.</p>
       </details>
       <details>
         <summary>Are the Abuja Tech Week buses really free?</summary>

@@ -29,6 +29,12 @@ abstract class Backend {
   Future<AppUser> signIn({required String email, required String password, required Portal portal});
   Future<AppUser> register({required String fullName, required String email, required String phone, required String password, String? organisation});
   Future<void> sendPasswordReset(String email);
+
+  /// True after the visitor arrived from a password-reset email: they must choose a new password.
+  bool get passwordRecovery;
+
+  /// Sets a new password for the signed-in account (after a reset email).
+  Future<void> setNewPassword(String password);
   Future<void> signOut();
 
   /// Continue with Google or Apple. On the web this leaves the page and comes back signed in
@@ -42,6 +48,27 @@ abstract class Backend {
 
   /// Everyone who joined on the website (waitlist, Tech Week seats). Admins only.
   Future<List<WaitlistEntry>> fetchWaitlist();
+
+  /// Admins: mark a website sign-up as contacted (or not), with an optional private note.
+  Future<void> setSignupContacted(int id, {required bool contacted, String? note});
+
+  /// Admins: change a person's free event-bus pass (pick-up point, days, name, phone). Keeps the pass ID.
+  Future<void> updateEventPass({required int id, required String event, required String pickup, required List<DateTime> days, String? name, String? phone});
+
+  /// Admins: cancel a person's pass for one event.
+  Future<void> cancelEventPass(int id, String event);
+
+  /// Admins: remove a duplicate sign-up (refused once its free ride was paid into an account).
+  Future<void> removeSignup(int id);
+
+  /// Admins: wallets, top-ups, held fares and collection wallets across the platform.
+  Future<MoneyOverview> fetchMoney();
+
+  /// Partners: the signed-in company's collection wallet (tap-to-pay fares, held until each trip ends).
+  Future<CollectionWallet> fetchCollectionWallet();
+
+  /// Event organisers (and admins/FCTA): free-bus bookings for their events, counts only.
+  Future<List<EventSeatBookings>> fetchOrganiserSeatBookings();
 
   /// Active routes of verified providers, readable before sign-in (landing page).
   Future<List<TransitRoute>> fetchPublicRoutes();
