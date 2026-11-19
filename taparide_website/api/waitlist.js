@@ -85,6 +85,22 @@ function daysFrom(b) {
 /** Sends an email but never holds the response for more than a few seconds or fails it. */
 const mailSoon = (msg) => Promise.race([sendMail(msg), new Promise((ok) => setTimeout(() => ok({ sent: false, reason: "slow" }), 6000))]);
 
+// Until migration 20261119000000 is on the database: book each day with the older one-day function
+// and show the result as one pass. Remove once reserve_event_pass is live everywhere.
+const EVENT_DAYS = { "abuja-tech-week-2026": ["2026-11-24", "2026-11-25", "2026-11-26"] };
+async function passOneDayAtATime(a) {
+  const days = a.p_days?.length ? a.p_days : EVENT_DAYS[a.p_event] || [];
+  if (!days.length) throw new StoreError(400, "Pick days of the event only.");
+  let first, last;
+  for (const day of days) {
+    last = await call("reserve_event_seat", { p_access: a.p_access, p_event: a.p_event, p_day: day, p_area: a.p_area, p_slot: a.p_slot, p_name: a.p_name, p_phone: a.p_phone });
+    first ||= last;
+  }
+  // The migration later gives every day the first day's pass ID, so show that one now.
+  const t = last.ticket;
+  return { pass: { code: first.ticket.code, event: t.event, name: t.name, days, area: t.area, slot: t.slot }, riders: last.riders, summary: last.summary };
+}
+
 export default async function handler(req, res) {
   try {
     if (!allowedOrigin(req.headers.origin)) return send(res, 403, { error: "This form only works on the Tap A Ride website." });
@@ -133,7 +149,7 @@ export default async function handler(req, res) {
     }
     if (b.action === "seat") {
       // The private access key (returned when joining), never the public invite code.
-      const out = await call("reserve_event_pass", {
+      const args = {
         p_access: str(b.access, 80),
         p_event: str(b.event, 60),
         p_area: str(b.area, 40),
@@ -141,7 +157,8 @@ export default async function handler(req, res) {
         p_phone: str(b.phone, 30) ?? null,
         p_days: daysFrom(b),
         p_slot: "07:00",
-      });
+      };
+      const out = await call("reserve_event_pass", args).catch((e) => (e.missing ? passOneDayAtATime(args) : Promise.reject(e)));
       // The pass goes to the email they joined with, straight away.
       const to = out?.summary?.email;
       const mail = out?.pass && to ? await mailSoon({ to, ...passEmail(out.pass) }) : { sent: false };

@@ -29,7 +29,10 @@ export async function call(fn, args) {
   if (res.ok) return body;
   const code = body?.code;
   const status = code === "22023" ? 400 : code === "P0002" ? 404 : code === "23505" ? 409 : 502;
-  throw new StoreError(status, status === 502 ? "The waitlist is busy right now. Try again in a minute." : body?.message || "Something went wrong.");
+  const err = new StoreError(status, status === 502 ? "The waitlist is busy right now. Try again in a minute." : body?.message || "Something went wrong.");
+  // PostgREST: the database function doesn't exist (yet). Lets callers fall back to an older one.
+  err.missing = code === "PGRST202";
+  throw err;
 }
 
 // ---------------------------------------------------------------- preview store (mirrors the SQL)

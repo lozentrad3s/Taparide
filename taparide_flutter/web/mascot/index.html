@@ -13,6 +13,10 @@
   </script>
 </head>
 <body>
-  <script type="module" src="mascot.js"></script>
+  <!-- The host may serve this page as ".../mascot" (no trailing slash), so find mascot.js from the path. -->
+  <script type="module">
+    const dir = location.pathname.replace(/\/(index\.html)?$/, "").replace(/\/mascot$/, "") + "/mascot/";
+    import(dir + "mascot.js");
+  </script>
 </body>
 </html>
