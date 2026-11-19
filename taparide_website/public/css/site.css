@@ -109,7 +109,7 @@ h3 { font-weight: 700; letter-spacing: -0.01em; font-size: 22px; line-height: 1.
 @supports (backdrop-filter: blur(1px)) { .top { background: rgba(255, 255, 255, 0.86); backdrop-filter: saturate(1.6) blur(14px); } }
 .top.solid { box-shadow: 0 1px 0 var(--line); }
 .top-in { height: 100%; max-width: 1400px; margin-inline: auto; padding-inline: var(--gutter); display: flex; align-items: center; gap: 24px; }
-.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; flex: none; }
+.brand { display: flex; align-items: center; gap: 10px; min-height: 44px; text-decoration: none; flex: none; }
 .brand-mark { width: 62px; }
 .brand-word { width: 116px; }
 .nav { display: none; margin-left: auto; gap: 2px; }
@@ -154,7 +154,7 @@ h3 { font-weight: 700; letter-spacing: -0.01em; font-size: 22px; line-height: 1.
 
 @media (max-width: 1099px) {
   .hero-tabs { left: 14px; right: 14px; top: 12px; bottom: auto; gap: 6px; }
-  .hero-tab { flex: 1; width: auto; padding: 8px 0; }
+  .hero-tab { flex: 1; width: auto; padding: 11px 0; }
   .hero-tab .tab-label { display: none; }
 }
 .hero-frame::before {
@@ -295,19 +295,17 @@ legend, .field label { display: block; font-weight: 700; font-size: 15px; margin
 .more-body h3 .ic { color: var(--forest); }
 .more-body p { color: var(--muted); max-width: 42ch; }
 
-/* ------------------------------------------------------------ campaigns gallery */
-.gallery { padding-block: var(--section); background: var(--forest-deep); color: #fff; overflow: hidden; }
-.gallery-head { display: flex; align-items: end; justify-content: space-between; gap: 24px; }
-.gallery-nav { display: flex; gap: 10px; }
-.gallery .round-btn { background: transparent; color: #fff; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.3); }
-.gallery .round-btn:hover { box-shadow: inset 0 0 0 1.5px #fff; }
-.gallery-track {
-  margin-top: 40px; display: flex; gap: 20px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
-  padding: 4px max(var(--gutter), calc((100vw - var(--max)) / 2 + var(--gutter))) 8px;
-  scroll-padding-inline: max(var(--gutter), calc((100vw - var(--max)) / 2 + var(--gutter)));
+/* ------------------------------------------------------------ campaign band (Move more. Worry less.) */
+/* The poster is the whole section: shown uncropped in the middle, its own colours blurred out to the edges. */
+.campaign {
+  position: relative; display: grid; place-items: center; overflow: hidden;
+  background: #0f7a3a url("/img/flyers/move-more-blur.jpg") center / cover no-repeat;
 }
-.gallery-track::-webkit-scrollbar { display: none; }
-.gallery-track img { flex: none; width: clamp(240px, 26vw, 340px); aspect-ratio: 4 / 5; object-fit: cover; border-radius: var(--r-lg); scroll-snap-align: start; }
+.campaign img { position: relative; display: block; width: 100%; height: auto; }
+@media (min-width: 700px) {
+  .campaign { padding-block: clamp(32px, 5vw, 64px); }
+  .campaign img { width: auto; height: min(88vh, 860px); max-width: 100%; object-fit: contain; border-radius: var(--r-lg); box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.45); }
+}
 
 /* ------------------------------------------------------------ partners */
 .partners { padding-block: var(--section); }
@@ -524,3 +522,22 @@ legend, .field label { display: block; font-weight: 700; font-size: 15px; margin
 /* The WhatsApp button waits until the visitor has scrolled past the hero. */
 .wa-float { opacity: 0; pointer-events: none; transform: translateY(12px); transition: opacity 260ms ease, transform 260ms var(--ease), background-color 160ms ease; }
 .wa-float.is-visible { opacity: 1; pointer-events: auto; transform: none; }
+
+/* ------------------------------------------------------------ cookie notice */
+.cookie {
+  position: fixed; z-index: 60; left: max(16px, env(safe-area-inset-left)); bottom: max(16px, env(safe-area-inset-bottom));
+  width: min(420px, calc(100vw - 32px)); padding: 20px 22px; border-radius: var(--r-lg); background: #fff; color: var(--ink);
+  box-shadow: 0 24px 60px -20px rgba(6, 51, 31, 0.35), 0 0 0 1px rgba(6, 51, 31, 0.08);
+  animation: cookie-in 320ms var(--ease) both;
+}
+.cookie h2 { font-size: 18px; margin: 0 0 6px; }
+.cookie p { margin: 0; font-size: 14.5px; line-height: 1.5; color: #4a5a52; }
+.cookie a { color: var(--forest); font-weight: 600; }
+.cookie-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.cookie-actions .btn { min-height: 44px; padding: 0 18px; font-size: 15px; flex: 1 1 auto; }
+.btn-line { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1.5px rgba(6, 51, 31, 0.2); }
+.btn-line:hover { box-shadow: inset 0 0 0 1.5px var(--ink); }
+body.has-cookie .wa-float { opacity: 0; pointer-events: none; }
+@keyframes cookie-in { from { opacity: 0; transform: translateY(16px); } }
+@media (prefers-reduced-motion: reduce) { .cookie { animation: none; } }
+@media print { .cookie { display: none; } }

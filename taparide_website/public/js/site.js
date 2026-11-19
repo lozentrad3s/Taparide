@@ -10,8 +10,9 @@
   const APP = "/app";
   const DASH = "/dashboard";
   const WHATSAPP = "2349110502561";
-  const $ = (s, el = document) => el.querySelector(s);
-  const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+  // Tolerate a missing container: /terms and /privacy share this script but not every section.
+  const $ = (s, el = document) => el?.querySelector(s) ?? null;
+  const $$ = (s, el = document) => (el ? [...el.querySelectorAll(s)] : []);
   const naira = (n) => "₦" + Number(n).toLocaleString("en-NG");
   const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -381,20 +382,6 @@
     }
   });
 
-  // ---------------------------------------------------------------- campaign gallery arrows
-  const track = $("[data-gallery]");
-  if (track) {
-    const btns = $$("[data-gal]");
-    const step = () => (track.querySelector("img")?.getBoundingClientRect().width || 300) + 20;
-    const sync = () => {
-      btns[0].disabled = track.scrollLeft < 8;
-      btns[1].disabled = track.scrollLeft + track.clientWidth > track.scrollWidth - 8;
-    };
-    for (const b of btns) b.addEventListener("click", () => track.scrollBy({ left: Number(b.dataset.gal) * step(), behavior: reduced() ? "auto" : "smooth" }));
-    track.addEventListener("scroll", sync, { passive: true });
-    addEventListener("resize", sync);
-    sync();
-  }
 
   // ---------------------------------------------------------------- Abuja Tech Week seats
   const seatForm = $("[data-seat]");
@@ -476,4 +463,38 @@
     say(seatForm, "");
     seatForm.area.focus();
   });
+  // ---------------------------------------------------------------- cookie & storage notice
+  // The site sets no advertising or tracking cookies. It keeps the visitor's own sign-up, invite code
+  // and bus passes on their device (essential: they asked for them). Optional anonymous visit statistics
+  // stay off unless the visitor allows them; anything added later must check window.tarConsent() first.
+  const CONSENT = "tar.consent";
+  const readConsent = () => { try { return JSON.parse(localStorage.getItem(CONSENT) || "null"); } catch { return null; } };
+  window.tarConsent = () => readConsent()?.stats === true;
+  const showCookies = () => {
+    if ($(".cookie")) return;
+    const box = document.createElement("section");
+    box.className = "cookie";
+    box.setAttribute("role", "dialog");
+    box.setAttribute("aria-labelledby", "cookie-title");
+    box.innerHTML = `
+      <h2 id="cookie-title">Cookies and your device</h2>
+      <p>We don't use advertising or tracking cookies. We keep your sign-up, invite code and free bus passes on this device so they're here when you come back. With your OK we may also count visits anonymously. <a href="/privacy#cookies">Details</a></p>
+      <div class="cookie-actions">
+        <button type="button" class="btn btn-ink" data-consent="all">Allow statistics</button>
+        <button type="button" class="btn btn-line" data-consent="essential">Essential only</button>
+      </div>`;
+    document.body.append(box);
+    document.body.classList.add("has-cookie");
+    for (const b of $$("[data-consent]", box)) {
+      b.addEventListener("click", () => {
+        const stats = b.dataset.consent === "all";
+        try { localStorage.setItem(CONSENT, JSON.stringify({ v: 1, stats, at: new Date().toISOString() })); } catch {}
+        box.remove();
+        document.body.classList.remove("has-cookie");
+        dispatchEvent(new CustomEvent("tar:consent", { detail: { stats } }));
+      });
+    }
+  };
+  if (!readConsent()) showCookies();
+  for (const a of $$("[data-cookie-settings]")) a.addEventListener("click", (e) => { e.preventDefault(); showCookies(); });
 })();

@@ -49,9 +49,11 @@ async function limited(req, perMinute, scope) {
   const shared = await overLimit(`waitlist:${scope}:${ip}`, perMinute);
   if (shared !== null) return shared;
   const now = Date.now();
-  const recent = (hits.get(ip) || []).filter((t) => now - t < 60_000);
+  // One counter per scope: page reads (seat counts) must not use up the sign-up allowance.
+  const key = `${scope}:${ip}`;
+  const recent = (hits.get(key) || []).filter((t) => now - t < 60_000);
   recent.push(now);
-  hits.set(ip, recent);
+  hits.set(key, recent);
   if (hits.size > 5000) hits.clear();
   return recent.length > perMinute;
 }
@@ -88,7 +90,8 @@ export default async function handler(req, res) {
     }
 
     if (req.method !== "POST") return send(res, 405, { error: "Use GET or POST." });
-    if (await limited(req, 10, "write")) return send(res, 429, { error: "Too many tries. Wait a minute and try again." });
+    // 20 a minute per address: many people share one mobile-network address in Nigeria.
+    if (await limited(req, 20, "write")) return send(res, 429, { error: "Too many tries. Wait a minute and try again." });
     const b = await readBody(req);
     // Bots fill every field; people never see this one.
     if (b.company) return send(res, 400, { error: "Something went wrong. Please try again." });

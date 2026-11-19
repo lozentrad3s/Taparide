@@ -16,10 +16,13 @@ export async function requireUser(req, { perMinute = 20 } = {}) {
   if (shared === true) throw new AiError(429, "Too many requests. Wait a minute and try again.");
   if (shared === null) {
     const now = Date.now();
-    const recent = (hits.get(ip) || []).filter((t) => now - t < 60_000);
+    // One counter per service, as in Redis: busy map tiles must not block payments or the assistant.
+    const key = `${new URL(req.url, "http://x").pathname}:${ip}`;
+    const recent = (hits.get(key) || []).filter((t) => now - t < 60_000);
     if (recent.length >= perMinute) throw new AiError(429, "Too many requests. Wait a minute and try again.");
     recent.push(now);
-    hits.set(ip, recent);
+    hits.set(key, recent);
+    if (hits.size > 5000) hits.clear();
   }
 
   const url = process.env.SUPABASE_URL;
