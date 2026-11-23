@@ -13,7 +13,6 @@
   // Tolerate a missing container: /terms and /privacy share this script but not every section.
   const $ = (s, el = document) => el?.querySelector(s) ?? null;
   const $$ = (s, el = document) => (el ? [...el.querySelectorAll(s)] : []);
-  const naira = (n) => "₦" + Number(n).toLocaleString("en-NG");
   const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   // Storage can throw (private mode, blocked site data); the page works without it.
@@ -52,12 +51,20 @@
 
   const menuBtn = $("[data-menu-btn]");
   const menu = $("[data-menu]");
+  // The menu opens right under the header, wherever it is (the Tech Week notice can sit above it).
+  const placeMenu = () => {
+    const bottom = Math.max(0, Math.round($("[data-top]")?.getBoundingClientRect().bottom || 0));
+    menu.style.top = bottom + "px";
+    menu.style.maxHeight = `calc(100dvh - ${bottom}px)`;
+  };
   const setMenu = (open) => {
+    if (open) placeMenu();
     menu.hidden = !open;
     menuBtn.setAttribute("aria-expanded", String(open));
     menuBtn.querySelector("use").setAttribute("href", open ? "#i-close" : "#i-menu");
   };
   menuBtn?.addEventListener("click", () => setMenu(menu.hidden));
+  addEventListener("scroll", () => { if (menu && !menu.hidden) placeMenu(); }, { passive: true });
   menu?.addEventListener("click", (e) => { if (e.target.closest("a")) setMenu(false); });
   addEventListener("keydown", (e) => { if (e.key === "Escape" && menu && !menu.hidden) { setMenu(false); menuBtn.focus(); } });
 
@@ -176,13 +183,13 @@
     b.disabled = on;
     b.setAttribute("aria-busy", String(on));
   }
-  // Claiming the free ride needs the terms accepted.
+  // Claiming the ride reward needs the terms accepted.
   function agreed(form) {
     const box = form.terms;
     if (!box || box.checked) { box?.closest(".agree")?.classList.remove("is-missing"); return true; }
     box.closest(".agree")?.classList.add("is-missing");
     box.focus();
-    say(form, "Please agree to the Terms and Privacy notice to claim your free ride.", "err");
+    say(form, "Please agree to the Terms and Privacy notice to claim your ride reward.", "err");
     return false;
   }
 
@@ -223,10 +230,11 @@
     $("[data-t-pos]", ticket).textContent = `#${Number(me.position).toLocaleString("en-NG")}`;
     $("[data-t-refs]", ticket).textContent = String(me.referrals ?? 0);
     $("[data-t-code]", ticket).textContent = me.code;
-    $(".ticket-value", ticket).textContent = naira(me.free_ride || 1000);
+    // Sign-up reward until full launch: no amount is promised, only that it is granted.
+    $(".ticket-value", ticket).textContent = me.free_ride_left === false ? "Place saved" : "Ride reward granted";
     $("[data-t-note]", ticket).textContent = me.free_ride_left === false
-      ? "The free rides have all been claimed, but your place in line is saved."
-      : "Open your Tap A Ride account with this email and it shows as ride credit.";
+      ? "The sign-up rewards have all been claimed, but your place in line is saved."
+      : "Open your Tap A Ride account with this email to see it. Its value is announced at launch.";
     const pass = passFrom(me);
     const seatEl = $("[data-t-seat]", ticket);
     seatEl.hidden = !pass;
@@ -234,7 +242,7 @@
 
     const link = inviteLink(me.code);
     $("[data-t-link]", ticket).value = link;
-    const msg = `I just got a free ride on Tap A Ride, plus free buses to Abuja Tech Week (24–26 Nov). Join with my link: ${link}`;
+    const msg = `I just joined Tap A Ride and got a ride reward, plus free buses to Abuja Tech Week (24–26 Nov). Join with my link: ${link}`;
     $("[data-wa]", ticket).href = "https://wa.me/?text=" + encodeURIComponent(msg);
     $("[data-x]", ticket).href = "https://x.com/intent/post?text=" + encodeURIComponent(msg);
     if (navigator.share) $("[data-share]", ticket).hidden = false;
@@ -259,7 +267,7 @@
     setTimeout(() => (label.textContent = "Copy"), 1800);
   });
   $("[data-share]", ticket)?.addEventListener("click", () => {
-    navigator.share?.({ title: "Tap A Ride", text: "Get a free ride on Tap A Ride in Abuja", url: inviteLink(me.code) }).catch(() => {});
+    navigator.share?.({ title: "Tap A Ride", text: "Join Tap A Ride in Abuja and get a ride reward", url: inviteLink(me.code) }).catch(() => {});
   });
   $("[data-forget]", ticket)?.addEventListener("click", () => {
     for (const k of ["tar.code", "tar.name", "tar.email", "tar.access", "tar.passes"]) store.del(k);
@@ -374,7 +382,7 @@
       const d = await join({ email, company: quick.company.value }, "website-hero");
       const a = Object.assign(document.createElement("a"), { href: "#join", textContent: "See your ticket and invite link" });
       const p = document.createElement("span");
-      p.append(d.existing ? `You're already in, at #${d.position}. ` : `You're in at #${d.position}. Your free ride is saved. `, a);
+      p.append(d.existing ? `You're already in, at #${d.position}. ` : `You're in at #${d.position}. Ride reward granted. `, a);
       say(quick, p, "ok");
     } catch (err) {
       say(quick, err.message, "err");

@@ -731,7 +731,7 @@ class Wallet {
   /// Everything the rider can spend: their own money plus [rideCredit].
   final int balance;
 
-  /// Free credit (the ₦1,000 for joining). Spent first, shown apart from the wallet money.
+  /// Credit that isn't the rider's own money (older sign-up credit). Spent first, shown apart.
   final int rideCredit;
 
   /// The rider's own money in the wallet.

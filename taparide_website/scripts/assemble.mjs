@@ -3,6 +3,7 @@
 //   .output/public/            website (this folder's public/)
 //   .output/public/app/        rider app        -> taparide.com/app
 //   .output/public/dashboard/  partner, FCTA and admin dashboards -> taparide.com/dashboard
+//   .output/public/demo/       everything with sample data, for judges -> taparide.com/demo
 //   .output/api/               website API + the app's API (maps, search, AI, payments)
 //
 // The website and the app stay in their own folders; only this output joins them.
@@ -34,13 +35,15 @@ function build(target) {
 
 const rider = build("rider");
 const dashboard = build("dashboard");
+const demo = build("demo");
 
 rmSync(out, { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
 cpSync(join(site, "public"), join(out, "public"), { recursive: true });
 cpSync(rider, join(out, "public", "app"), { recursive: true });
 cpSync(dashboard, join(out, "public", "dashboard"), { recursive: true });
-for (const dir of [join(out, "public", "app"), join(out, "public", "dashboard")]) rmSync(join(dir, "_phone.html"), { force: true });
+cpSync(demo, join(out, "public", "demo"), { recursive: true });
+for (const dir of [join(out, "public", "app"), join(out, "public", "dashboard"), join(out, "public", "demo")]) rmSync(join(dir, "_phone.html"), { force: true });
 
 // API: the app's functions first, then the website's (both keep their _lib helpers).
 cpSync(join(appDeploy, "api"), join(out, "api"), { recursive: true });
@@ -59,4 +62,5 @@ writeFileSync(join(out, "package.json"), JSON.stringify({
 if (existsSync(join(appDeploy, ".vercel"))) cpSync(join(appDeploy, ".vercel"), join(out, ".vercel"), { recursive: true });
 if (existsSync(join(appDeploy, "node_modules"))) cpSync(join(appDeploy, "node_modules"), join(out, "node_modules"), { recursive: true });
 
-console.log(`Assembled ${out}\n  website  /\n  app      /app\n  dashboards /dashboard`);
+console.log(`Assembled ${out}\n  website  /\n  app      /app\n  dashboards /dashboard
+  demo     /demo`);

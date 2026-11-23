@@ -75,8 +75,7 @@ class DemoBackend implements Backend {
     }
     try {
       final json = jsonDecode(raw) as Map<String, dynamic>;
-      List<T> list<T>(String key, T Function(Map<String, dynamic>) from) =>
-          [for (final item in (json[key] as List)) from(Map<String, dynamic>.from(item as Map))];
+      List<T> list<T>(String key, T Function(Map<String, dynamic>) from) => [for (final item in (json[key] as List)) from(Map<String, dynamic>.from(item as Map))];
       _accounts = list('accounts', _Account.fromJson);
       _providers = list('providers', TransportProvider.fromJson);
       _routes = list('routes', TransitRoute.fromJson);
@@ -113,7 +112,7 @@ class DemoBackend implements Backend {
     _rides = DemoSeed.sharedRides(now);
     _bookings = [...DemoSeed.bookings(now), ...DemoSeed.fleetDriverBookings(now)];
     _audit = DemoSeed.audit(now);
-    _wallets = {DemoSeed.uAisha: const Wallet(cardNumber: '5061004219872500', balance: 2500, rideCredit: 1000)};
+    _wallets = {DemoSeed.uAisha: const Wallet(cardNumber: '5061004219872500', balance: 5000)};
     _applications = DemoSeed.applications(now);
     _drivers = DemoSeed.fleetDrivers();
     _sessionUserId = null;
@@ -141,7 +140,9 @@ class DemoBackend implements Backend {
         'rides': [for (final r in _rides) r.toJson()],
         'bookings': [for (final b in _bookings) b.toJson()],
         'audit': [for (final a in _audit) a.toJson()],
-        'wallets': {for (final e in _wallets.entries) e.key: {'card_number': e.value.cardNumber, 'balance': e.value.balance}},
+        'wallets': {
+          for (final e in _wallets.entries) e.key: {'card_number': e.value.cardNumber, 'balance': e.value.balance}
+        },
         'session': _sessionUserId,
         'applications': [for (final a in _applications) a.toJson()],
         'fleet_drivers': [for (final d in _drivers) d.toJson()],
@@ -177,10 +178,12 @@ class DemoBackend implements Backend {
     if (!allowed) throw BackendException(BackendErrorKind.permission, 'Your account is not allowed to $what.');
   }
 
-  bool _manages(AppUser user, String providerId) =>
-      user.role == UserRole.admin || ((user.role == UserRole.operator || user.role == UserRole.fleetOwner) && user.providerId == providerId);
+  bool _manages(AppUser user, String providerId) => user.role == UserRole.admin || ((user.role == UserRole.operator || user.role == UserRole.fleetOwner) && user.providerId == providerId);
 
-  Set<String> get _verifiedProviderIds => {for (final p in _providers) if (p.status == Verification.verified) p.id};
+  Set<String> get _verifiedProviderIds => {
+        for (final p in _providers)
+          if (p.status == Verification.verified) p.id
+      };
 
   void _log(String action, String target) {
     final me = _me;
@@ -260,6 +263,9 @@ class DemoBackend implements Backend {
 
   @override
   bool get passwordRecovery => false;
+
+  @override
+  String? takeAuthRedirectError() => null;
 
   @override
   Future<void> setNewPassword(String password) async => _wait();
@@ -369,7 +375,10 @@ class DemoBackend implements Backend {
     final i = _signupIndex(id);
     final e = _waitlist[i];
     final code = e.seats.where((s) => s.event == event).map((s) => s.ticket).whereType<String>().firstOrNull ?? 'TW-SMPL0$id';
-    final kept = [for (final s in e.seats) if (s.event != event) s];
+    final kept = [
+      for (final s in e.seats)
+        if (s.event != event) s
+    ];
     final n = name?.trim(), p = phone?.trim();
     _waitlist[i] = _copySignup(
       e,
@@ -388,7 +397,10 @@ class DemoBackend implements Backend {
     final e = _waitlist[i];
     final seat = e.seats.where((s) => s.event == event).firstOrNull;
     if (seat == null) throw const BackendException(BackendErrorKind.notFound, 'That person has no pass for this event.');
-    _waitlist[i] = _copySignup(e, seats: [for (final s in e.seats) if (s.event != event) s]);
+    _waitlist[i] = _copySignup(e, seats: [
+      for (final s in e.seats)
+        if (s.event != event) s
+    ]);
     _log('Cancelled bus pass', seat.ticket ?? e.code);
   }
 
@@ -398,28 +410,69 @@ class DemoBackend implements Backend {
     _require(_me.role == UserRole.admin, 'remove sign-ups');
     final i = _signupIndex(id);
     if (_waitlist[i].creditedAt != null) {
-      throw const BackendException(BackendErrorKind.validation, "This sign-up already received its free ride in an account; it can't be removed.");
+      throw const BackendException(BackendErrorKind.validation, "This sign-up's ride reward was already granted to an account; it can't be removed.");
     }
     _waitlist.removeAt(i);
     _log('Removed duplicate sign-up', 'waitlist #$id');
   }
+
+  /// Tap-to-pay holds, worked out from the demo bookings like the live server does: a paid fare is
+  /// held until 45 minutes after departure (or the trip is completed), refunded if cancelled first.
+  List<({Booking booking, String status})> _payouts({String? providerId}) {
+    final now = DateTime.now();
+    return [
+      for (final b in _bookings)
+        if (b.providerId != null && b.fare > 0 && b.kind != BookingKind.tagAlong && b.paymentMethod != PaymentMethod.splitCost && (providerId == null || b.providerId == providerId))
+          (
+            booking: b,
+            status: switch (b.status) {
+              BookingStatus.cancelled || BookingStatus.declined => 'refunded',
+              BookingStatus.completed => 'released',
+              _ => b.departureAt.add(const Duration(minutes: 45)).isBefore(now) ? 'released' : 'held',
+            },
+          ),
+    ];
+  }
+
+  int _sum(Iterable<({Booking booking, String status})> rows, String status) => rows.where((r) => r.status == status).fold(0, (a, r) => a + r.booking.fare);
 
   @override
   Future<MoneyOverview> fetchMoney() async {
     await _wait();
     _require(_me.role == UserRole.admin, 'see money');
     final wallets = _wallets.values;
+    final payouts = _payouts();
+    final topUps = [for (final list in _topUps.values) ...list]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final byProvider = <String, int>{};
+    for (final r in payouts.where((r) => r.status == 'released')) {
+      byProvider.update(r.booking.providerId!, (v) => v + r.booking.fare, ifAbsent: () => r.booking.fare);
+    }
     return MoneyOverview(
       walletCount: wallets.length,
       walletBalance: wallets.fold(0, (a, w) => a + w.balance),
       rideCredit: wallets.fold(0, (a, w) => a + w.rideCredit),
-      topupsPaid: 0,
-      topupsPaidAmount: 0,
+      topupsPaid: topUps.length,
+      topupsPaidAmount: topUps.fold(0, (a, t) => a + t.amount),
       topupsPending: 0,
       topupsFailed: 0,
-      held: 0,
-      released: 0,
-      refunded: 0,
+      held: _sum(payouts, 'held'),
+      released: _sum(payouts, 'released'),
+      refunded: _sum(payouts, 'refunded'),
+      collection: [
+        for (final e in (byProvider.entries.toList()..sort((a, b) => b.value.compareTo(a.value))))
+          (provider: _providers.where((p) => p.id == e.key).firstOrNull?.name ?? e.key, kind: _providers.where((p) => p.id == e.key).firstOrNull?.kind.label ?? '', available: e.value, paidOut: 0),
+      ],
+      recentTopups: [
+        for (final t in topUps.take(25))
+          (
+            reference: t.reference,
+            amount: t.amount,
+            status: t.status,
+            channel: t.channel,
+            createdAt: t.createdAt,
+            name: _accounts.where((a) => _topUps[a.user.id]?.contains(t) ?? false).firstOrNull?.user.fullName
+          ),
+      ],
     );
   }
 
@@ -427,7 +480,38 @@ class DemoBackend implements Backend {
   Future<CollectionWallet> fetchCollectionWallet() async {
     await _wait();
     _require(_me.providerId != null, 'see a collection wallet');
-    return CollectionWallet.empty;
+    final rows = _payouts(providerId: _me.providerId)..sort((a, b) => b.booking.createdAt.compareTo(a.booking.createdAt));
+    return CollectionWallet(
+      available: _sum(rows, 'released'),
+      paidOut: 0,
+      held: _sum(rows, 'held'),
+      recent: [
+        for (final r in rows.take(20))
+          CollectionPayment(
+            bookingId: r.booking.id,
+            amount: r.booking.fare,
+            status: r.status,
+            createdAt: r.booking.createdAt,
+            releaseAt: r.booking.departureAt.add(const Duration(minutes: 45)),
+            title: r.booking.title ?? '${r.booking.origin} → ${r.booking.destination}',
+          ),
+      ],
+    );
+  }
+
+  final _topUps = <String, List<TopUpRecord>>{};
+
+  @override
+  Future<List<TopUpRecord>> fetchMyTopUps() async {
+    await _wait();
+    return List.unmodifiable(_topUps[_me.id] ?? const <TopUpRecord>[]);
+  }
+
+  @override
+  Future<SignupReward> fetchSignupReward() async {
+    await _wait();
+    // The sample rider joined on the website before launch; other demo riders did not.
+    return _me.id == DemoSeed.uAisha ? SignupReward(granted: true, at: DateTime.now().subtract(const Duration(days: 3))) : SignupReward.none;
   }
 
   @override
@@ -473,7 +557,10 @@ class DemoBackend implements Backend {
   Future<List<TransitRoute>> fetchPublicRoutes() async {
     await _wait();
     final verified = _verifiedProviderIds;
-    return [for (final r in _routes) if (r.active && verified.contains(r.providerId)) r]..sort((a, b) => b.monthlyTrips.compareTo(a.monthlyTrips));
+    return [
+      for (final r in _routes)
+        if (r.active && verified.contains(r.providerId)) r
+    ]..sort((a, b) => b.monthlyTrips.compareTo(a.monthlyTrips));
   }
 
   @override
@@ -481,7 +568,10 @@ class DemoBackend implements Backend {
     await _wait();
     final me = _me;
     if (me.role == UserRole.government || me.role == UserRole.admin) return List.of(_providers);
-    return [for (final p in _providers) if (p.status == Verification.verified || p.id == me.providerId) p];
+    return [
+      for (final p in _providers)
+        if (p.status == Verification.verified || p.id == me.providerId) p
+    ];
   }
 
   @override
@@ -521,8 +611,10 @@ class DemoBackend implements Backend {
     _me;
     _refreshSeedRides();
     final now = _clock();
-    final rides = [for (final r in _rides) if (!r.cancelled && r.departAt.isAfter(now.subtract(const Duration(minutes: 30)))) r]
-      ..sort((a, b) => a.departAt.compareTo(b.departAt));
+    final rides = [
+      for (final r in _rides)
+        if (!r.cancelled && r.departAt.isAfter(now.subtract(const Duration(minutes: 30)))) r
+    ]..sort((a, b) => a.departAt.compareTo(b.departAt));
     return rides;
   }
 
@@ -546,7 +638,10 @@ class DemoBackend implements Backend {
     final me = _me;
     _settleTagAlongRequests();
     _completePastTrips();
-    return [for (final b in _bookings) if (b.userId == me.id) b]..sort((a, b) => b.departureAt.compareTo(a.departureAt));
+    return [
+      for (final b in _bookings)
+        if (b.userId == me.id) b
+    ]..sort((a, b) => b.departureAt.compareTo(a.departureAt));
   }
 
   bool _hostIsAccount(String hostId) => _accounts.any((a) => a.user.id == hostId);
@@ -700,7 +795,15 @@ class DemoBackend implements Backend {
   }
 
   @override
-  Future<SharedRide> offerSharedRide({required String origin, required String destination, required DateTime departAt, required int seats, required int costShare, required String vehicleLabel, String note = '', String? eventId}) async {
+  Future<SharedRide> offerSharedRide(
+      {required String origin,
+      required String destination,
+      required DateTime departAt,
+      required int seats,
+      required int costShare,
+      required String vehicleLabel,
+      String note = '',
+      String? eventId}) async {
     await _wait();
     final me = _me;
     if (departAt.isBefore(_clock())) throw const BackendException(BackendErrorKind.validation, 'Choose a departure time later than now.');
@@ -775,6 +878,8 @@ class DemoBackend implements Backend {
     if (amount < 100 || amount > 50000) throw const BackendException(BackendErrorKind.validation, 'Top up between ₦100 and ₦50,000.');
     final wallet = _walletFor(me.id);
     final updated = Wallet(cardNumber: wallet.cardNumber, balance: wallet.balance + amount, rideCredit: wallet.rideCredit);
+    final now = DateTime.now();
+    (_topUps[_me.id] ??= []).insert(0, TopUpRecord(reference: 'TAR-DEMO${now.millisecondsSinceEpoch % 1000000}', amount: amount, status: 'paid', channel: 'demo', createdAt: now, paidAt: now));
     _wallets[me.id] = updated;
     _save();
     return updated;
@@ -791,8 +896,14 @@ class DemoBackend implements Backend {
   Future<List<Booking>> fetchRideRequests() async {
     await _wait();
     final me = _me;
-    final mine = {for (final r in _rides) if (r.hostId == me.id) r.id};
-    return [for (final b in _bookings) if (b.rideId != null && mine.contains(b.rideId)) b]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final mine = {
+      for (final r in _rides)
+        if (r.hostId == me.id) r.id
+    };
+    return [
+      for (final b in _bookings)
+        if (b.rideId != null && mine.contains(b.rideId)) b
+    ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   }
 
   @override
@@ -844,10 +955,69 @@ class DemoBackend implements Backend {
     const org = 'Capital Events Hub (sample)';
     return [
       // Real event: Tap A Ride is the official ride partner (free buses, booked on taparide.com).
-      RideEvent(id: 'ev_techweek', title: 'Abuja Tech Week 2026', venue: 'Velodrome, National Stadium', area: 'Kukwaba', startsAt: DateTime(2026, 11, 24, 9), endsAt: DateTime(2026, 11, 26, 17), category: EventCategory.conference, organiserName: 'Abuja Tech & Digital Economy Week', sponsored: true, description: 'Abuja Tech & Digital Economy Week at the Velodrome, National Stadium. Tap A Ride is the official ride partner: free buses leave at 7:00 AM sharp from University of Abuja (Gwagwalada), Nnamdi Azikiwe Airport, Old Parade Ground (corps members), Nile University, Police Signboard (Lugbe) and the checkpoint between Maraba and Nyanya. Powered by Pi-CNG & EV.', lat: 9.0392, lng: 7.4556),
-      RideEvent(id: 'ev_showcase', title: 'Smart Mobility Showcase', venue: 'International Conference Centre', area: 'Central Area', startsAt: at(3, 10), endsAt: at(3, 16), category: EventCategory.conference, organiserId: 'u_events', organiserName: org, providerId: DemoSeed.pEvents, description: 'Sample event: demos and talks on how Abuja moves.', lat: 9.0412, lng: 7.4893, ticketPrice: 2000, ticketsTotal: 400, ticketsSold: 118),
-      RideEvent(id: 'ev_music', title: 'Abuja Live Music Night', venue: 'Millennium Park', area: 'Maitama', startsAt: at(5, 18), endsAt: at(5, 22), category: EventCategory.concert, organiserId: 'u_events', organiserName: org, providerId: DemoSeed.pEvents, description: 'Sample event: an evening of live music in the park.', lat: 9.0718, lng: 7.5003, ticketPrice: 5000, ticketsTotal: 1200, ticketsSold: 640),
-      RideEvent(id: 'ev_cup', title: 'Community Cup Final', venue: 'Moshood Abiola National Stadium', area: 'Kukwaba', startsAt: at(6, 20), endsAt: at(6, 22), category: EventCategory.sport, organiserId: 'u_events', organiserName: org, providerId: DemoSeed.pEvents, sponsored: true, description: 'Sample event: the weekend football final. Event buses run from Kubwa and Nyanya.', lat: 9.0379, lng: 7.4531),
+      RideEvent(
+          id: 'ev_techweek',
+          title: 'Abuja Tech Week 2026',
+          venue: 'Velodrome, National Stadium',
+          area: 'Kukwaba',
+          startsAt: DateTime(2026, 11, 24, 9),
+          endsAt: DateTime(2026, 11, 26, 17),
+          category: EventCategory.conference,
+          organiserName: 'Abuja Tech & Digital Economy Week',
+          sponsored: true,
+          description:
+              'Abuja Tech & Digital Economy Week at the Velodrome, National Stadium. Tap A Ride is the official ride partner: free buses leave at 7:00 AM sharp from University of Abuja (Gwagwalada), Nnamdi Azikiwe Airport, Old Parade Ground (corps members), Nile University, Police Signboard (Lugbe) and the checkpoint between Maraba and Nyanya. Powered by Pi-CNG & EV.',
+          lat: 9.0392,
+          lng: 7.4556),
+      RideEvent(
+          id: 'ev_showcase',
+          title: 'Smart Mobility Showcase',
+          venue: 'International Conference Centre',
+          area: 'Central Area',
+          startsAt: at(3, 10),
+          endsAt: at(3, 16),
+          category: EventCategory.conference,
+          organiserId: 'u_events',
+          organiserName: org,
+          providerId: DemoSeed.pEvents,
+          description: 'Sample event: demos and talks on how Abuja moves.',
+          lat: 9.0412,
+          lng: 7.4893,
+          ticketPrice: 2000,
+          ticketsTotal: 400,
+          ticketsSold: 118),
+      RideEvent(
+          id: 'ev_music',
+          title: 'Abuja Live Music Night',
+          venue: 'Millennium Park',
+          area: 'Maitama',
+          startsAt: at(5, 18),
+          endsAt: at(5, 22),
+          category: EventCategory.concert,
+          organiserId: 'u_events',
+          organiserName: org,
+          providerId: DemoSeed.pEvents,
+          description: 'Sample event: an evening of live music in the park.',
+          lat: 9.0718,
+          lng: 7.5003,
+          ticketPrice: 5000,
+          ticketsTotal: 1200,
+          ticketsSold: 640),
+      RideEvent(
+          id: 'ev_cup',
+          title: 'Community Cup Final',
+          venue: 'Moshood Abiola National Stadium',
+          area: 'Kukwaba',
+          startsAt: at(6, 20),
+          endsAt: at(6, 22),
+          category: EventCategory.sport,
+          organiserId: 'u_events',
+          organiserName: org,
+          providerId: DemoSeed.pEvents,
+          sponsored: true,
+          description: 'Sample event: the weekend football final. Event buses run from Kubwa and Nyanya.',
+          lat: 9.0379,
+          lng: 7.4531),
     ];
   }
 
@@ -856,9 +1026,46 @@ class DemoBackend implements Backend {
     DateTime at(int days, int hour) => DateTime(now.year, now.month, now.day + days, hour);
     Map<String, int> seats(List<(DateTime, int)> v) => {for (final e in v) EventBus.slotKey(e.$1): e.$2};
     return [
-      EventBus(id: 'eb_kubwa', eventId: 'ev_cup', providerId: DemoSeed.pMetro, providerName: 'Abuja Metro Bus Co. (sample)', vehicleLabel: 'City bus', origin: 'Kubwa', fare: 1200, capacity: 40, minRiders: 20, slots: [at(6, 17), at(6, 18), at(6, 19)], seatsBySlot: seats([(at(6, 17), 4), (at(6, 18), 11), (at(6, 19), 7)]), status: EventBusStatus.open),
-      EventBus(id: 'eb_nyanya', eventId: 'ev_cup', providerId: DemoSeed.pMetro, providerName: 'Abuja Metro Bus Co. (sample)', vehicleLabel: 'Toyota Coaster', origin: 'Nyanya', fare: 1000, capacity: 30, minRiders: 15, slots: [at(6, 18), at(6, 19)], seatsBySlot: seats([(at(6, 18), 9), (at(6, 19), 3)]), status: EventBusStatus.open),
-      EventBus(id: 'eb_jabi', eventId: 'ev_music', providerId: DemoSeed.pAirport, providerName: 'FCT Airport E-Shuttle (sample)', vehicleLabel: 'Electric shuttle', origin: 'Jabi', fare: 800, capacity: 14, minRiders: 8, slots: [at(5, 16), at(5, 17)], seatsBySlot: seats([(at(5, 17), 8)]), status: EventBusStatus.confirmed, confirmedAt: at(5, 17)),
+      EventBus(
+          id: 'eb_kubwa',
+          eventId: 'ev_cup',
+          providerId: DemoSeed.pMetro,
+          providerName: 'Abuja Metro Bus Co. (sample)',
+          vehicleLabel: 'City bus',
+          origin: 'Kubwa',
+          fare: 1200,
+          capacity: 40,
+          minRiders: 20,
+          slots: [at(6, 17), at(6, 18), at(6, 19)],
+          seatsBySlot: seats([(at(6, 17), 4), (at(6, 18), 11), (at(6, 19), 7)]),
+          status: EventBusStatus.open),
+      EventBus(
+          id: 'eb_nyanya',
+          eventId: 'ev_cup',
+          providerId: DemoSeed.pMetro,
+          providerName: 'Abuja Metro Bus Co. (sample)',
+          vehicleLabel: 'Toyota Coaster',
+          origin: 'Nyanya',
+          fare: 1000,
+          capacity: 30,
+          minRiders: 15,
+          slots: [at(6, 18), at(6, 19)],
+          seatsBySlot: seats([(at(6, 18), 9), (at(6, 19), 3)]),
+          status: EventBusStatus.open),
+      EventBus(
+          id: 'eb_jabi',
+          eventId: 'ev_music',
+          providerId: DemoSeed.pAirport,
+          providerName: 'FCT Airport E-Shuttle (sample)',
+          vehicleLabel: 'Electric shuttle',
+          origin: 'Jabi',
+          fare: 800,
+          capacity: 14,
+          minRiders: 8,
+          slots: [at(5, 16), at(5, 17)],
+          seatsBySlot: seats([(at(5, 17), 8)]),
+          status: EventBusStatus.confirmed,
+          confirmedAt: at(5, 17)),
     ];
   }
 
@@ -867,11 +1074,26 @@ class DemoBackend implements Backend {
     await _wait();
     _me;
     final now = _clock();
-    return [for (final e in _events) if ((e.endsAt ?? e.startsAt).isAfter(now.subtract(const Duration(hours: 6)))) e]..sort((a, b) => a.startsAt.compareTo(b.startsAt));
+    return [
+      for (final e in _events)
+        if ((e.endsAt ?? e.startsAt).isAfter(now.subtract(const Duration(hours: 6)))) e
+    ]..sort((a, b) => a.startsAt.compareTo(b.startsAt));
   }
 
   @override
-  Future<RideEvent> createEvent({required String title, required String venue, required String area, required DateTime startsAt, DateTime? endsAt, required EventCategory category, String description = '', double? lat, double? lng, int ticketPrice = 0, int ticketsTotal = 0, String? ticketLink}) async {
+  Future<RideEvent> createEvent(
+      {required String title,
+      required String venue,
+      required String area,
+      required DateTime startsAt,
+      DateTime? endsAt,
+      required EventCategory category,
+      String description = '',
+      double? lat,
+      double? lng,
+      int ticketPrice = 0,
+      int ticketsTotal = 0,
+      String? ticketLink}) async {
     await _wait();
     final me = _me;
     if (me.role != UserRole.eventPartner && me.role != UserRole.admin) {
@@ -943,7 +1165,23 @@ class DemoBackend implements Backend {
     }
     if (e.ticketPrice > 0) _charge(me.id, e.ticketPrice);
     _events[i] = e.copyWith(ticketsSold: e.ticketsSold + 1);
-    final booking = Booking(id: _id('bk'), userId: me.id, passengerName: me.fullName, kind: BookingKind.eventTicket, status: BookingStatus.confirmed, origin: e.venue, destination: e.venue, departureAt: e.startsAt, fare: e.ticketPrice, paymentMethod: method, ticketCode: _ticket('ET'), createdAt: _clock(), title: e.title, seat: 'Entry', providerId: e.providerId, eventId: e.id);
+    final booking = Booking(
+        id: _id('bk'),
+        userId: me.id,
+        passengerName: me.fullName,
+        kind: BookingKind.eventTicket,
+        status: BookingStatus.confirmed,
+        origin: e.venue,
+        destination: e.venue,
+        departureAt: e.startsAt,
+        fare: e.ticketPrice,
+        paymentMethod: method,
+        ticketCode: _ticket('ET'),
+        createdAt: _clock(),
+        title: e.title,
+        seat: 'Entry',
+        providerId: e.providerId,
+        eventId: e.id);
     _bookings.add(booking);
     _save();
     return booking;
@@ -955,11 +1193,15 @@ class DemoBackend implements Backend {
   Future<List<EventBus>> fetchEventBuses() async {
     await _wait();
     _me;
-    return [for (final b in _eventBuses) if (b.status != EventBusStatus.cancelled) b];
+    return [
+      for (final b in _eventBuses)
+        if (b.status != EventBusStatus.cancelled) b
+    ];
   }
 
   @override
-  Future<EventBus> offerEventBus({required String eventId, required String origin, required int fare, required int capacity, required int minRiders, required List<DateTime> slots, String? vehicleId}) async {
+  Future<EventBus> offerEventBus(
+      {required String eventId, required String origin, required int fare, required int capacity, required int minRiders, required List<DateTime> slots, String? vehicleId}) async {
     await _wait();
     final me = _me;
     if (me.role != UserRole.operator && me.role != UserRole.admin) {
@@ -1094,9 +1336,42 @@ class DemoBackend implements Backend {
   // ------------------------------------------------------------ header ads
 
   static const _ads = [
-    PromoAd(id: 'ad_advertise', sponsor: 'Tap A Ride', headline: 'Your brand here, in front of Abuja commuters', body: 'Reach riders on every trip without interrupting them. Ask about header slots and sponsored rides.', ctaLabel: 'Advertise with us', ctaLink: 'mailto:hello@taparide.app', colour: Color(0xFF0B5D3B), icon: 'campaign', reward: 50, seconds: 15, house: true),
-    PromoAd(id: 'ad_ev', sponsor: 'Tap A Ride Electric', headline: 'Go electric this week', body: 'Verified electric cars across Maitama, Wuse and Jabi. Quiet, clean and fixed fares.', ctaLabel: 'Book an EV', ctaLink: '/ev', colour: Color(0xFF0E7C66), icon: 'electric_car', reward: 50, seconds: 15, house: true),
-    PromoAd(id: 'ad_events', sponsor: 'Tap A Ride Events', headline: 'Event buses: skip the parking', body: 'Book a seat on a bus to the stadium or the conference centre and ride back together.', ctaLabel: 'See events', ctaLink: '/events', colour: Color(0xFF1F3A8A), icon: 'celebration', reward: 50, seconds: 15, house: true),
+    PromoAd(
+        id: 'ad_advertise',
+        sponsor: 'Tap A Ride',
+        headline: 'Your brand here, in front of Abuja commuters',
+        body: 'Reach riders on every trip without interrupting them. Ask about header slots and sponsored rides.',
+        ctaLabel: 'Advertise with us',
+        ctaLink: 'mailto:hello@taparide.app',
+        colour: Color(0xFF0B5D3B),
+        icon: 'campaign',
+        reward: 50,
+        seconds: 15,
+        house: true),
+    PromoAd(
+        id: 'ad_ev',
+        sponsor: 'Tap A Ride Electric',
+        headline: 'Go electric this week',
+        body: 'Verified electric cars across Maitama, Wuse and Jabi. Quiet, clean and fixed fares.',
+        ctaLabel: 'Book an EV',
+        ctaLink: '/ev',
+        colour: Color(0xFF0E7C66),
+        icon: 'electric_car',
+        reward: 50,
+        seconds: 15,
+        house: true),
+    PromoAd(
+        id: 'ad_events',
+        sponsor: 'Tap A Ride Events',
+        headline: 'Event buses: skip the parking',
+        body: 'Book a seat on a bus to the stadium or the conference centre and ride back together.',
+        ctaLabel: 'See events',
+        ctaLink: '/events',
+        colour: Color(0xFF1F3A8A),
+        icon: 'celebration',
+        reward: 50,
+        seconds: 15,
+        house: true),
   ];
 
   int _rewardsLeft(String userId) {
@@ -1206,7 +1481,10 @@ class DemoBackend implements Backend {
   @override
   Future<List<VehiclePosition>> fetchVehiclePositions() async {
     final now = _clock();
-    return [for (final p in _positions.values) if (now.difference(p.updatedAt).inMinutes < 5) p];
+    return [
+      for (final p in _positions.values)
+        if (now.difference(p.updatedAt).inMinutes < 5) p
+    ];
   }
 
   @override
@@ -1235,15 +1513,30 @@ class DemoBackend implements Backend {
     if (me.role == UserRole.government || me.role == UserRole.admin) {
       scoped = List.of(_bookings);
     } else if (me.role == UserRole.eventPartner) {
-      final mine = {for (final e in _events) if (e.providerId == me.providerId) e.id};
-      scoped = [for (final b in _bookings) if (mine.contains(b.eventId)) b];
+      final mine = {
+        for (final e in _events)
+          if (e.providerId == me.providerId) e.id
+      };
+      scoped = [
+        for (final b in _bookings)
+          if (mine.contains(b.eventId)) b
+      ];
     } else if (me.role == UserRole.fleetDriver) {
       scoped = _driverBookings(me);
     } else if (me.role == UserRole.fleetOwner) {
-      final owned = {for (final v in _vehicles) if (v.ownerId == me.providerId) v.id};
-      scoped = [for (final b in _bookings) if (owned.contains(b.vehicleId)) b];
+      final owned = {
+        for (final v in _vehicles)
+          if (v.ownerId == me.providerId) v.id
+      };
+      scoped = [
+        for (final b in _bookings)
+          if (owned.contains(b.vehicleId)) b
+      ];
     } else {
-      scoped = [for (final b in _bookings) if (b.providerId == me.providerId) b];
+      scoped = [
+        for (final b in _bookings)
+          if (b.providerId == me.providerId) b
+      ];
     }
     return scoped..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   }
@@ -1286,7 +1579,13 @@ class DemoBackend implements Backend {
     if (index < 0) throw const BackendException(BackendErrorKind.notFound, 'Vehicle not found.');
     final updated = _vehicles[index].copyWith(verification: status);
     _vehicles[index] = updated;
-    _log(status == Verification.verified ? 'Verified vehicle' : status == Verification.suspended ? 'Rejected vehicle' : 'Flagged vehicle for review', updated.displayName);
+    _log(
+        status == Verification.verified
+            ? 'Verified vehicle'
+            : status == Verification.suspended
+                ? 'Rejected vehicle'
+                : 'Flagged vehicle for review',
+        updated.displayName);
     _save();
     return updated;
   }
@@ -1414,8 +1713,14 @@ class DemoBackend implements Backend {
   List<Booking> _driverBookings(AppUser me) {
     final vehicle = _driverVehicle(me);
     if (vehicle == null) return [];
-    final buses = {for (final b in _eventBuses) if (b.vehicleId == vehicle) b.id};
-    return [for (final b in _bookings) if (b.vehicleId == vehicle || buses.contains(b.eventBusId)) b];
+    final buses = {
+      for (final b in _eventBuses)
+        if (b.vehicleId == vehicle) b.id
+    };
+    return [
+      for (final b in _bookings)
+        if (b.vehicleId == vehicle || buses.contains(b.eventBusId)) b
+    ];
   }
 
   /// Drivers go only on the company's own vehicles, and on routes those vehicles run.
@@ -1445,12 +1750,20 @@ class DemoBackend implements Backend {
     await _wait();
     final me = _me;
     if (me.role == UserRole.admin) return List.of(_drivers);
-    if (me.role == UserRole.operator || me.role == UserRole.fleetOwner) return [for (final d in _drivers) if (d.providerId == me.providerId) d];
-    return [for (final d in _drivers) if (d.userId == me.id) d];
+    if (me.role == UserRole.operator || me.role == UserRole.fleetOwner)
+      return [
+        for (final d in _drivers)
+          if (d.providerId == me.providerId) d
+      ];
+    return [
+      for (final d in _drivers)
+        if (d.userId == me.id) d
+    ];
   }
 
   @override
-  Future<FleetDriver> addFleetDriver({required String fullName, required String phone, required String email, required String licenceNumber, String? providerId, String? vehicleId, String? routeId}) async {
+  Future<FleetDriver> addFleetDriver(
+      {required String fullName, required String phone, required String email, required String licenceNumber, String? providerId, String? vehicleId, String? routeId}) async {
     await _wait();
     final me = _me;
     final companyId = providerId ?? me.providerId;
@@ -1607,7 +1920,8 @@ class DemoBackend implements Backend {
     final chassis = PartnerRules.normalise(draft.chassisNumber);
     final plate = PartnerRules.normalise(draft.plateNumber);
     final taken = !org &&
-        (_applications.any((a) => a.status != ApplicationStatus.rejected && a.userId != me.id && (PartnerRules.normalise(a.chassisNumber) == chassis || PartnerRules.normalise(a.plateNumber) == plate)) ||
+        (_applications
+                .any((a) => a.status != ApplicationStatus.rejected && a.userId != me.id && (PartnerRules.normalise(a.chassisNumber) == chassis || PartnerRules.normalise(a.plateNumber) == plate)) ||
             _vehicles.any((v) => PartnerRules.normalise(v.plate) == plate));
     if (taken) throw const BackendException(BackendErrorKind.validation, 'This plate or chassis number is already registered on Tap A Ride.');
     if (_applications.any((a) => a.userId == me.id && a.status.isOpen)) {
@@ -1640,7 +1954,10 @@ class DemoBackend implements Backend {
   Future<List<PartnerApplication>> fetchMyApplications() async {
     await _wait();
     final me = _me;
-    return [for (final a in _applications) if (a.userId == me.id) a];
+    return [
+      for (final a in _applications)
+        if (a.userId == me.id) a
+    ];
   }
 
   @override
@@ -1680,23 +1997,24 @@ class DemoBackend implements Backend {
       ));
       // Private drivers bring one vehicle; organisations register their fleet from the portal afterwards.
       if (!app.type.isOrganisation) vehicleId = _id('v');
-      if (vehicleId != null) _vehicles.add(Vehicle(
-        id: vehicleId,
-        operatorId: providerId,
-        plate: app.plateNumber,
-        kind: _vehicleKindFor(app),
-        model: '${app.vehicleMake} ${app.vehicleModel}',
-        capacity: app.seats,
-        status: VehicleStatus.active,
-        verification: Verification.verified,
-        area: app.area,
-        monthEarnings: 0,
-        driverName: app.fullName,
-        baseFare: 1000,
-        perKmFare: 150,
-        batteryPct: app.type == PartnerType.evOperator ? 100 : null,
-        rangeKm: app.type == PartnerType.evOperator ? 300 : null,
-      ));
+      if (vehicleId != null)
+        _vehicles.add(Vehicle(
+          id: vehicleId,
+          operatorId: providerId,
+          plate: app.plateNumber,
+          kind: _vehicleKindFor(app),
+          model: '${app.vehicleMake} ${app.vehicleModel}',
+          capacity: app.seats,
+          status: VehicleStatus.active,
+          verification: Verification.verified,
+          area: app.area,
+          monthEarnings: 0,
+          driverName: app.fullName,
+          baseFare: 1000,
+          perKmFare: 150,
+          batteryPct: app.type == PartnerType.evOperator ? 100 : null,
+          rangeKm: app.type == PartnerType.evOperator ? 300 : null,
+        ));
       final accountIndex = _accounts.indexWhere((a) => a.user.id == app.userId);
       if (accountIndex >= 0) {
         final role = app.type == PartnerType.fleetOwner ? UserRole.fleetOwner : UserRole.operator;
@@ -1751,6 +2069,5 @@ class _Account {
   _Account withUser(AppUser updated) => _Account(updated, salt, hash);
 
   Map<String, Object?> toJson() => {'user': user.toJson(), 'salt': salt, 'hash': hash};
-  factory _Account.fromJson(Map<String, dynamic> json) =>
-      _Account(AppUser.fromJson(Map<String, dynamic>.from(json['user'] as Map)), json['salt'] as String, json['hash'] as String);
+  factory _Account.fromJson(Map<String, dynamic> json) => _Account(AppUser.fromJson(Map<String, dynamic>.from(json['user'] as Map)), json['salt'] as String, json['hash'] as String);
 }

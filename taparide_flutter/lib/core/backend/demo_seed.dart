@@ -39,7 +39,7 @@ abstract final class DemoSeed {
     ('Ibrahim Musa · Abuja Metro Bus Co. (sample)', 'ops@abujametro.demo', UserRole.operator),
     ('Chiamaka Obi · GreenFleet Logistics (sample)', 'fleet@greenfleet.demo', UserRole.fleetOwner),
     ('Tunde Bello · NaviRide Electric (sample)', 'ev@naviride.demo', UserRole.operator),
-    ('Fatima Lawal · FCTA Transport', 'transport@fcta.demo', UserRole.government),
+    ('Fatima Lawal · FCTA transport (sample)', 'transport@fcta.demo', UserRole.government),
     ('Halima Sani · sample event partner', 'events@taparide.demo', UserRole.eventPartner),
     ('Grace Okafor · private driver', 'grace@taparide.demo', UserRole.operator),
     ('Musa Abdullahi · driver applicant', 'musa@taparide.demo', UserRole.passenger),

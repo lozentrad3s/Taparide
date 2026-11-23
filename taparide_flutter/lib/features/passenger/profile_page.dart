@@ -31,7 +31,13 @@ class _ProfilePageState extends State<ProfilePage> {
   void initState() {
     super.initState();
     final reference = widget.topUpReference;
-    if (reference != null && reference.isNotEmpty) WidgetsBinding.instance.addPostFrameCallback((_) => _confirmTopUp(reference));
+    if (reference != null && reference.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _confirmTopUp(reference));
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) context.read<AppState>().loadTopUps();
+      });
+    }
   }
 
   Future<void> _confirmTopUp(String reference) async {
@@ -128,7 +134,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 const SizedBox(height: 22),
                 SectionHeader(title: 'Payment methods', subtitle: 'Spent on trips so far: ${Fmt.naira(spent)}'),
                 TapCardView(wallet: state.wallet, onTap: () => showTapAndPaySheet(context)),
-                if ((state.wallet?.rideCredit ?? 0) > 0) ...[const SizedBox(height: 10), const RideCreditCard()],
+                const SizedBox(height: 10),
+                const RideRewardCard(hint: true),
                 if (_confirming)
                   Padding(
                     padding: const EdgeInsets.only(top: 10),
@@ -148,6 +155,37 @@ class _ProfilePageState extends State<ProfilePage> {
                   const SizedBox(width: 10),
                   Expanded(child: OutlinedButton.icon(onPressed: () => showTapAndPaySheet(context), icon: const Icon(Icons.qr_code_2_rounded), label: const Text('Show my QR'))),
                 ]),
+                if (state.topUps.isNotEmpty) ...[
+                  const SizedBox(height: 14),
+                  Text('Recent top-ups', style: text.titleSmall),
+                  const SizedBox(height: 6),
+                  Panel(
+                    padding: EdgeInsets.zero,
+                    child: Column(children: [
+                      for (final (i, t) in state.topUps.take(5).indexed) ...[
+                        if (i > 0) const Divider(height: 1, indent: 16, endIndent: 16),
+                        ListTile(
+                          dense: true,
+                          leading: Icon(
+                            t.status == 'paid' ? Icons.check_circle_rounded : (t.status == 'failed' ? Icons.cancel_rounded : Icons.schedule_rounded),
+                            color: t.status == 'paid' ? AppColors.leafText : (t.status == 'failed' ? AppColors.red : AppColors.amber),
+                          ),
+                          title: Text(Fmt.naira(t.amount), style: text.titleSmall?.copyWith(fontFeatures: tabular)),
+                          subtitle: Text('${Fmt.dayTime(t.createdAt)} · ${t.reference}', maxLines: 1, overflow: TextOverflow.ellipsis),
+                          trailing: StatusPill(
+                            switch (t.status) { 'paid' => 'Added', 'failed' => 'Failed', _ => 'Confirming' },
+                            tone: switch (t.status) { 'paid' => Tone.success, 'failed' => Tone.danger, _ => Tone.warning },
+                          ),
+                        ),
+                      ],
+                    ]),
+                  ),
+                  if (state.topUps.any((t) => t.status == 'pending'))
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text('Bank transfers can take a few minutes. "Confirming" top-ups are added automatically once the bank confirms them.', style: text.bodySmall),
+                    ),
+                ],
                 const SizedBox(height: 26),
                 const SectionHeader(title: 'Safety centre'),
                 Panel(

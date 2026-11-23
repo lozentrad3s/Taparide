@@ -110,9 +110,20 @@ await check('Cloudflare Turnstile', 'TURNSTILE_SECRET_KEY', async (k) => {
 
 await check('Resend email', 'RESEND_API_KEY', async (k) => {
   const r = await fetch('https://api.resend.com/domains', { headers: { Authorization: `Bearer ${k}` } });
+  const restricted = r.status === 403 || (r.status === 401 && /only send emails/i.test(await r.clone().text()));
+  if (restricted) {
+    // Sending-only key (the right kind for the server): try a send to Resend's own test inbox.
+    const s = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${k}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: 'Tap A Ride <no-reply@taparide.com>', to: ['delivered@resend.dev'], subject: 'Tap A Ride key check', text: 'Key check.' }),
+    });
+    if (s.ok) return 'sending-only key · taparide.com verified, test email accepted';
+    const msg = (await s.json().catch(() => ({}))).message || `HTTP ${s.status}`;
+    if (/not verified/i.test(msg)) throw new Error('key OK, but taparide.com is not verified in Resend > Domains yet');
+    throw new Error(msg.slice(0, 120));
+  }
   if (r.status === 401) throw new Error('key rejected');
-  // Sending-only keys can't list domains but still send.
-  if (r.status === 403) return 'sending-only key (domain list not visible)';
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   const d = ((await r.json()).data || []).find((x) => x.name === 'taparide.com');
   return d ? `taparide.com ${d.status}` : 'taparide.com NOT added in Resend > Domains yet';

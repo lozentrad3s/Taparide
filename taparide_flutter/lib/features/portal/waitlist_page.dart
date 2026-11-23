@@ -133,7 +133,7 @@ class _WaitlistPageState extends State<WaitlistPage> {
           'Invited by',
           'Invites',
           'Source',
-          'Free ride paid',
+          'Ride reward granted',
           'Pass ID',
           'Pass days',
           'Pick-up point',
@@ -458,7 +458,7 @@ class _EntryRowState extends State<_EntryRow> {
               Wrap(spacing: 8, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
                 Text('Joined ${Fmt.day(e.joinedAt)}', style: text.bodySmall),
                 Text('Code ${e.code} · ${e.referrals} invited', style: text.bodySmall),
-                if (e.creditedAt != null) const StatusPill('Free ride paid', tone: Tone.success),
+                if (e.creditedAt != null) const StatusPill('Ride reward granted', tone: Tone.success),
               ]),
               if (pass != null)
                 Container(

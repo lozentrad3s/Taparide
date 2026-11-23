@@ -53,6 +53,9 @@ class _LoginPageState extends State<LoginPage> {
   void initState() {
     super.initState();
     if (widget.email != null) _email.text = widget.email!.trim();
+    // Coming back from Google (or an email link) with an error: say what happened.
+    final redirectError = context.read<AppState>().takeAuthRedirectError();
+    if (redirectError != null) _error = BackendException(BackendErrorKind.auth, redirectError);
   }
 
   @override
@@ -110,8 +113,8 @@ class _LoginPageState extends State<LoginPage> {
       _busy = true;
     });
     try {
-      // Comes back to this page's address (e.g. taparide.com/app/) signed in.
-      await context.read<AppState>().signInWithProvider(provider, redirectTo: kIsWeb ? Uri.base.removeFragment().toString() : null);
+      // Comes back to this app's address (taparide.com/app/) signed in; the backend picks the address.
+      await context.read<AppState>().signInWithProvider(provider);
     } on BackendException catch (e) {
       if (mounted) setState(() => _error = e);
     } catch (_) {
@@ -150,12 +153,18 @@ class _LoginPageState extends State<LoginPage> {
     await attempt(context, () => context.read<AppState>().sendPasswordReset(sent), success: 'If an account exists for $sent, a reset link is on its way.');
   }
 
-  void _fillDemo(String email) {
+  /// One tap on a demo account signs straight in (in the right portal).
+  void _fillDemo(String email, UserRole role) {
+    final portal = role.isPartner ? Portal.partner : Portal.passenger;
     setState(() {
       _register = false;
+      if (widget.mode == AppMode.all) _portal = portal;
       _email.text = email;
       _password.text = DemoSeed.password;
       _error = null;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _submit();
     });
   }
 
@@ -233,7 +242,7 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Joined on taparide.com? Sign up with the same email and your ₦1,000 ride credit is added once you confirm it.',
+                      'Joined on taparide.com? Sign up with the same email and you\'ll see "Ride reward granted" once you confirm it.',
                       style: text.bodySmall?.copyWith(color: AppColors.forestDeep, fontWeight: FontWeight.w600),
                     ),
                   ),
@@ -311,9 +320,7 @@ class _LoginPageState extends State<LoginPage> {
             FilledButton(
               onPressed: _busy ? null : _submit,
               style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(54)),
-              child: _busy
-                  ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                  : Text(_register ? 'Create account' : 'Sign in'),
+              child: _busy ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white)) : Text(_register ? 'Create account' : 'Sign in'),
             ),
             const SizedBox(height: 10),
             if (!partner) ...[
@@ -342,7 +349,7 @@ class _LoginPageState extends State<LoginPage> {
             // The same demo accounts exist in the live Supabase project (deploy/scripts/supabase-setup.mjs).
             if (!const bool.fromEnvironment('HIDE_DEMO_ACCOUNTS')) ...[
               const SizedBox(height: 24),
-              _DemoAccounts(partner: partner, onPick: _fillDemo),
+              _DemoAccounts(partner: partner, all: widget.mode == AppMode.all && context.read<AppState>().backend.isDemo, busy: _busy, onPick: _fillDemo),
             ],
           ],
         ),
@@ -409,12 +416,14 @@ class _TermsCheck extends StatelessWidget {
           child: Wrap(children: [
             Text('I agree to the ', style: text.bodySmall),
             GestureDetector(
-              onTap: () => _show(context, 'Terms of use', 'Tap A Ride is a prototype for the ATDEW 2026 National Innovation Challenge. Bookings, payments and balances in demo mode are simulated and carry no real charge.'),
+              onTap: () => _show(context, 'Terms of use',
+                  'Tap A Ride is a prototype for the ATDEW 2026 National Innovation Challenge. Bookings, payments and balances in demo mode are simulated and carry no real charge.'),
               child: Text('Terms', style: text.bodySmall?.copyWith(color: AppColors.forest, fontWeight: FontWeight.w700, decoration: TextDecoration.underline)),
             ),
             Text(' and ', style: text.bodySmall),
             GestureDetector(
-              onTap: () => _show(context, 'Privacy', 'We use your name, phone and trips only to run your bookings and keep rides safe. Partners only see the data their role needs; trip data shared with the FCTA is aggregated.'),
+              onTap: () => _show(context, 'Privacy',
+                  'We use your name, phone and trips only to run your bookings and keep rides safe. Partners only see the data their role needs; trip data shared with the FCTA is aggregated.'),
               child: Text('Privacy Policy', style: text.bodySmall?.copyWith(color: AppColors.forest, fontWeight: FontWeight.w700, decoration: TextDecoration.underline)),
             ),
           ]),
@@ -425,14 +434,21 @@ class _TermsCheck extends StatelessWidget {
 }
 
 class _DemoAccounts extends StatelessWidget {
-  const _DemoAccounts({required this.partner, required this.onPick});
+  const _DemoAccounts({required this.partner, required this.onPick, this.all = false, this.busy = false});
   final bool partner;
-  final ValueChanged<String> onPick;
+
+  /// Show every demo account (the judges' demo has riders and dashboards in one app).
+  final bool all;
+  final bool busy;
+  final void Function(String email, UserRole role) onPick;
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final accounts = [for (final a in DemoSeed.demoAccounts) if (a.$3.isPartner == partner) a];
+    final accounts = [
+      for (final a in DemoSeed.demoAccounts)
+        if (all || a.$3.isPartner == partner) a
+    ];
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(color: AppColors.amberSoft.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(AppRadius.lg)),
@@ -440,13 +456,13 @@ class _DemoAccounts extends StatelessWidget {
         Row(children: [
           const Icon(Icons.science_outlined, size: 18, color: AppColors.amber),
           const SizedBox(width: 8),
-          Expanded(child: Text('Demo accounts · password ${DemoSeed.password}', style: text.labelMedium?.copyWith(color: const Color(0xFF6E4A06)))),
+          Expanded(child: Text('Demo accounts · tap one to sign in (password ${DemoSeed.password})', style: text.labelMedium?.copyWith(color: const Color(0xFF6E4A06)))),
         ]),
         const SizedBox(height: 8),
         for (final a in accounts)
           InkWell(
             borderRadius: BorderRadius.circular(AppRadius.sm),
-            onTap: () => onPick(a.$2),
+            onTap: busy ? null : () => onPick(a.$2, a.$3),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
               child: Row(children: [
@@ -458,7 +474,8 @@ class _DemoAccounts extends StatelessWidget {
                     Text(a.$2, style: text.bodySmall),
                   ]),
                 ),
-                Text('Use', style: text.labelMedium?.copyWith(color: AppColors.forest)),
+                Text('Sign in', style: text.labelMedium?.copyWith(color: AppColors.forest, fontWeight: FontWeight.w700)),
+                const Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.forest),
               ]),
             ),
           ),
@@ -480,13 +497,15 @@ class _SidePhoto extends StatelessWidget {
         const PhotoView(
           AppPhoto.expressway,
           semanticLabel: 'Abuja expressway with Aso Rock in the distance',
-          overlay: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xA606331F), Color(0x1106331F), Color(0x2206331F), Color(0xEE06331F)], stops: [0, 0.22, 0.5, 1]),
+          overlay:
+              LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xA606331F), Color(0x1106331F), Color(0x2206331F), Color(0xEE06331F)], stops: [0, 0.22, 0.5, 1]),
         )
       else ...[
         Image.asset('assets/onboarding/move.jpg', fit: BoxFit.cover, alignment: const Alignment(0, -0.4), excludeFromSemantics: true),
         const DecoratedBox(
           decoration: BoxDecoration(
-            gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0x99000000), Color(0x00000000), Color(0x11000000), Color(0xE0000000)], stops: [0, 0.25, 0.5, 1]),
+            gradient:
+                LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0x99000000), Color(0x00000000), Color(0x11000000), Color(0xE0000000)], stops: [0, 0.25, 0.5, 1]),
           ),
         ),
       ],

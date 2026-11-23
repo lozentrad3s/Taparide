@@ -109,13 +109,21 @@ void main() {
   test('insufficient balance is refused and suspended providers stop taking bookings', () async {
     final (state, backend) = await freshState();
     await state.signIn(email: 'aisha@taparide.demo', password: DemoSeed.password, portal: Portal.passenger);
-    // Spend the balance down below the fare of the Nyanya – Jabi Garage bus (₦1,700).
-    final cheap = state.routeById('r07')!;
-    for (final at in cheap.upcomingDepartures(state.now)) {
-      if (state.wallet!.balance < 1700) break;
-      await state.bookTransit(cheap, at, PaymentMethod.tapCard);
-    }
+    // Spend the balance down below the fare of the Nyanya – Jabi Garage bus (₦1,700), using
+    // whichever buses still have departures today.
     final long = state.routeById('r08')!;
+    spend:
+    for (final r in [state.routeById('r07')!, ...state.routes.where((r) => r.active && r.id != 'r08')]) {
+      for (final at in r.upcomingDepartures(state.now)) {
+        if (state.wallet!.balance < long.fare) break spend;
+        if (r.fare > state.wallet!.balance) continue;
+        try {
+          await state.bookTransit(r, at, PaymentMethod.tapCard);
+        } on BackendException {
+          continue;
+        }
+      }
+    }
     expect(state.wallet!.balance, lessThan(long.fare));
     await expectLater(
       () => state.bookTransit(long, long.upcomingDepartures(state.now).first, PaymentMethod.tapCard),

@@ -89,8 +89,8 @@ class HomePage extends StatelessWidget {
           child: Mascot(mood: MascotMood.wave, size: wide ? 120 : 92, semanticLabel: 'Tapi, your ride assistant. Tap to ask.', onTap: () => openAssistant(context)),
         ),
       ]),
-      // The free ride credit sits right under the greeting on phones (in the side column on wide screens).
-      if (!wide && (state.wallet?.rideCredit ?? 0) > 0) ...[const SizedBox(height: 16), const RideCreditCard()],
+      // The website sign-up reward sits right under the greeting on phones (in the side column on wide screens).
+      if (!wide && state.signupReward.granted) ...[const SizedBox(height: 16), const RideRewardCard()],
       const SizedBox(height: 18),
       const WhereToCard(),
       const SizedBox(height: 18),
@@ -126,7 +126,7 @@ class HomePage extends StatelessWidget {
   List<Widget> _secondary(BuildContext context, AppState state, bool wide) {
     final evs = state.availableEvs.where((v) => v.status == VehicleStatus.active).take(3).toList();
     return [
-      if (wide && (state.wallet?.rideCredit ?? 0) > 0) ...[const RideCreditCard(), const SizedBox(height: 22)],
+      if (wide && state.signupReward.granted) ...[const RideRewardCard(), const SizedBox(height: 22)],
       // Launch focus first: event rides and Tag Along; the rest follows as it opens.
       const EventsBanner(),
       const SizedBox(height: 22),

@@ -92,6 +92,9 @@ class AppState extends ChangeNotifier {
   /// Drivers of the signed-in company (all for admins; a fleet driver gets only their own record).
   List<FleetDriver> fleetDrivers = const [];
   Wallet? wallet;
+
+  /// Website sign-up reward for this rider ("Ride reward granted"; no money until full launch).
+  SignupReward signupReward = SignupReward.none;
   MetricBaselines? baselines;
 
   /// Popular routes for the public landing page.
@@ -204,6 +207,16 @@ class AppState extends ChangeNotifier {
   /// Arrived from a password-reset email: the router shows "Choose a new password" first.
   bool get passwordRecovery => backend.passwordRecovery;
 
+  /// A sign-in error from the auth server's redirect (cancelled Google sign-in, expired email link).
+  /// The sign-in page shows it once.
+  late String? authRedirectError = backend.takeAuthRedirectError();
+
+  String? takeAuthRedirectError() {
+    final e = authRedirectError;
+    authRedirectError = null;
+    return e;
+  }
+
   Future<void> setNewPassword(String password) async {
     await backend.setNewPassword(password);
     _notify();
@@ -233,9 +246,12 @@ class AppState extends ChangeNotifier {
   /// Event organisers: free-bus bookings for their events (counts only).
   Future<List<EventSeatBookings>> fetchOrganiserSeatBookings() => backend.fetchOrganiserSeatBookings();
 
-  /// Wallet top-ups (card / bank) stay "coming soon" until every payment path is proven end to end.
-  /// Riders pay with ride credit (and any balance they already have) meanwhile.
-  static const walletTopUpsOpen = false;
+  /// Wallet top-ups by card, bank transfer or USSD through Bachs (live). Set to false to show
+  /// "coming soon" instead of the top-up flow everywhere.
+  static const walletTopUpsOpen = true;
+
+  /// Real money moves only on the live backend; the demo uses on-device test money.
+  bool get realPayments => !backend.isDemo;
 
   Future<void> signOut() async {
     twoStepPending = false;
@@ -263,6 +279,8 @@ class AppState extends ChangeNotifier {
     partnerApplications = const [];
     leavePlans.clear();
     wallet = null;
+    signupReward = SignupReward.none;
+    topUps = const [];
     _notify();
   }
 
@@ -303,11 +321,12 @@ class AppState extends ChangeNotifier {
         fleetDrivers = const {UserRole.admin, UserRole.operator, UserRole.fleetOwner, UserRole.fleetDriver}.contains(me.role) ? await backend.fetchFleetDrivers() : const [];
         partnerApplications = me.role.canVerify ? await backend.fetchPartnerApplications() : const [];
       } else {
-        final rider = await Future.wait<Object>([backend.fetchWallet(), backend.fetchMyBookings(), backend.fetchRideRequests(), backend.fetchAds()]);
+        final rider = await Future.wait<Object>([backend.fetchWallet(), backend.fetchMyBookings(), backend.fetchRideRequests(), backend.fetchAds(), backend.fetchSignupReward()]);
         wallet = rider[0] as Wallet;
         myBookings = rider[1] as List<Booking>;
         rideRequests = rider[2] as List<Booking>;
         ads = HouseAds.merge(rider[3] as List<PromoAd>);
+        signupReward = rider[4] as SignupReward;
       }
       myApplications = await backend.fetchMyApplications();
       dataState = LoadState.ready;
@@ -349,9 +368,14 @@ class AppState extends ChangeNotifier {
   /// Routes riders see: active and run by a verified provider, plus real corridors with no operator yet
   /// (shown with who runs them today; seat booking opens when an operator joins, see [canBook]).
   List<TransitRoute> get bookableRoutes {
-    final verified = {for (final p in providers) if (p.status == Verification.verified) p.id};
-    return [for (final r in routes) if (r.active && (!r.hasOperator || verified.contains(r.providerId))) r]
-      ..sort((a, b) {
+    final verified = {
+      for (final p in providers)
+        if (p.status == Verification.verified) p.id
+    };
+    return [
+      for (final r in routes)
+        if (r.active && (!r.hasOperator || verified.contains(r.providerId))) r
+    ]..sort((a, b) {
         final operated = (b.hasOperator ? 1 : 0) - (a.hasOperator ? 1 : 0);
         return operated != 0 ? operated : b.monthlyTrips.compareTo(a.monthlyTrips);
       });
@@ -362,7 +386,10 @@ class AppState extends ChangeNotifier {
 
   /// Electric cars and verified private-driver cars riders can book.
   List<Vehicle> get availableEvs {
-    final verified = {for (final p in providers) if (p.status == Verification.verified) p.id};
+    final verified = {
+      for (final p in providers)
+        if (p.status == Verification.verified) p.id
+    };
     return [
       for (final v in vehicles)
         if (v.kind.isBookableCar && v.verification == Verification.verified && verified.contains(v.operatorId)) v,
@@ -372,11 +399,16 @@ class AppState extends ChangeNotifier {
   /// "Book your usual ride" suggestions learned from the rider's history.
   List<RideSuggestion> get suggestions => RideInsights.suggestions(bookings: myBookings, routes: bookableRoutes, now: now);
 
-  List<Booking> get upcomingTrips => [for (final b in myBookings) if (b.isUpcoming) b]..sort((a, b) => a.departureAt.compareTo(b.departureAt));
-  List<Booking> get pastTrips => [for (final b in myBookings) if (!b.isUpcoming) b];
+  List<Booking> get upcomingTrips => [
+        for (final b in myBookings)
+          if (b.isUpcoming) b
+      ]..sort((a, b) => a.departureAt.compareTo(b.departureAt));
+  List<Booking> get pastTrips => [
+        for (final b in myBookings)
+          if (!b.isUpcoming) b
+      ];
 
-  Booking? bookingForRide(String rideId) =>
-      myBookings.where((b) => b.rideId == rideId && b.status != BookingStatus.cancelled && b.status != BookingStatus.declined).firstOrNull;
+  Booking? bookingForRide(String rideId) => myBookings.where((b) => b.rideId == rideId && b.status != BookingStatus.cancelled && b.status != BookingStatus.declined).firstOrNull;
 
   // ------------------------------------------------------------ rider actions
 
@@ -478,7 +510,10 @@ class AppState extends ChangeNotifier {
   SharedRide? rideById(String? id) => id == null ? null : rides.where((r) => r.id == id).firstOrNull;
 
   /// Requests still waiting for this host's answer.
-  List<Booking> get pendingRideRequests => [for (final b in rideRequests) if (b.status == BookingStatus.requested) b];
+  List<Booking> get pendingRideRequests => [
+        for (final b in rideRequests)
+          if (b.status == BookingStatus.requested) b
+      ];
 
   Future<void> respondToRideRequest(Booking request, {required bool accept}) async {
     final updated = await backend.respondToRideRequest(request.id, accept: accept);
@@ -498,10 +533,37 @@ class AppState extends ChangeNotifier {
   // ------------------------------------------------------------ events
 
   RideEvent? eventById(String? id) => id == null ? null : events.where((e) => e.id == id).firstOrNull;
-  List<SharedRide> ridesForEvent(String eventId) => [for (final r in rides) if (r.eventId == eventId) r];
+  List<SharedRide> ridesForEvent(String eventId) => [
+        for (final r in rides)
+          if (r.eventId == eventId) r
+      ];
 
-  Future<RideEvent> createEvent({required String title, required String venue, required String area, required DateTime startsAt, DateTime? endsAt, required EventCategory category, String description = '', double? lat, double? lng, int ticketPrice = 0, int ticketsTotal = 0, String? ticketLink}) async {
-    final event = await backend.createEvent(title: title, venue: venue, area: area, startsAt: startsAt, endsAt: endsAt, category: category, description: description, lat: lat, lng: lng, ticketPrice: ticketPrice, ticketsTotal: ticketsTotal, ticketLink: ticketLink);
+  Future<RideEvent> createEvent(
+      {required String title,
+      required String venue,
+      required String area,
+      required DateTime startsAt,
+      DateTime? endsAt,
+      required EventCategory category,
+      String description = '',
+      double? lat,
+      double? lng,
+      int ticketPrice = 0,
+      int ticketsTotal = 0,
+      String? ticketLink}) async {
+    final event = await backend.createEvent(
+        title: title,
+        venue: venue,
+        area: area,
+        startsAt: startsAt,
+        endsAt: endsAt,
+        category: category,
+        description: description,
+        lat: lat,
+        lng: lng,
+        ticketPrice: ticketPrice,
+        ticketsTotal: ticketsTotal,
+        ticketLink: ticketLink);
     events = [...events, event]..sort((a, b) => a.startsAt.compareTo(b.startsAt));
     _notify();
     return event;
@@ -509,8 +571,14 @@ class AppState extends ChangeNotifier {
 
   Future<void> removeEvent(RideEvent event) async {
     await backend.removeEvent(event.id);
-    events = [for (final e in events) if (e.id != event.id) e];
-    eventBuses = [for (final b in eventBuses) if (b.eventId != event.id) b];
+    events = [
+      for (final e in events)
+        if (e.id != event.id) e
+    ];
+    eventBuses = [
+      for (final b in eventBuses)
+        if (b.eventId != event.id) b
+    ];
     _notify();
   }
 
@@ -525,11 +593,15 @@ class AppState extends ChangeNotifier {
 
   // ------------------------------------------------------------ event buses
 
-  List<EventBus> busesForEvent(String eventId) => [for (final b in eventBuses) if (b.eventId == eventId && b.status != EventBusStatus.cancelled) b];
+  List<EventBus> busesForEvent(String eventId) => [
+        for (final b in eventBuses)
+          if (b.eventId == eventId && b.status != EventBusStatus.cancelled) b
+      ];
   EventBus? eventBusById(String? id) => id == null ? null : eventBuses.where((b) => b.id == id).firstOrNull;
   Booking? myEventBusSeat(String busId) => myBookings.where((b) => b.eventBusId == busId && b.status.isOpen).firstOrNull;
 
-  Future<EventBus> offerEventBus({required RideEvent event, required String origin, required int fare, required int capacity, required int minRiders, required List<DateTime> slots, String? vehicleId}) async {
+  Future<EventBus> offerEventBus(
+      {required RideEvent event, required String origin, required int fare, required int capacity, required int minRiders, required List<DateTime> slots, String? vehicleId}) async {
     final bus = await backend.offerEventBus(eventId: event.id, origin: origin, fare: fare, capacity: capacity, minRiders: minRiders, slots: slots, vehicleId: vehicleId);
     eventBuses = [...eventBuses, bus];
     _notify();
@@ -555,7 +627,10 @@ class AppState extends ChangeNotifier {
 
   Future<void> cancelEventBus(EventBus bus) async {
     await backend.cancelEventBus(bus.id);
-    eventBuses = [for (final b in eventBuses) if (b.id != bus.id) b];
+    eventBuses = [
+      for (final b in eventBuses)
+        if (b.id != bus.id) b
+    ];
     _notify();
     unawaited(refresh());
   }
@@ -701,8 +776,17 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  Future<SharedRide> offerSharedRide({required String origin, required String destination, required DateTime departAt, required int seats, required int costShare, required String vehicleLabel, String note = '', String? eventId}) async {
-    final ride = await backend.offerSharedRide(origin: origin, destination: destination, departAt: departAt, seats: seats, costShare: costShare, vehicleLabel: vehicleLabel, note: note, eventId: eventId);
+  Future<SharedRide> offerSharedRide(
+      {required String origin,
+      required String destination,
+      required DateTime departAt,
+      required int seats,
+      required int costShare,
+      required String vehicleLabel,
+      String note = '',
+      String? eventId}) async {
+    final ride =
+        await backend.offerSharedRide(origin: origin, destination: destination, departAt: departAt, seats: seats, costShare: costShare, vehicleLabel: vehicleLabel, note: note, eventId: eventId);
     rides = [...rides, ride]..sort((a, b) => a.departAt.compareTo(b.departAt));
     _notify();
     return ride;
@@ -721,6 +805,7 @@ class AppState extends ChangeNotifier {
   /// Test-money top-up (demo mode, or a live server before payments are switched on).
   Future<void> topUp(int amount) async {
     wallet = await backend.topUp(amount);
+    topUps = await fetchMyTopUps();
     _notify();
   }
 
@@ -728,8 +813,25 @@ class AppState extends ChangeNotifier {
   Future<TopUpResult> confirmTopUp(String reference) async {
     final result = await api.verifyTopUp(reference);
     wallet = await backend.fetchWallet();
+    topUps = await fetchMyTopUps();
     _notify();
     return result;
+  }
+
+  /// The rider's latest top-ups (profile history).
+  List<TopUpRecord> topUps = const [];
+
+  Future<List<TopUpRecord>> fetchMyTopUps() async {
+    try {
+      return await backend.fetchMyTopUps();
+    } on BackendException {
+      return topUps;
+    }
+  }
+
+  Future<void> loadTopUps() async {
+    topUps = await fetchMyTopUps();
+    _notify();
   }
 
   // ------------------------------------------------------------ partner actions
@@ -791,9 +893,14 @@ class AppState extends ChangeNotifier {
   /// The signed-in fleet driver's own record.
   FleetDriver? get myDriverRecord => user?.role == UserRole.fleetDriver ? fleetDrivers.where((d) => d.userId == user!.id).firstOrNull : null;
 
-  void _putDriver(FleetDriver d) => fleetDrivers = [for (final x in fleetDrivers) if (x.id != d.id) x, d]..sort((a, b) => a.fullName.compareTo(b.fullName));
+  void _putDriver(FleetDriver d) => fleetDrivers = [
+        for (final x in fleetDrivers)
+          if (x.id != d.id) x,
+        d
+      ]..sort((a, b) => a.fullName.compareTo(b.fullName));
 
-  Future<FleetDriver> addFleetDriver({required String fullName, required String phone, required String email, required String licenceNumber, String? providerId, String? vehicleId, String? routeId}) async {
+  Future<FleetDriver> addFleetDriver(
+      {required String fullName, required String phone, required String email, required String licenceNumber, String? providerId, String? vehicleId, String? routeId}) async {
     final driver = await backend.addFleetDriver(fullName: fullName, phone: phone, email: email, licenceNumber: licenceNumber, providerId: providerId, vehicleId: vehicleId, routeId: routeId);
     _putDriver(driver);
     vehicles = await backend.fetchVehicles();

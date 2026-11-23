@@ -73,9 +73,7 @@ class TapCardView extends StatelessWidget {
     return Semantics(
       button: onTap != null,
       selected: selected,
-      label: w == null
-          ? 'Tap card, balance loading'
-          : 'Tap card, wallet ${Fmt.naira(w.cash)}${w.rideCredit > 0 ? ', plus ${Fmt.naira(w.rideCredit)} ride credit, used first' : ''}',
+      label: w == null ? 'Tap card, balance loading' : 'Tap card, wallet ${Fmt.naira(w.cash)}${w.rideCredit > 0 ? ', plus ${Fmt.naira(w.rideCredit)} ride credit, used first' : ''}',
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
@@ -146,18 +144,29 @@ class TicketQr extends StatelessWidget {
       );
 }
 
-/// The rider's free ride credit, shown on its own (it is not wallet money and can't be withdrawn).
-class RideCreditCard extends StatelessWidget {
-  const RideCreditCard({super.key});
+/// "Ride reward granted": the website sign-up reward. It carries no money until full launch, so it
+/// shows no amount. Riders whose email isn't on the website list see a short hint instead (if [hint]).
+class RideRewardCard extends StatelessWidget {
+  const RideRewardCard({super.key, this.hint = false});
+
+  /// Show "Joined on taparide.com?" when this account has no reward.
+  final bool hint;
 
   @override
   Widget build(BuildContext context) {
-    final w = context.watch<AppState>().wallet;
-    if (w == null || w.rideCredit <= 0) return const SizedBox.shrink();
+    final reward = context.watch<AppState>().signupReward;
     final text = Theme.of(context).textTheme;
+    if (!reward.granted) {
+      if (!hint) return const SizedBox.shrink();
+      return Row(children: [
+        const Icon(Icons.card_giftcard_rounded, size: 18, color: AppColors.muted),
+        const SizedBox(width: 8),
+        Expanded(child: Text('Joined on taparide.com? Use the same email for this account to get your ride reward.', style: text.bodySmall)),
+      ]);
+    }
     return Semantics(
       container: true,
-      label: 'Ride credit ${Fmt.naira(w.rideCredit)}. Used first when you tap to pay.',
+      label: '${reward.label}. Your sign-up reward is saved to your account and unlocks at full launch.',
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         decoration: BoxDecoration(
@@ -171,14 +180,18 @@ class RideCreditCard extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(color: AppColors.forest, borderRadius: BorderRadius.circular(AppRadius.md)),
-              child: const Icon(Icons.local_activity_rounded, color: Colors.white),
+              child: const Icon(Icons.card_giftcard_rounded, color: Colors.white),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Ride credit', style: text.labelMedium?.copyWith(color: AppColors.forest, fontWeight: FontWeight.w700)),
-                Text(Fmt.naira(w.rideCredit), style: text.headlineSmall?.copyWith(color: AppColors.forestDeep, fontWeight: FontWeight.w800, fontFeatures: tabular)),
-                Text('Used first when you tap to pay for a seat.', style: text.bodySmall?.copyWith(color: AppColors.inkSoft)),
+                Row(children: [
+                  Flexible(child: Text(reward.label, style: text.titleMedium?.copyWith(color: AppColors.forestDeep, fontWeight: FontWeight.w800))),
+                  const SizedBox(width: 6),
+                  const Icon(Icons.verified_rounded, size: 18, color: AppColors.leafText),
+                ]),
+                const SizedBox(height: 2),
+                Text('Thanks for joining early. Your sign-up reward is saved to your account and unlocks at full launch.', style: text.bodySmall?.copyWith(color: AppColors.inkSoft)),
               ]),
             ),
           ]),
@@ -215,7 +228,6 @@ class _TopUpSheetState extends State<_TopUpSheet> {
     final state = context.watch<AppState>();
     const options = [500, 1000, 2000, 5000, 10000];
     if (!AppState.walletTopUpsOpen) {
-      final credit = state.wallet?.rideCredit ?? 0;
       return Padding(
         padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -225,9 +237,7 @@ class _TopUpSheetState extends State<_TopUpSheet> {
           ]),
           const SizedBox(height: 8),
           Text(
-            credit > 0
-                ? 'Card and bank top-ups open shortly. Until then, tap to pay uses your ${Fmt.naira(credit)} ride credit first, then any money already in your wallet.'
-                : 'Card and bank top-ups open shortly. We will let you know in the app the moment they are on.',
+            'Card and bank top-ups open shortly. We will let you know in the app the moment they are on.',
             style: text.bodyMedium,
           ),
           const SizedBox(height: 18),
@@ -253,13 +263,13 @@ class _TopUpSheetState extends State<_TopUpSheet> {
         ]),
         const SizedBox(height: 14),
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Icon(state.paymentsLive ? Icons.lock_rounded : Icons.science_outlined, size: 16, color: AppColors.muted),
+          Icon(state.realPayments ? Icons.lock_rounded : Icons.science_outlined, size: 16, color: AppColors.muted),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              state.paymentsLive
-                  ? 'Pay by card, bank transfer or USSD on Paystack\'s secure page. Your card details never reach Tap A Ride.'
-                  : 'Test money: card and bank payments are not switched on yet, so no real money moves.',
+              state.realPayments
+                  ? 'You pay by card, bank transfer or USSD on the secure Bachs payment page, then come straight back here. Your card details never reach Tap A Ride.'
+                  : 'Demo: this adds sample money on this device only. No real money moves.',
               style: text.bodySmall,
             ),
           ),
@@ -271,10 +281,15 @@ class _TopUpSheetState extends State<_TopUpSheet> {
               : () async {
                   setState(() => _busy = true);
                   final app = context.read<AppState>();
-                  if (app.paymentsLive) {
+                  if (app.realPayments) {
                     // Leave for the payment page; the app confirms the payment when the rider comes back.
                     final start = await attempt(context, () => app.api.startTopUp(_amount));
-                    if (start != null) await launchUrl(Uri.parse(start.url), webOnlyWindowName: '_self');
+                    final url = start == null ? null : Uri.tryParse(start.url);
+                    if (url != null && url.hasScheme) {
+                      await launchUrl(url, webOnlyWindowName: '_self');
+                    } else if (start != null && context.mounted) {
+                      showMessage(context, 'The payment page could not be opened. Please try again.', error: true);
+                    }
                     if (mounted) setState(() => _busy = false);
                     return;
                   }
@@ -283,7 +298,9 @@ class _TopUpSheetState extends State<_TopUpSheet> {
                   setState(() => _busy = false);
                   if (ok) Navigator.of(context).pop();
                 },
-          child: _busy ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white)) : Text(state.paymentsLive ? 'Pay ${Fmt.naira(_amount)}' : 'Add ${Fmt.naira(_amount)}'),
+          child: _busy
+              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+              : Text(state.realPayments ? 'Pay ${Fmt.naira(_amount)}' : 'Add ${Fmt.naira(_amount)}'),
         ),
       ]),
     );
@@ -321,7 +338,7 @@ Future<void> showTapAndPaySheet(BuildContext context) {
           if (AppState.walletTopUpsOpen)
             OutlinedButton.icon(onPressed: () => showTopUpSheet(sheet), icon: const Icon(Icons.add_rounded), label: const Text('Top up card'))
           else
-            Text('Ride credit is used first. Adding money by card or bank is coming soon.', style: text.bodySmall, textAlign: TextAlign.center),
+            Text('Adding money by card or bank is coming soon.', style: text.bodySmall, textAlign: TextAlign.center),
         ]),
       );
     },

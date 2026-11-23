@@ -15,8 +15,11 @@ import { loadEnv } from './check-keys.mjs';
 const here = dirname(fileURLToPath(import.meta.url));
 const arg = (name) => process.argv.find((a) => a.startsWith(`--${name}=`))?.split('=').slice(1).join('=');
 const target = arg('target') || 'all';
-if (!['all', 'rider', 'dashboard'].includes(target)) throw new Error(`Unknown --target=${target}`);
-const baseHref = { all: '/', rider: '/app/', dashboard: '/dashboard/' }[target];
+if (!['all', 'rider', 'dashboard', 'demo'].includes(target)) throw new Error(`Unknown --target=${target}`);
+// demo: rider app + dashboards in one, sample data in the browser only (no Supabase, no real accounts),
+// for judges and partners to try every role at taparide.com/demo.
+const demo = target === 'demo';
+const baseHref = { all: '/', rider: '/app/', dashboard: '/dashboard/', demo: '/demo/' }[target];
 const app = join(here, '..', '..');
 // Master admin credentials live in their own git-ignored file so editing .env.local can't lose them.
 const masterFile = join(app, '.env.master.local');
@@ -36,7 +39,7 @@ if (!master.MASTER_ADMIN_EMAIL || !master.MASTER_ADMIN_PASSWORD) {
 const supabaseUrl = (v) => (!v ? '' : /^[a-z0-9]{20}$/.test(v) ? `https://${v}.supabase.co` : v.replace(/\/$/, ''));
 let live = false;
 const sbUrl = supabaseUrl(env.SUPABASE_URL);
-if (sbUrl && env.SUPABASE_ANON_KEY) {
+if (sbUrl && env.SUPABASE_ANON_KEY && !demo) {
   try {
     const r = await fetch(`${sbUrl}/rest/v1/providers?select=id&limit=1`, { headers: { apikey: env.SUPABASE_ANON_KEY } });
     live = r.ok;
@@ -48,14 +51,16 @@ if (sbUrl && env.SUPABASE_ANON_KEY) {
 
 const salt = randomBytes(12).toString('base64url');
 const hash = createHash('sha256').update(`${salt}:${master.MASTER_ADMIN_PASSWORD}`).digest('hex');
+// The demo never carries the real master admin's details (not even a hash).
+const demoMaster = randomBytes(18).toString('base64url');
 const defines = {
-  MASTER_ADMIN_EMAIL: master.MASTER_ADMIN_EMAIL,
-  MASTER_ADMIN_NAME: master.MASTER_ADMIN_NAME || 'Platform owner',
+  MASTER_ADMIN_EMAIL: demo ? 'master@demo.taparide' : master.MASTER_ADMIN_EMAIL,
+  MASTER_ADMIN_NAME: demo ? 'Demo owner' : master.MASTER_ADMIN_NAME || 'Platform owner',
   MASTER_ADMIN_SALT: salt,
-  MASTER_ADMIN_HASH: hash,
+  MASTER_ADMIN_HASH: demo ? createHash('sha256').update(`${salt}:${demoMaster}`).digest('hex') : hash,
   // Public by design (Supabase row-level security protects the data):
   ...(live ? { SUPABASE_URL: sbUrl, SUPABASE_ANON_KEY: env.SUPABASE_ANON_KEY } : {}),
-  ...(target === 'all' ? {} : { APP_MODE: target }),
+  ...(target === 'all' || demo ? {} : { APP_MODE: target }),
   // Live builds never show the demo sign-in shortcuts (those accounts are locked on the live database).
   ...(live && !process.env.SHOW_DEMO_ACCOUNTS ? { HIDE_DEMO_ACCOUNTS: 'true' } : {}),
 };
@@ -63,7 +68,8 @@ const defines = {
 const flutter = process.env.FLUTTER || 'C:/src/flutter/bin/flutter.bat';
 const args = ['build', 'web', '--release', '--no-wasm-dry-run', '--no-web-resources-cdn', `--base-href=${baseHref}`, ...Object.entries(defines).map(([k, v]) => `"--dart-define=${k}=${v}"`)];
 const r = spawnSync(flutter, args, { cwd: app, stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8', shell: true });
-const tail = (r.stdout + r.stderr).trim().split('\n').slice(-2).join('\n');
+const log = (r.stdout + r.stderr).trim().split('\n');
+const tail = (log.filter((l) => /error|\.dart:\d/i.test(l)).slice(0, 20).join('\n') || log.slice(-5).join('\n'));
 if (r.status !== 0) {
   console.error('Build failed:\n' + tail);
   process.exit(1);
@@ -73,4 +79,4 @@ const pub = out ? (out.match(/^[A-Za-z]:|^\//) ? out : join(process.cwd(), out))
 rmSync(pub, { recursive: true, force: true });
 cpSync(join(app, 'build', 'web'), pub, { recursive: true });
 rmSync(join(pub, '_phone.html'), { force: true });
-console.log(`Built ${target} web app (base ${baseHref}) → ${pub} (master admin: ${master.MASTER_ADMIN_EMAIL}; Supabase: ${defines.SUPABASE_URL ? 'live' : 'demo data'})`);
+console.log(`Built ${target} web app (base ${baseHref}) → ${pub} (master admin: ${defines.MASTER_ADMIN_EMAIL}; Supabase: ${defines.SUPABASE_URL ? 'live' : 'demo data'})`);

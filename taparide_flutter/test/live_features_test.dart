@@ -82,10 +82,10 @@ void main() {
     await expectLater(() => backend.offerEventBus(eventId: event.id, origin: 'Wuse', fare: 900, capacity: 14, minRiders: 4, slots: [early]), throwsA(isA<BackendException>()), reason: 'riders cannot run buses');
     final ticket = await state.buyEventTicket(state.eventById(event.id)!, PaymentMethod.tapCard);
     expect(ticket.kind, BookingKind.eventTicket);
-    expect(state.wallet!.balance, 2000);
+    expect(state.wallet!.balance, 4500);
     final seat = await state.bookEventBus(state.eventBusById(bus.id)!, late, PaymentMethod.tapCard);
     expect(seat.status, BookingStatus.requested, reason: 'held until the operator confirms a time');
-    expect(state.wallet!.balance, 800);
+    expect(state.wallet!.balance, 3300);
     expect(state.eventBusById(bus.id)!.seatsAt(late), 1);
     await expectLater(() => state.bookEventBus(state.eventBusById(bus.id)!, early, PaymentMethod.tapCard), throwsA(isA<BackendException>()), reason: 'one seat per rider');
     await state.signOut();
@@ -106,7 +106,7 @@ void main() {
     expect(mine.departureAt, late);
     await state.cancelBooking(mine);
     await state.refresh();
-    expect(state.wallet!.balance, 2000, reason: 'bus fare refunded on cancelling');
+    expect(state.wallet!.balance, 4500, reason: 'bus fare refunded on cancelling');
     await state.signOut();
 
     // The event partner sees the ticket and seats for their event, nobody else's.
@@ -132,7 +132,7 @@ void main() {
     now = now.add(Duration(seconds: ad.seconds));
     final first = await state.claimAdReward(view);
     expect(first.reward, ad.reward);
-    expect(state.wallet!.balance, 2500 + ad.reward);
+    expect(state.wallet!.balance, 5000 + ad.reward);
     await expectLater(() => state.claimAdReward(view), throwsA(isA<BackendException>()), reason: 'one reward per view');
 
     for (var i = 0; i < 3; i++) {
@@ -141,7 +141,7 @@ void main() {
       final r = await state.claimAdReward(v);
       expect(r.reward, i < 2 ? ad.reward : 0, reason: 'three rewards a day');
     }
-    expect(state.wallet!.balance, 2500 + 3 * ad.reward);
+    expect(state.wallet!.balance, 5000 + 3 * ad.reward);
   });
 
   test('share my ride: the link shows the trip without an account and stops working when sharing stops', () async {

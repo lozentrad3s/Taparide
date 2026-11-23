@@ -65,6 +65,10 @@ GoRouter buildRouter(AppState state, {AppMode? mode}) {
       final path = s.uri.path;
       final portal = path.startsWith('/portal');
       if (path == '/moved') return null;
+      // Auth servers can put "error=…" or tokens in the #fragment, which isn't one of our pages.
+      if (!path.startsWith('/') || s.uri.toString().contains('error_description') || s.uri.toString().contains('access_token=')) {
+        return user == null ? (appMode.hasRiderApp ? '/login' : '/login?portal=partner') : homeFor(user);
+      }
       // Admins and FCTA staff pass the authenticator step before anything else opens.
       if (user != null && state.passwordRecovery) return path == '/set-password' ? null : '/set-password';
       if (path == '/set-password') return user == null ? '/login' : homeFor(user);

@@ -68,7 +68,10 @@ class PortalScaffold extends StatelessWidget {
                   LayoutBuilder(
                     builder: (context, c) => toolbar != null && c.maxWidth >= 760
                         ? Row(crossAxisAlignment: CrossAxisAlignment.center, children: [Expanded(child: heading), const SizedBox(width: 16), Flexible(child: toolbar)])
-                        : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [heading, if (toolbar != null) ...[const SizedBox(height: 14), Align(alignment: Alignment.centerLeft, child: toolbar)]]),
+                        : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                            heading,
+                            if (toolbar != null) ...[const SizedBox(height: 14), Align(alignment: Alignment.centerLeft, child: toolbar)]
+                          ]),
                   ),
                   SizedBox(height: wide ? 24 : 18),
                   ...children,
@@ -201,33 +204,38 @@ class FigureCard extends StatelessWidget {
         radius: AppRadius.md,
         padding: const EdgeInsets.fromLTRB(18, 16, 16, 16),
         semanticLabel: '$label: $value',
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Expanded(child: Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.muted, height: 1.25), maxLines: 2, overflow: TextOverflow.ellipsis)),
-            if (icon != null) ...[
-              const SizedBox(width: 8),
-              Container(
-                width: 30,
-                height: 30,
-                decoration: BoxDecoration(color: AppColors.mint, borderRadius: BorderRadius.circular(AppRadius.sm)),
-                child: Icon(icon, size: 16, color: AppColors.forest),
-              ),
-            ],
-          ]),
-          const SizedBox(height: 10),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(value, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: AppColors.ink, height: 1.05, letterSpacing: -0.6, fontFeatures: tabular)),
-          ),
-          if (delta != null || caption != null) ...[
-            const SizedBox(height: 10),
+        child: Builder(builder: (context) {
+          // On a phone, cards sit three to a row: drop the icon so the label keeps whole words. (No
+          // LayoutBuilder here: these cards live inside IntrinsicHeight rows.)
+          final showIcon = icon != null && MediaQuery.sizeOf(context).width >= 480;
+          return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              if (delta != null) ...[DeltaChip(delta!), const SizedBox(width: 6)],
-              if (caption != null) Flexible(child: Text(caption!, style: const TextStyle(fontSize: 12.5, color: AppColors.muted, height: 1.25), maxLines: 2, overflow: TextOverflow.ellipsis)),
+              Expanded(child: Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.muted, height: 1.25), maxLines: 2, overflow: TextOverflow.ellipsis)),
+              if (showIcon) ...[
+                const SizedBox(width: 8),
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(color: AppColors.mint, borderRadius: BorderRadius.circular(AppRadius.sm)),
+                  child: Icon(icon, size: 16, color: AppColors.forest),
+                ),
+              ],
             ]),
-          ],
-        ]),
+            const SizedBox(height: 10),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(value, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: AppColors.ink, height: 1.05, letterSpacing: -0.6, fontFeatures: tabular)),
+            ),
+            if (delta != null || caption != null) ...[
+              const SizedBox(height: 10),
+              Row(children: [
+                if (delta != null) ...[DeltaChip(delta!), const SizedBox(width: 6)],
+                if (caption != null) Flexible(child: Text(caption!, style: const TextStyle(fontSize: 12.5, color: AppColors.muted, height: 1.25), maxLines: 2, overflow: TextOverflow.ellipsis)),
+              ]),
+            ],
+          ]);
+        }),
       );
 }
 
@@ -309,7 +317,10 @@ class PanelLink extends StatelessWidget {
   @override
   Widget build(BuildContext context) => TextButton(
         onPressed: onPressed,
-        style: TextButton.styleFrom(minimumSize: const Size(0, 34), padding: const EdgeInsets.symmetric(horizontal: 10), textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(fontSize: 13.5, fontWeight: FontWeight.w700)),
+        style: TextButton.styleFrom(
+            minimumSize: const Size(0, 34),
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(fontSize: 13.5, fontWeight: FontWeight.w700)),
         child: Row(mainAxisSize: MainAxisSize.min, children: [Text(label), const SizedBox(width: 2), const Icon(Icons.arrow_forward_rounded, size: 15)]),
       );
 }
@@ -394,8 +405,7 @@ class DataList<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (items.isEmpty)
-      return empty ?? const EmptyState(icon: Icons.inbox_rounded, title: 'Nothing here yet', message: 'Records will appear here as they are created.');
+    if (items.isEmpty) return empty ?? const EmptyState(icon: Icons.inbox_rounded, title: 'Nothing here yet', message: 'Records will appear here as they are created.');
     final text = Theme.of(context).textTheme;
     return LayoutBuilder(builder: (context, c) {
       if (c.maxWidth >= 760) {

@@ -41,12 +41,20 @@ class _MoneyPageState extends State<MoneyPage> {
             else if (snap.hasError)
               Panel(child: LoadFailure(message: snap.error is BackendException ? (snap.error as BackendException).message : 'Could not load money figures.', onRetry: _reload))
             else ...[
-              const SectionLabel('Riders', subtitle: 'Ride credit is spent first and can\'t be withdrawn'),
+              const SectionLabel('Riders', subtitle: 'Money riders have added, ready to tap and pay'),
               Cols(children: [
-                FigureCard(label: 'In rider wallets', value: Fmt.naira(m.walletBalance - m.rideCredit), icon: Icons.account_balance_wallet_rounded, caption: '${Fmt.count(m.walletCount)} wallets'),
-                FigureCard(label: 'Ride credit outstanding', value: Fmt.naira(m.rideCredit), icon: Icons.local_activity_rounded, caption: 'Free ₦1,000 for the first 5,000'),
+                FigureCard(
+                    label: 'In rider wallets',
+                    value: Fmt.naira(m.walletBalance - m.rideCredit),
+                    icon: Icons.account_balance_wallet_rounded,
+                    caption: '${Fmt.count(m.walletCount)} wallet${m.walletCount == 1 ? '' : 's'}'),
+                FigureCard(label: 'Ride credit outstanding', value: Fmt.naira(m.rideCredit), icon: Icons.local_activity_rounded, caption: 'Older sign-up credit still unspent'),
                 FigureCard(label: 'Top-ups paid', value: Fmt.naira(m.topupsPaidAmount), icon: Icons.credit_card_rounded, caption: '${Fmt.count(m.topupsPaid)} payments'),
-                FigureCard(label: 'Top-ups not finished', value: Fmt.count(m.topupsPending + m.topupsFailed), icon: Icons.hourglass_bottom_rounded, caption: '${m.topupsPending} pending · ${m.topupsFailed} failed'),
+                FigureCard(
+                    label: 'Top-ups not finished',
+                    value: Fmt.count(m.topupsPending + m.topupsFailed),
+                    icon: Icons.hourglass_bottom_rounded,
+                    caption: '${m.topupsPending} pending · ${m.topupsFailed} failed'),
               ]),
               const SectionLabel('Tap to pay', subtitle: 'Each fare is held until the trip ends, then moves to the partner\'s collection wallet'),
               Cols(max: 3, children: [
@@ -62,7 +70,7 @@ class _MoneyPageState extends State<MoneyPage> {
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                     const PanelTitle('Latest top-ups', subtitle: 'Newest 25'),
                     if (m.recentTopups.isEmpty)
-                      Text('No card or bank top-ups yet. Adding money is still "coming soon" in the rider app.', style: text.bodyMedium)
+                      Text('No card or bank top-ups yet. Riders add money from Profile → Top up (Bachs).', style: text.bodyMedium)
                     else
                       for (final t in m.recentTopups) _TopUpRow(row: t),
                   ]),

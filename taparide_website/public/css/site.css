@@ -118,16 +118,19 @@ h3 { font-weight: 700; letter-spacing: -0.01em; font-size: 22px; line-height: 1.
 .top-cta { margin-left: auto; display: flex; align-items: center; gap: 10px; }
 .top-cta .btn { min-height: 42px; padding: 0 18px; font-size: 15px; }
 .menu-btn { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; border: 0; background: var(--soft); cursor: pointer; }
-.hide-sm { display: none; }
+.lbl-short { display: none; }
 .menu { position: fixed; inset: var(--header-h) 0 auto 0; z-index: 29; max-height: calc(100dvh - var(--header-h)); overflow: auto; background: #fff; padding: 8px var(--gutter) 28px; display: grid; gap: 10px; box-shadow: 0 30px 40px -24px rgba(0, 0, 0, 0.3); }
 .menu[hidden] { display: none; }
 .menu nav { display: grid; margin-bottom: 10px; }
 .menu nav a { padding: 14px 2px; font-size: 19px; font-weight: 600; text-decoration: none; border-bottom: 1px solid var(--line); }
-@media (min-width: 720px) { .hide-sm { display: inline-flex; } }
+@media (max-width: 719px) {
+  .top-cta .lbl-long, .quick .lbl-long { display: none; } .top-cta .lbl-short, .quick .lbl-short { display: inline; }
+  .top-cta .btn { min-height: 44px; }
+}
 @media (min-width: 1120px) { .nav { display: flex; } .top-cta { margin-left: 8px; } .menu-btn, .menu { display: none !important; } }
 @media (max-width: 479px) {
   .top-in { gap: 10px; } .brand { gap: 6px; } .brand-mark { width: 44px; } .brand-word { width: 92px; }
-  .top-cta { gap: 8px; } .top-cta .btn { padding: 0 14px; }
+  .top-cta { gap: 6px; } .top-cta .btn { padding: 0 13px; font-size: 14.5px; }
 }
 @media (max-width: 379px) { .brand-mark { display: none; } }
 
@@ -343,7 +346,7 @@ legend, .field label { display: block; font-weight: 700; font-size: 15px; margin
 .ticket-top { display: flex; justify-content: space-between; align-items: center; }
 .ticket-top img { width: 116px; }
 .ticket-top span { font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; font-size: 12px; color: var(--ink); background: var(--lime); padding: 6px 10px; border-radius: 99px; }
-.ticket-value { margin-top: 20px; font-size: clamp(52px, 7vw, 76px); font-weight: 800; line-height: 1; letter-spacing: -0.03em; color: var(--forest); }
+.ticket-value { margin-top: 20px; font-size: clamp(34px, 5vw, 48px); font-weight: 800; line-height: 1.05; letter-spacing: -0.025em; color: var(--forest); text-wrap: balance; }
 .ticket-for { margin-top: 6px; font-size: 18px; color: var(--ink-soft); }
 .ticket-meta { margin: 22px 0 0; display: grid; grid-template-columns: repeat(3, auto); justify-content: start; gap: 24px; }
 .ticket-meta dt { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 700; }
@@ -388,8 +391,11 @@ legend, .field label { display: block; font-weight: 700; font-size: 15px; margin
 .foot { background: var(--forest-deep); color: #fff; padding: 72px 0 32px; }
 .foot-grid { display: grid; gap: 40px; }
 @media (min-width: 900px) { .foot-grid { grid-template-columns: 1fr 1.6fr; } }
-.foot-brand { display: grid; gap: 10px; justify-items: start; }
-.foot-brand img:first-child { width: 76px; }
+.foot-brand { display: grid; gap: 10px; justify-items: start; align-content: start; }
+.foot-logo { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; flex-wrap: nowrap; }
+.foot-logo img { height: auto; flex: none; }
+.foot-logo img:first-child { width: 70px; }
+.foot-logo img:last-child { width: 146px; }
 .foot-brand p { color: #B9D5C5; font-size: 15px; }
 .foot-brand .foot-tag { color: var(--lime); font-weight: 700; }
 .foot-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 28px; }
@@ -427,13 +433,29 @@ legend, .field label { display: block; font-weight: 700; font-size: 15px; margin
 .doc img + h1 { margin-top: 24px; }
 .doc .btn { margin-top: 20px; }
 
-/* Phones: photo on top, words below (no text over faces). */
+/* Phones: the photo fills the whole card, as on desktop. Portrait crops keep faces in the top
+   third; the words sit on a dark fade at the bottom. */
 @media (max-width: 719px) {
-  .hero-frame { display: block; min-height: 0; background: var(--ink); }
-  .hero-slides { position: relative; aspect-ratio: 4 / 3; }
-  .hero-bg { object-position: 50% 40%; }
-  .hero-frame::before { display: none; }
-  .hero-in { padding: 28px 20px 30px; }
+  .hero { padding: 8px 8px 0; }
+  .hero-frame { min-height: max(560px, min(calc(100svh - var(--header-h) - 16px), 740px)); border-radius: 24px; }
+  .hero-bg { object-position: 50% 0%; }
+  .hero-frame::before {
+    background:
+      linear-gradient(0deg, rgba(6, 12, 9, 0.94) 0%, rgba(6, 12, 9, 0.82) 36%, rgba(6, 12, 9, 0.4) 56%, rgba(6, 12, 9, 0) 70%),
+      linear-gradient(180deg, rgba(0, 0, 0, 0.38) 0%, rgba(0, 0, 0, 0) 16%);
+  }
+  .hero-in { padding: 64px 18px 22px; }
+  .hero-title { font-size: clamp(2.3rem, 10.6vw, 2.9rem); }
+  .hero-lede { margin-top: 12px; font-size: 16.5px; line-height: 1.5; }
+  .hero-link { margin-top: 12px; }
+  .quick { margin-top: 18px; }
+  /* One row, as on desktop: the email field and a short "Join" button. */
+  .quick-row { flex-direction: row; gap: 0; padding: 5px; border-radius: 999px; background: #fff; }
+  .quick-row input { min-height: 50px; padding: 0 16px; font-size: 16px; }
+  .quick-row input:focus-visible { outline: none; }
+  .quick-row:focus-within { box-shadow: 0 0 0 3px var(--lime); }
+  .quick-row .btn { min-height: 50px; padding: 0 18px; flex: none; }
+  .hero-offer { display: none; }
   .notice-tag { display: none; }
   .notice a { padding: 9px 16px; font-size: 14px; flex-wrap: nowrap; }
 }
@@ -549,3 +571,9 @@ body.has-cookie .wa-float { opacity: 0; pointer-events: none; }
 .chips-sm span { min-height: 36px; padding: 0 12px; font-size: 13.5px; }
 @media (pointer: coarse) { .chips-sm span { min-height: 44px; } }
 .pass-days { white-space: normal; }
+
+/* ------------------------------------------------------------ judges' demo links */
+.demo-note { margin-top: 18px; font-size: 15px; color: var(--muted); max-width: 46ch; }
+.demo-note a { font-weight: 700; color: var(--forest); }
+.menu-demo { display: grid; gap: 2px; padding: 12px 2px 4px; font-size: 17px; font-weight: 700; text-decoration: none; color: var(--forest); }
+.menu-demo small { font-size: 13px; font-weight: 500; color: var(--muted); }

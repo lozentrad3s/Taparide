@@ -130,7 +130,7 @@ export default async function handler(req, res) {
     if (b.action === "join" && !(await turnstileOk(b.turnstile, ip))) return send(res, 400, { error: "We couldn't confirm you're a person. Refresh the page and try again." });
 
     if (b.action === "join") {
-      if (b.terms !== "v1") return send(res, 400, { error: "Please agree to the Terms and Privacy notice to claim your free ride." });
+      if (b.terms !== "v1") return send(res, 400, { error: "Please agree to the Terms and Privacy notice to claim your ride reward." });
       const out = await call("join_waitlist", {
         p_email: str(b.email, 254),
         p_name: str(b.name, 80) ?? null,

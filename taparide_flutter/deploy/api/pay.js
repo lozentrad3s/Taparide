@@ -113,6 +113,33 @@ export default async function handler(req, res) {
         const r = await fetch(`${bachsBase()}/v1/checkout-sessions/chk_taparide_status_check`, { headers: { Authorization: `Bearer ${bachsKey()}` }, signal: AbortSignal.timeout(8000) }).catch(() => null);
         out.key = !r ? "unreachable" : r.status === 401 || r.status === 403 ? "rejected" : r.status < 500 ? "accepted" : "provider error";
         out.providerStatus = r?.status ?? null;
+        // Owner-only end-to-end probe (Bearer CRON_SECRET): Bachs creates a real ₦100 checkout that
+        // expires unpaid. No wallet row is made, so nothing can be credited; the link isn't returned.
+        const probeKey = process.env.CRON_SECRET;
+        const bearer = `${req.headers.authorization || ""}`.replace(/^Bearer\s+/i, "");
+        if (req.query?.probe === "checkout" && probeKey && bearer.length === probeKey.length && timingSafeEqual(Buffer.from(bearer), Buffer.from(probeKey))) {
+          const reference = `TAR-PROBE${Date.now().toString(36).toUpperCase()}`;
+          const origin = `https://${req.headers["x-forwarded-host"] || req.headers.host}`;
+          try {
+            const s = await bachs("/v1/checkout-sessions", {
+              method: "POST",
+              headers: { "Idempotency-Key": reference },
+              body: JSON.stringify({
+                pricing: { currency: "NGN", amount: "100.00" },
+                customer: { email: "payments-check@taparide.com" },
+                success_url: `${origin}/api/pay?action=return&reference=${reference}`,
+                cancel_url: `${origin}/api/pay?action=return&reference=${reference}`,
+                reference,
+                expires_in_minutes: 10,
+                metadata: { purpose: "Tap A Ride payment set-up check (do not pay)" },
+              }),
+            });
+            const back = s.id ? await bachs(`/v1/checkout-sessions/${encodeURIComponent(s.id)}`) : null;
+            out.checkout = { created: !!s.checkout_url, id: s.id ? `${s.id.slice(0, 8)}…` : null, status: back?.status ?? null, readBack: !!back };
+          } catch (e) {
+            out.checkout = { created: false, error: e.message };
+          }
+        }
       }
       return send(res, 200, out);
     }

@@ -585,6 +585,47 @@ class EventPass {
   final String time;
 }
 
+/// The sign-up reward for people who joined on taparide.com before launch. Until full launch it
+/// carries no money: the rider just sees "Ride reward granted" once their account email matches.
+class SignupReward {
+  const SignupReward({required this.granted, this.at, this.label = 'Ride reward granted'});
+
+  final bool granted;
+  final DateTime? at;
+  final String label;
+
+  static const none = SignupReward(granted: false);
+
+  factory SignupReward.fromJson(Map<String, dynamic> j) => SignupReward(
+        granted: j['granted'] == true,
+        at: DateTime.tryParse('${j['at'] ?? ''}')?.toLocal(),
+        label: (j['label'] as String?)?.trim().isNotEmpty == true ? j['label'] as String : 'Ride reward granted',
+      );
+}
+
+/// One card / bank top-up of the rider's wallet (Bachs).
+class TopUpRecord {
+  const TopUpRecord({required this.reference, required this.amount, required this.status, required this.createdAt, this.channel, this.paidAt});
+
+  final String reference;
+  final int amount;
+
+  /// pending · paid · failed
+  final String status;
+  final String? channel;
+  final DateTime createdAt;
+  final DateTime? paidAt;
+
+  factory TopUpRecord.fromJson(Map<String, dynamic> j) => TopUpRecord(
+        reference: '${j['reference'] ?? ''}',
+        amount: (j['amount'] as num?)?.toInt() ?? 0,
+        status: '${j['status'] ?? 'pending'}',
+        channel: j['channel'] as String?,
+        createdAt: DateTime.tryParse('${j['created_at'] ?? ''}')?.toLocal() ?? DateTime.now(),
+        paidAt: DateTime.tryParse('${j['paid_at'] ?? ''}')?.toLocal(),
+      );
+}
+
 /// Money a partner has collected through tap to pay. Fares are held until the trip is over.
 class CollectionWallet {
   const CollectionWallet({required this.available, required this.paidOut, required this.held, this.recent = const []});
@@ -656,8 +697,7 @@ class MoneyOverview {
   final List<CollectionRow> collection;
   final List<TopUpRow> recentTopups;
 
-  static const empty = MoneyOverview(
-      walletCount: 0, walletBalance: 0, rideCredit: 0, topupsPaid: 0, topupsPaidAmount: 0, topupsPending: 0, topupsFailed: 0, held: 0, released: 0, refunded: 0);
+  static const empty = MoneyOverview(walletCount: 0, walletBalance: 0, rideCredit: 0, topupsPaid: 0, topupsPaidAmount: 0, topupsPending: 0, topupsFailed: 0, held: 0, released: 0, refunded: 0);
 
   factory MoneyOverview.fromJson(Map<String, dynamic> j) {
     Map<String, dynamic> m(String k) => Map<String, dynamic>.from((j[k] as Map?) ?? const {});
@@ -721,9 +761,8 @@ class EventSeatBookings {
   final List<String> areas;
   final List<String> slots;
 
-  int ridersOn(DateTime day, [String? area]) => rows
-      .where((r) => r.day.year == day.year && r.day.month == day.month && r.day.day == day.day && (area == null || r.area == area))
-      .fold(0, (a, r) => a + r.riders);
+  int ridersOn(DateTime day, [String? area]) =>
+      rows.where((r) => r.day.year == day.year && r.day.month == day.month && r.day.day == day.day && (area == null || r.area == area)).fold(0, (a, r) => a + r.riders);
 
   factory EventSeatBookings.fromJson(Map<String, dynamic> j) {
     final config = Map<String, dynamic>.from((j['config'] as Map?) ?? const {});
@@ -736,8 +775,7 @@ class EventSeatBookings {
       people: _num(j['people']),
       lastBooking: _date(j['last_booking']),
       rows: [
-        for (final r in (j['rows'] as List? ?? const []))
-          (day: DateTime.parse('${(r as Map)['day']}'), area: '${r['area'] ?? ''}', slot: '${r['slot'] ?? ''}', riders: _num(r['riders'])),
+        for (final r in (j['rows'] as List? ?? const [])) (day: DateTime.parse('${(r as Map)['day']}'), area: '${r['area'] ?? ''}', slot: '${r['slot'] ?? ''}', riders: _num(r['riders'])),
       ],
       days: [for (final d in (config['days'] as List? ?? const [])) DateTime.parse('$d')],
       areas: [for (final a in (config['areas'] as List? ?? const [])) '$a'],

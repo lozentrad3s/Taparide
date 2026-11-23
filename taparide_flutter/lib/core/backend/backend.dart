@@ -33,6 +33,10 @@ abstract class Backend {
   /// True after the visitor arrived from a password-reset email: they must choose a new password.
   bool get passwordRecovery;
 
+  /// A sign-in error the auth server sent back in the address (e.g. Google sign-in was cancelled
+  /// or an email link expired), in plain words. Read once, then cleared.
+  String? takeAuthRedirectError();
+
   /// Sets a new password for the signed-in account (after a reset email).
   Future<void> setNewPassword(String password);
   Future<void> signOut();
@@ -66,6 +70,12 @@ abstract class Backend {
 
   /// Partners: the signed-in company's collection wallet (tap-to-pay fares, held until each trip ends).
   Future<CollectionWallet> fetchCollectionWallet();
+
+  /// Riders: whether this account earned the website sign-up reward (no money until full launch).
+  Future<SignupReward> fetchSignupReward();
+
+  /// Riders: their latest card / bank top-ups, newest first.
+  Future<List<TopUpRecord>> fetchMyTopUps();
 
   /// Event organisers (and admins/FCTA): free-bus bookings for their events, counts only.
   Future<List<EventSeatBookings>> fetchOrganiserSeatBookings();

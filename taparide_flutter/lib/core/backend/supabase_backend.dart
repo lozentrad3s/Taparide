@@ -17,9 +17,38 @@ class SupabaseBackend implements Backend {
       if (s.event == AuthChangeEvent.passwordRecovery) _recovery = true;
     });
     if (kIsWeb && Uri.base.queryParameters['reset'] == '1') _recovery = true;
+    if (kIsWeb) _redirectError = _readRedirectError(Uri.base);
   }
 
   bool _recovery = false;
+  String? _redirectError;
+
+  /// Supabase sends errors back as ?error=…&error_description=… (or the same in the #fragment).
+  static String? _readRedirectError(Uri uri) {
+    final params = <String, String>{...uri.queryParameters};
+    final fragment = uri.fragment;
+    if (fragment.contains('error')) {
+      try {
+        params.addAll(Uri.splitQueryString(fragment.startsWith('/') ? (fragment.contains('?') ? fragment.split('?').last : '') : fragment));
+      } catch (_) {}
+    }
+    final code = params['error_code'] ?? params['error'];
+    final description = params['error_description']?.replaceAll('+', ' ');
+    if (code == null && description == null) return null;
+    return switch (code) {
+      'access_denied' => 'Sign-in was cancelled. You can try again or use your email instead.',
+      'otp_expired' => 'That email link has expired or was already used. Request a new one and open it on this device.',
+      'provider_email_needs_verification' => 'Please confirm your email first, then sign in.',
+      _ => description == null || description.isEmpty ? 'Sign-in did not complete. Please try again.' : 'Sign-in did not complete: $description',
+    };
+  }
+
+  @override
+  String? takeAuthRedirectError() {
+    final e = _redirectError;
+    _redirectError = null;
+    return e;
+  }
 
   /// Where email links (confirm account, reset password) bring people back to: this same app
   /// (taparide.com/app/ or taparide.com/dashboard/), never Supabase's default Site URL.
@@ -55,9 +84,7 @@ class SupabaseBackend implements Backend {
     } on BackendException {
       rethrow;
     } on AuthException catch (e) {
-      final message = e.message.toLowerCase().contains('invalid login')
-          ? 'That email and password do not match an account.'
-          : e.message;
+      final message = e.message.toLowerCase().contains('invalid login') ? 'That email and password do not match an account.' : e.message;
       throw BackendException(BackendErrorKind.auth, message);
     } on PostgrestException catch (e) {
       // Our SQL functions raise readable messages with these SQLSTATE codes.
@@ -150,9 +177,12 @@ class SupabaseBackend implements Backend {
   Future<void> signInWithProvider(SocialProvider provider, {String? redirectTo}) => _guard(() async {
         // Needs the provider switched on in Supabase (Authentication → Providers) with our
         // Google / Apple client IDs, and [redirectTo] listed under Redirect URLs.
+        // Always come back to this app's own address (taparide.com/app/ or /dashboard/), never the
+        // project's Site URL; the address must be on Supabase's Redirect URLs list.
         await _client.auth.signInWithOAuth(
           provider == SocialProvider.google ? OAuthProvider.google : OAuthProvider.apple,
-          redirectTo: redirectTo,
+          redirectTo: redirectTo ?? _returnUrl(),
+          queryParams: provider == SocialProvider.google ? const {'prompt': 'select_account'} : null,
         );
       });
 
@@ -190,13 +220,19 @@ class SupabaseBackend implements Backend {
   static String _isoDay(DateTime d) => '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
   @override
-  Future<void> setSignupContacted(int id, {required bool contacted, String? note}) =>
-      _guard(() => _client.rpc('admin_set_contacted', params: {'p_id': id, 'p_contacted': contacted, 'p_note': note}));
+  Future<void> setSignupContacted(int id, {required bool contacted, String? note}) => _guard(() => _client.rpc('admin_set_contacted', params: {'p_id': id, 'p_contacted': contacted, 'p_note': note}));
 
   @override
   Future<void> updateEventPass({required int id, required String event, required String pickup, required List<DateTime> days, String? name, String? phone}) => _guard(() => _client.rpc(
         'admin_update_event_pass',
-        params: {'p_id': id, 'p_event': event, 'p_area': pickup, 'p_days': [for (final d in days) _isoDay(d)], 'p_name': name, 'p_phone': phone},
+        params: {
+          'p_id': id,
+          'p_event': event,
+          'p_area': pickup,
+          'p_days': [for (final d in days) _isoDay(d)],
+          'p_name': name,
+          'p_phone': phone
+        },
       ));
 
   @override
@@ -209,8 +245,23 @@ class SupabaseBackend implements Backend {
   Future<MoneyOverview> fetchMoney() => _guard(() async => MoneyOverview.fromJson(Map<String, dynamic>.from((await _client.rpc('admin_money')) as Map)));
 
   @override
-  Future<CollectionWallet> fetchCollectionWallet() =>
-      _guard(() async => CollectionWallet.fromJson(Map<String, dynamic>.from((await _client.rpc('my_collection_wallet')) as Map)));
+  Future<CollectionWallet> fetchCollectionWallet() => _guard(() async => CollectionWallet.fromJson(Map<String, dynamic>.from((await _client.rpc('my_collection_wallet')) as Map)));
+
+  @override
+  Future<List<TopUpRecord>> fetchMyTopUps() => _guard(() async => [
+        for (final r in _rows(await _client.from('wallet_topups').select().order('created_at', ascending: false).limit(20))) TopUpRecord.fromJson(r),
+      ]);
+
+  @override
+  Future<SignupReward> fetchSignupReward() async {
+    try {
+      final r = await _client.rpc('my_signup_reward');
+      return r is Map ? SignupReward.fromJson(Map<String, dynamic>.from(r)) : SignupReward.none;
+    } catch (_) {
+      // Older database without the function, or offline: the reward is simply not shown.
+      return SignupReward.none;
+    }
+  }
 
   @override
   Future<List<EventSeatBookings>> fetchOrganiserSeatBookings() => _guard(() async {
@@ -226,20 +277,16 @@ class SupabaseBackend implements Backend {
       ]);
 
   @override
-  Future<List<TransportProvider>> fetchProviders() =>
-      _guard(() async => [for (final r in _rows(await _client.from('providers').select().order('name'))) TransportProvider.fromJson(r)]);
+  Future<List<TransportProvider>> fetchProviders() => _guard(() async => [for (final r in _rows(await _client.from('providers').select().order('name'))) TransportProvider.fromJson(r)]);
 
   @override
-  Future<List<TransitRoute>> fetchRoutes() =>
-      _guard(() async => [for (final r in _rows(await _client.from('routes').select().order('code'))) TransitRoute.fromJson(r)]);
+  Future<List<TransitRoute>> fetchRoutes() => _guard(() async => [for (final r in _rows(await _client.from('routes').select().order('code'))) TransitRoute.fromJson(r)]);
 
   @override
-  Future<List<Vehicle>> fetchVehicles() =>
-      _guard(() async => [for (final r in _rows(await _client.from('vehicles').select().order('plate'))) Vehicle.fromJson(r)]);
+  Future<List<Vehicle>> fetchVehicles() => _guard(() async => [for (final r in _rows(await _client.from('vehicles').select().order('plate'))) Vehicle.fromJson(r)]);
 
   @override
-  Future<List<ChargingStation>> fetchChargingStations() =>
-      _guard(() async => [for (final r in _rows(await _client.from('charging_stations').select().order('name'))) ChargingStation.fromJson(r)]);
+  Future<List<ChargingStation>> fetchChargingStations() => _guard(() async => [for (final r in _rows(await _client.from('charging_stations').select().order('name'))) ChargingStation.fromJson(r)]);
 
   @override
   Future<List<SharedRide>> fetchSharedRides() => _guard(() async {
@@ -265,8 +312,7 @@ class SupabaseBackend implements Backend {
           fleetRevenue: n('fleet_revenue'),
           fleetRevenueDelta: n('fleet_revenue_delta'),
           fleetEarnings: [
-            for (final e in (d['fleet_earnings'] as List))
-              VehicleEarning(plate: e['plate'] as String, amount: (e['amount'] as num).toInt(), date: DateTime.parse(e['date'] as String)),
+            for (final e in (d['fleet_earnings'] as List)) VehicleEarning(plate: e['plate'] as String, amount: (e['amount'] as num).toInt(), date: DateTime.parse(e['date'] as String)),
           ],
           ridershipByDay: [for (final v in (d['ridership_by_day'] as List)) (v as num).toInt()],
           ridershipDelta: n('ridership_delta'),
@@ -290,20 +336,26 @@ class SupabaseBackend implements Backend {
       });
 
   @override
-  Future<Booking> bookTransit({required TransitRoute route, required DateTime departure, required PaymentMethod method}) => _guard(() async => Booking.fromJson(_row(
-      await _client.rpc('book_transit', params: {'p_route_id': route.id, 'p_departure': departure.toUtc().toIso8601String(), 'p_method': method.wire}))));
+  Future<Booking> bookTransit({required TransitRoute route, required DateTime departure, required PaymentMethod method}) =>
+      _guard(() async => Booking.fromJson(_row(await _client.rpc('book_transit', params: {'p_route_id': route.id, 'p_departure': departure.toUtc().toIso8601String(), 'p_method': method.wire}))));
 
   @override
-  Future<Booking> bookElectric({required Vehicle vehicle, required String pickup, required String dropoff, required int fare, required PaymentMethod method}) =>
-      _guard(() async => Booking.fromJson(_row(await _client.rpc('book_electric',
-          params: {'p_vehicle_id': vehicle.id, 'p_pickup': pickup, 'p_dropoff': dropoff, 'p_fare': fare, 'p_method': method.wire}))));
+  Future<Booking> bookElectric({required Vehicle vehicle, required String pickup, required String dropoff, required int fare, required PaymentMethod method}) => _guard(
+      () async => Booking.fromJson(_row(await _client.rpc('book_electric', params: {'p_vehicle_id': vehicle.id, 'p_pickup': pickup, 'p_dropoff': dropoff, 'p_fare': fare, 'p_method': method.wire}))));
 
   @override
-  Future<Booking> requestSharedRide(SharedRide ride) =>
-      _guard(() async => Booking.fromJson(_row(await _client.rpc('request_shared_ride', params: {'p_ride_id': ride.id}))));
+  Future<Booking> requestSharedRide(SharedRide ride) => _guard(() async => Booking.fromJson(_row(await _client.rpc('request_shared_ride', params: {'p_ride_id': ride.id}))));
 
   @override
-  Future<SharedRide> offerSharedRide({required String origin, required String destination, required DateTime departAt, required int seats, required int costShare, required String vehicleLabel, String note = '', String? eventId}) =>
+  Future<SharedRide> offerSharedRide(
+          {required String origin,
+          required String destination,
+          required DateTime departAt,
+          required int seats,
+          required int costShare,
+          required String vehicleLabel,
+          String note = '',
+          String? eventId}) =>
       _guard(() async => SharedRide.fromJson(_row(await _client.rpc('offer_shared_ride', params: {
             'p_origin': origin,
             'p_destination': destination,
@@ -316,8 +368,7 @@ class SupabaseBackend implements Backend {
           }))));
 
   @override
-  Future<Booking> cancelBooking(String bookingId) =>
-      _guard(() async => Booking.fromJson(_row(await _client.rpc('cancel_booking', params: {'p_booking_id': bookingId}))));
+  Future<Booking> cancelBooking(String bookingId) => _guard(() async => Booking.fromJson(_row(await _client.rpc('cancel_booking', params: {'p_booking_id': bookingId}))));
 
   @override
   Future<Wallet> topUp(int amount) => _guard(() async => Wallet.fromJson(_row(await _client.rpc('top_up', params: {'p_amount': amount}))));
@@ -335,8 +386,7 @@ class SupabaseBackend implements Backend {
       _guard(() async => Booking.fromJson(_row(await _client.rpc('respond_ride_request', params: {'p_booking_id': bookingId, 'p_accept': accept}))));
 
   @override
-  Future<SharedRide> cancelSharedRide(String rideId) =>
-      _guard(() async => SharedRide.fromJson(_row(await _client.rpc('cancel_shared_ride', params: {'p_ride_id': rideId}))));
+  Future<SharedRide> cancelSharedRide(String rideId) => _guard(() async => SharedRide.fromJson(_row(await _client.rpc('cancel_shared_ride', params: {'p_ride_id': rideId}))));
 
   // ------------------------------------------------------------ events
 
@@ -348,7 +398,19 @@ class SupabaseBackend implements Backend {
       });
 
   @override
-  Future<RideEvent> createEvent({required String title, required String venue, required String area, required DateTime startsAt, DateTime? endsAt, required EventCategory category, String description = '', double? lat, double? lng, int ticketPrice = 0, int ticketsTotal = 0, String? ticketLink}) =>
+  Future<RideEvent> createEvent(
+          {required String title,
+          required String venue,
+          required String area,
+          required DateTime startsAt,
+          DateTime? endsAt,
+          required EventCategory category,
+          String description = '',
+          double? lat,
+          double? lng,
+          int ticketPrice = 0,
+          int ticketsTotal = 0,
+          String? ticketLink}) =>
       _guard(() async => RideEvent.fromJson(_row(await _client.rpc('create_event', params: {
             'p_title': title,
             'p_venue': venue,
@@ -390,7 +452,8 @@ class SupabaseBackend implements Backend {
   }
 
   @override
-  Future<EventBus> offerEventBus({required String eventId, required String origin, required int fare, required int capacity, required int minRiders, required List<DateTime> slots, String? vehicleId}) =>
+  Future<EventBus> offerEventBus(
+          {required String eventId, required String origin, required int fare, required int capacity, required int minRiders, required List<DateTime> slots, String? vehicleId}) =>
       _guard(() async => EventBus.fromJson(_row(await _client.rpc('offer_event_bus', params: {
             'p_event_id': eventId,
             'p_origin': origin,
@@ -402,12 +465,12 @@ class SupabaseBackend implements Backend {
           }))));
 
   @override
-  Future<Booking> bookEventBus(String busId, DateTime slot, PaymentMethod method) => _guard(() async => Booking.fromJson(
-      _row(await _client.rpc('book_event_bus', params: {'p_bus_id': busId, 'p_slot': slot.toUtc().toIso8601String(), 'p_method': method.wire}))));
+  Future<Booking> bookEventBus(String busId, DateTime slot, PaymentMethod method) =>
+      _guard(() async => Booking.fromJson(_row(await _client.rpc('book_event_bus', params: {'p_bus_id': busId, 'p_slot': slot.toUtc().toIso8601String(), 'p_method': method.wire}))));
 
   @override
-  Future<EventBus> confirmEventBus(String busId, DateTime slot) => _guard(
-      () async => EventBus.fromJson(_row(await _client.rpc('confirm_event_bus', params: {'p_bus_id': busId, 'p_slot': slot.toUtc().toIso8601String()}))));
+  Future<EventBus> confirmEventBus(String busId, DateTime slot) =>
+      _guard(() async => EventBus.fromJson(_row(await _client.rpc('confirm_event_bus', params: {'p_bus_id': busId, 'p_slot': slot.toUtc().toIso8601String()}))));
 
   @override
   Future<EventBus> cancelEventBus(String busId) => _guard(() async => EventBus.fromJson(_row(await _client.rpc('cancel_event_bus', params: {'p_bus_id': busId}))));
@@ -445,15 +508,13 @@ class SupabaseBackend implements Backend {
   // ------------------------------------------------------------ share my ride
 
   @override
-  Future<TripShare> shareTrip(String bookingId) =>
-      _guard(() async => TripShare.fromJson(_row(await _client.rpc('share_trip', params: {'p_booking_id': bookingId}))));
+  Future<TripShare> shareTrip(String bookingId) => _guard(() async => TripShare.fromJson(_row(await _client.rpc('share_trip', params: {'p_booking_id': bookingId}))));
 
   @override
   Future<void> stopSharingTrip(String bookingId) => _guard(() => _client.rpc('stop_trip_share', params: {'p_booking_id': bookingId}));
 
   @override
-  Future<void> updateTripLocation(String bookingId, double lat, double lng) =>
-      _guard(() => _client.rpc('update_trip_location', params: {'p_booking_id': bookingId, 'p_lat': lat, 'p_lng': lng}));
+  Future<void> updateTripLocation(String bookingId, double lat, double lng) => _guard(() => _client.rpc('update_trip_location', params: {'p_booking_id': bookingId, 'p_lat': lat, 'p_lng': lng}));
 
   @override
   Future<SharedTrip?> fetchSharedTrip(String token) => _guard(() async {
@@ -470,8 +531,8 @@ class SupabaseBackend implements Backend {
       });
 
   @override
-  Future<void> reportVehiclePosition(String vehicleId, double lat, double lng, {double? heading, double? speedKmh}) => _guard(() =>
-      _client.rpc('report_vehicle_position', params: {'p_vehicle_id': vehicleId, 'p_lat': lat, 'p_lng': lng, 'p_heading': heading, 'p_speed_kmh': speedKmh}));
+  Future<void> reportVehiclePosition(String vehicleId, double lat, double lng, {double? heading, double? speedKmh}) =>
+      _guard(() => _client.rpc('report_vehicle_position', params: {'p_vehicle_id': vehicleId, 'p_lat': lat, 'p_lng': lng, 'p_heading': heading, 'p_speed_kmh': speedKmh}));
 
   @override
   Future<void> stopVehicleTracking(String vehicleId) => _guard(() => _client.rpc('stop_vehicle_tracking', params: {'p_vehicle_id': vehicleId}));
@@ -486,28 +547,25 @@ class SupabaseBackend implements Backend {
       });
 
   @override
-  Future<List<AuditEntry>> fetchAuditLog() =>
-      _guard(() async => [for (final r in _rows(await _client.from('audit_log').select().order('at', ascending: false).limit(200))) AuditEntry.fromJson(r)]);
+  Future<List<AuditEntry>> fetchAuditLog() => _guard(() async => [for (final r in _rows(await _client.from('audit_log').select().order('at', ascending: false).limit(200))) AuditEntry.fromJson(r)]);
 
   @override
-  Future<List<AppUser>> fetchUsers() =>
-      _guard(() async => [for (final r in _rows(await _client.from('profiles').select().order('full_name'))) AppUser.fromJson(r)]);
+  Future<List<AppUser>> fetchUsers() => _guard(() async => [for (final r in _rows(await _client.from('profiles').select().order('full_name'))) AppUser.fromJson(r)]);
 
   @override
-  Future<TransportProvider> setProviderStatus(String providerId, Verification status) => _guard(() async =>
-      TransportProvider.fromJson(_row(await _client.rpc('set_provider_status', params: {'p_provider_id': providerId, 'p_status': status.wire}))));
+  Future<TransportProvider> setProviderStatus(String providerId, Verification status) =>
+      _guard(() async => TransportProvider.fromJson(_row(await _client.rpc('set_provider_status', params: {'p_provider_id': providerId, 'p_status': status.wire}))));
 
   @override
-  Future<Vehicle> setVehicleVerification(String vehicleId, Verification status) => _guard(() async =>
-      Vehicle.fromJson(_row(await _client.rpc('set_vehicle_verification', params: {'p_vehicle_id': vehicleId, 'p_status': status.wire}))));
+  Future<Vehicle> setVehicleVerification(String vehicleId, Verification status) =>
+      _guard(() async => Vehicle.fromJson(_row(await _client.rpc('set_vehicle_verification', params: {'p_vehicle_id': vehicleId, 'p_status': status.wire}))));
 
   @override
-  Future<Vehicle> setVehicleStatus(String vehicleId, VehicleStatus status) => _guard(() async =>
-      Vehicle.fromJson(_row(await _client.rpc('set_vehicle_status', params: {'p_vehicle_id': vehicleId, 'p_status': status.wire}))));
+  Future<Vehicle> setVehicleStatus(String vehicleId, VehicleStatus status) =>
+      _guard(() async => Vehicle.fromJson(_row(await _client.rpc('set_vehicle_status', params: {'p_vehicle_id': vehicleId, 'p_status': status.wire}))));
 
   @override
-  Future<Booking> completeRide(String bookingId) =>
-      _guard(() async => Booking.fromJson(_row(await _client.rpc('complete_ride', params: {'p_booking_id': bookingId}))));
+  Future<Booking> completeRide(String bookingId) => _guard(() async => Booking.fromJson(_row(await _client.rpc('complete_ride', params: {'p_booking_id': bookingId}))));
 
   @override
   Future<TransitRoute> updateRouteFare(String routeId, int fare) =>
@@ -525,8 +583,8 @@ class SupabaseBackend implements Backend {
           }))));
 
   @override
-  Future<AppUser> setUserRole(String userId, UserRole role, {String? providerId}) => _guard(() async =>
-      AppUser.fromJson(_row(await _client.rpc('set_user_role', params: {'p_user_id': userId, 'p_role': role.wire, 'p_provider_id': providerId}))));
+  Future<AppUser> setUserRole(String userId, UserRole role, {String? providerId}) =>
+      _guard(() async => AppUser.fromJson(_row(await _client.rpc('set_user_role', params: {'p_user_id': userId, 'p_role': role.wire, 'p_provider_id': providerId}))));
 
   // ------------------------------------------------------------ fleet drivers
 
@@ -550,16 +608,16 @@ class SupabaseBackend implements Backend {
           }))));
 
   @override
-  Future<FleetDriver> assignFleetDriver(String driverId, {String? vehicleId, String? routeId}) => _guard(() async =>
-      FleetDriver.fromJson(_row(await _client.rpc('assign_fleet_driver', params: {'p_driver_id': driverId, 'p_vehicle_id': vehicleId, 'p_route_id': routeId}))));
+  Future<FleetDriver> assignFleetDriver(String driverId, {String? vehicleId, String? routeId}) =>
+      _guard(() async => FleetDriver.fromJson(_row(await _client.rpc('assign_fleet_driver', params: {'p_driver_id': driverId, 'p_vehicle_id': vehicleId, 'p_route_id': routeId}))));
 
   @override
-  Future<FleetDriver> setFleetDriverStatus(String driverId, FleetDriverStatus status) => _guard(() async =>
-      FleetDriver.fromJson(_row(await _client.rpc('set_fleet_driver_status', params: {'p_driver_id': driverId, 'p_status': status.wire}))));
+  Future<FleetDriver> setFleetDriverStatus(String driverId, FleetDriverStatus status) =>
+      _guard(() async => FleetDriver.fromJson(_row(await _client.rpc('set_fleet_driver_status', params: {'p_driver_id': driverId, 'p_status': status.wire}))));
 
   @override
-  Future<Booking> driverBookingAction(String bookingId, DriverBookingAction action) => _guard(() async =>
-      Booking.fromJson(_row(await _client.rpc('driver_booking_action', params: {'p_booking_id': bookingId, 'p_action': action.wire}))));
+  Future<Booking> driverBookingAction(String bookingId, DriverBookingAction action) =>
+      _guard(() async => Booking.fromJson(_row(await _client.rpc('driver_booking_action', params: {'p_booking_id': bookingId, 'p_action': action.wire}))));
 
   @override
   Future<Vehicle> driverSetTrip({required bool start}) => _guard(() async => Vehicle.fromJson(_row(await _client.rpc('driver_set_trip', params: {'p_start': start}))));
@@ -602,8 +660,8 @@ class SupabaseBackend implements Backend {
       ]);
 
   @override
-  Future<PartnerApplication> reviewPartnerApplication(String applicationId, ApplicationStatus decision, String note) => _guard(() async =>
-      PartnerApplication.fromJson(_row(await _client.rpc('review_partner_application', params: {'p_id': applicationId, 'p_decision': decision.wire, 'p_note': note}))));
+  Future<PartnerApplication> reviewPartnerApplication(String applicationId, ApplicationStatus decision, String note) =>
+      _guard(() async => PartnerApplication.fromJson(_row(await _client.rpc('review_partner_application', params: {'p_id': applicationId, 'p_decision': decision.wire, 'p_note': note}))));
 
   @override
   Future<DocumentFile> openDocument(DocumentFile document) => _guard(() async {

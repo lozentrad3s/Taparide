@@ -85,8 +85,8 @@ export function welcomeEmail({ name, code, position, freeRideLeft }) {
   const link = `${SITE}/r/${code}`;
   const hello = name ? `Welcome, ${esc(String(name).split(" ")[0])}.` : "Welcome to Tap A Ride.";
   const credit = freeRideLeft === false
-    ? "The free rides have all been claimed, but your place in line is saved."
-    : "₦1,000 of ride credit is saved for you. Open your Tap A Ride account with this same email and it is added once, for the first 5,000 people who join. It is used first when you pay for a ride.";
+    ? "The sign-up rewards have all been claimed, but your place in line is saved."
+    : "Your sign-up ride reward is granted. Open your Tap A Ride account with this same email to see it. We announce what it is worth, and how to use it, when we fully launch.";
   const subject = "You're on the Tap A Ride list";
   const html = frame(
     `You're #${position} in line. Share your link to move up.`,

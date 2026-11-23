@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Tap A Ride · Move more. Worry less.</title>
-  <meta name="description" content="Book bus rides, event rides and shared trips across Abuja with fixed fares and verified drivers. Join the waitlist and get your first ride free, up to ₦1,000.">
+  <meta name="description" content="Book bus rides, event rides and shared trips across Abuja with fixed fares and verified drivers. Join the waitlist and get a sign-up ride reward.">
   <meta name="theme-color" content="#0B5A3A">
   <link rel="canonical" href="https://taparide.com/">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Tap A Ride · Move more. Worry less.">
-  <meta property="og:description" content="Fixed fares, verified drivers and shared rides across Abuja. Join the waitlist for a free first ride, and reserve a free bus to Abuja Tech Week.">
+  <meta property="og:description" content="Fixed fares, verified drivers and shared rides across Abuja. Join the waitlist for a sign-up ride reward, and get a free bus pass to Abuja Tech Week.">
   <meta property="og:image" content="https://taparide.com/img/og.jpg">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="/img/brand/favicon.png" type="image/png">
@@ -72,8 +72,8 @@
       <a href="#partners">Partners</a>
     </nav>
     <div class="top-cta">
-      <a class="btn btn-line hide-sm" href="/app" data-app="/">Open the app</a>
-      <a class="btn btn-go" href="#join">Get ₦1,000 free</a>
+      <a class="btn btn-line btn-app" href="/app" data-app="/"><span class="lbl-long">Open the app</span><span class="lbl-short">Open app</span></a>
+      <a class="btn btn-go btn-join" href="#join"><span class="lbl-long">Claim your ride reward</span><span class="lbl-short">Join</span></a>
       <button class="menu-btn" type="button" aria-expanded="false" aria-controls="menu" data-menu-btn>
         <svg class="ic" aria-hidden="true"><use href="#i-menu"/></svg><span class="sr">Menu</span>
       </button>
@@ -92,8 +92,9 @@
     <a href="#partners">Partners &amp; advertisers</a>
     <a href="#faq">Questions</a>
   </nav>
-  <a class="btn btn-go btn-lg" href="#join">Get your free ride</a>
+  <a class="btn btn-go btn-lg" href="#join">Claim your ride reward</a>
   <a class="btn btn-line btn-lg" href="/app" data-app="/">Open the app</a>
+  <a class="menu-demo" href="/demo/">Try the demo <small>Sample data, for judges and visitors</small></a>
 </div>
 
 <main id="main">
@@ -105,19 +106,19 @@
     <div class="hero-slides" aria-hidden="true">
       <picture>
         <source media="(min-width: 720px)" srcset="/img/hero/hero-1-wide.jpg">
-        <img class="hero-bg is-on" src="/img/hero/hero-1-phone.jpg" width="960" height="720" alt="" decoding="async" fetchpriority="high" data-slide>
+        <img class="hero-bg is-on" src="/img/hero/hero-1-tall.jpg" width="558" height="900" alt="" decoding="async" fetchpriority="high" data-slide>
       </picture>
       <picture>
         <source media="(min-width: 720px)" srcset="/img/hero/hero-2-wide.jpg">
-        <img class="hero-bg" src="/img/hero/hero-2-phone.jpg" width="960" height="720" alt="" decoding="async" data-slide>
+        <img class="hero-bg" src="/img/hero/hero-2-tall.jpg" width="558" height="900" alt="" decoding="async" data-slide>
       </picture>
       <picture>
         <source media="(min-width: 720px)" srcset="/img/hero/hero-3-wide.jpg">
-        <img class="hero-bg" src="/img/hero/hero-3-phone.jpg" width="960" height="720" alt="" decoding="async" data-slide>
+        <img class="hero-bg" src="/img/hero/hero-3-tall.jpg" width="603" height="972" alt="" decoding="async" data-slide>
       </picture>
       <picture>
         <source media="(min-width: 720px)" srcset="/img/hero/hero-4-wide.jpg">
-        <img class="hero-bg" src="/img/hero/hero-4-phone.jpg" width="960" height="720" alt="" decoding="async" data-slide>
+        <img class="hero-bg" src="/img/hero/hero-4-tall.jpg" width="720" height="1161" alt="" decoding="async" data-slide>
       </picture>
     </div>
     <div class="hero-in">
@@ -148,12 +149,12 @@
           <label class="sr" for="hero-email">Email address</label>
           <input id="hero-email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="Enter your email" required>
           <input class="hp" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
-          <button class="btn btn-go btn-lg" type="submit"><span>Get my free ride</span><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+          <button class="btn btn-go btn-lg" type="submit"><span class="lbl-long">Claim my ride reward</span><span class="lbl-short">Join</span><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></button>
         </div>
-        <label class="agree on-dark"><input type="checkbox" name="terms" id="hero-terms" required><span>I agree to the <a href="/terms" target="_blank">Terms</a> and <a href="/privacy" target="_blank">Privacy notice</a>, including the free ride rules.</span></label>
+        <label class="agree on-dark"><input type="checkbox" name="terms" id="hero-terms" required><span>I agree to the <a href="/terms" target="_blank">Terms</a> and <a href="/privacy" target="_blank">Privacy notice</a>, including the ride reward rules.</span></label>
         <p class="form-msg" role="status" aria-live="polite" data-msg></p>
       </form>
-      <p class="hero-offer"><svg class="ic" aria-hidden="true"><use href="#i-ticket"/></svg>Join the waitlist and your first ride is free, up to ₦1,000.</p>
+      <p class="hero-offer"><svg class="ic" aria-hidden="true"><use href="#i-ticket"/></svg>Join the waitlist and get a ride reward when we launch.</p>
     </div>
     <div class="hero-tabs" role="group" aria-label="Choose a story">
       <button type="button" class="hero-tab is-on" data-tab="0" aria-label="Story 1: Move more, worry less"><span class="bar"><i></i></span><span class="tab-label">Everyday rides</span></button>
@@ -211,9 +212,10 @@
           <div><dt><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg>Drop-off</dt><dd>Velodrome, National Stadium</dd></div>
           <div><dt><svg class="ic" aria-hidden="true"><use href="#i-ticket"/></svg>Fare</dt><dd>Free · <span data-countdown>starts soon</span></dd></div>
         </dl>
+        <p class="demo-note">Judging at Tech Week? <a href="/demo/">Try the demo app</a>, with sample riders, buses and dashboards. No real money or data.</p>
       </div>
       <figure class="event-flyer">
-        <img src="/img/flyers/tech-week.jpg" width="900" height="1125" alt="Flyer: Abuja Tech Week x Taparide presents Event Ride. Rate: free. 24th to 26th November. Meeting point: Abuja Velodrome Stadium. Departure time 9:00 AM." loading="lazy">
+        <img src="/img/flyers/tech-week-event-ride.jpg" width="900" height="1125" alt="Flyer: Abuja Tech Week x Taparide presents Event Ride, with a green Taparide bus. Rate: free. 24th to 26th November. Drop-off point: Abuja Velodrome Stadium. Departure time: 7:00 AM." loading="lazy">
       </figure>
     </div>
 
@@ -277,7 +279,7 @@
           <small class="hint">We email your pass here.</small>
         </div>
         <input class="hp" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
-        <label class="agree"><input type="checkbox" name="terms" id="seat-terms" required><span>I agree to the <a href="/terms" target="_blank">Terms</a> and <a href="/privacy" target="_blank">Privacy notice</a>, including the free ride rules.</span></label>
+        <label class="agree"><input type="checkbox" name="terms" id="seat-terms" required><span>I agree to the <a href="/terms#tech-week" target="_blank">Terms</a> and <a href="/privacy" target="_blank">Privacy notice</a>, including the bus pass rules.</span></label>
         <button class="btn btn-go btn-lg btn-block" type="submit"><span>Get my free pass</span><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></button>
         <p class="form-msg" role="status" aria-live="polite" data-msg></p>
         <div class="seat-done" hidden data-seat-done>
@@ -324,11 +326,11 @@
   <div class="wrap pay-grid">
     <div class="story-copy">
       <h2 id="pay-title">Tap. Pay. You're on your way.</h2>
-      <p class="lede">Pay for your seat with a tap or a QR code in the app. No change wahala, and instant confirmation. Wallet top-ups are coming soon; your free ride credit works today.</p>
+      <p class="lede">Pay for your seat with a tap or a QR code in the app. No change wahala, and instant confirmation. Wallet top-ups are coming soon.</p>
       <ul class="pay-list">
-        <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Your free first ride arrives as ride credit</li>
+        <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Your sign-up ride reward shows in your account</li>
         <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>A receipt for every trip</li>
-        <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Your ₦1,000 ride credit is used first</li>
+        <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Pay with the wallet in the app</li>
       </ul>
     </div>
     <figure class="pay-media">
@@ -414,12 +416,12 @@
 <section class="join" id="join" aria-labelledby="join-title">
   <div class="wrap join-grid">
     <div class="join-copy">
-      <h2 id="join-title">Your first ride is on us.</h2>
-      <p class="lede">Join the waitlist and we save ₦1,000 of ride credit for you. It shows as ride credit in your account when you open Tap A Ride with the same email.</p>
+      <h2 id="join-title">Join now. Get a ride reward.</h2>
+      <p class="lede">Join the waitlist and we save a sign-up ride reward for you. Open Tap A Ride with the same email and your account shows “Ride reward granted”. We announce what it is worth when we fully launch.</p>
       <ol class="steps">
         <li><span>1</span>Join with your email</li>
         <li><span>2</span>Invite friends to move up the list</li>
-        <li><span>3</span>Open your account and ride free</li>
+        <li><span>3</span>Open your account to get your reward</li>
       </ol>
     </div>
 
@@ -460,19 +462,19 @@
           </select>
         </div>
         <input class="hp" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
-        <label class="agree"><input type="checkbox" name="terms" id="j-terms" required><span>I agree to the <a href="/terms" target="_blank">Terms</a> and <a href="/privacy" target="_blank">Privacy notice</a>, including the free ride rules.</span></label>
-        <button class="btn btn-go btn-lg btn-block" type="submit"><span>Claim my free ride</span><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+        <label class="agree"><input type="checkbox" name="terms" id="j-terms" required><span>I agree to the <a href="/terms" target="_blank">Terms</a> and <a href="/privacy" target="_blank">Privacy notice</a>, including the ride reward rules.</span></label>
+        <button class="btn btn-go btn-lg btn-block" type="submit"><span>Claim my ride reward</span><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></button>
         <p class="form-msg" role="status" aria-live="polite" data-msg></p>
-        <p class="fine">We'll contact you about your free ride, your seat and our launch. You can opt out any time.</p>
+        <p class="fine">We'll contact you about your ride reward, your seat and our launch. You can opt out any time.</p>
       </form>
 
       <div class="ticket" hidden data-ticket tabindex="-1">
         <div class="ticket-main">
           <div class="ticket-top">
             <img src="/img/brand/taparide_wordmark.png" width="120" height="18" alt="Tap A Ride">
-            <span>Free ride</span>
+            <span>Sign-up reward</span>
           </div>
-          <p class="ticket-value">₦1,000</p>
+          <p class="ticket-value">Ride reward granted</p>
           <p class="ticket-for">For <strong data-t-name>you</strong></p>
           <dl class="ticket-meta">
             <div><dt>Place in line</dt><dd data-t-pos>–</dd></div>
@@ -510,12 +512,12 @@
     <h2 id="faq-title">Questions</h2>
     <div class="faq-list">
       <details>
-        <summary>How do I get my free ride?</summary>
-        <p>Join the waitlist, then open your Tap A Ride account with the same email and confirm it. ₦1,000 of ride credit is added to your account once, and it's used first when you pay. It's for the first 5,000 people who join.</p>
+        <summary>How do I get my ride reward?</summary>
+        <p>Join the waitlist, then open your Tap A Ride account with the same email and confirm it. Your account shows “Ride reward granted”. We announce what the reward is worth, and how to use it, when we fully launch. One reward per person and per phone number.</p>
       </details>
       <details>
         <summary>Are the Abuja Tech Week buses really free?</summary>
-        <p>Yes. Tap A Ride is the official ride partner of Abuja Tech Week 2026, and the buses, powered by Pi-CNG &amp; EV, cost nothing. Reserve a seat for each day you're going.</p>
+        <p>Yes. Tap A Ride is the official ride partner of Abuja Tech Week 2026, and the buses, powered by Pi-CNG &amp; EV, cost nothing. One free pass covers every day you pick.</p>
       </details>
       <details>
         <summary>Where and when do the Tech Week buses leave?</summary>
@@ -542,15 +544,17 @@
 <footer class="foot">
   <div class="wrap foot-grid">
     <div class="foot-brand">
-      <img src="/img/brand/taparide_mark_white.png" width="92" height="32" alt="">
-      <img src="/img/brand/taparide_wordmark_white.png" width="150" height="22" alt="Tap A Ride">
+      <a class="foot-logo" href="/" aria-label="Tap A Ride home">
+        <img src="/img/brand/taparide_mark_white.png" width="92" height="32" alt="">
+        <img src="/img/brand/taparide_wordmark_white.png" width="150" height="22" alt="">
+      </a>
       <p>Abuja Smart Mobility Platform</p>
       <p class="foot-tag">Ride • Connect • Go</p>
     </div>
     <nav class="foot-links" aria-label="Footer">
       <div>
         <h3>Ride</h3>
-        <a href="#bus">Bus rides</a><a href="#tech-week">Event rides</a><a href="#tagalong">Tagalong</a><a href="#tap-pay">Tap to Pay</a><a href="/app" data-app="/">Open the app</a>
+        <a href="#bus">Bus rides</a><a href="#tech-week">Event rides</a><a href="#tagalong">Tagalong</a><a href="#tap-pay">Tap to Pay</a><a href="/app" data-app="/">Open the app</a><a href="/demo/">Try the demo</a>
       </div>
       <div>
         <h3>Partners</h3>
