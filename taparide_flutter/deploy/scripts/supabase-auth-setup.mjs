@@ -69,6 +69,9 @@ function patchFor(c) {
     uri_allow_list: [...allow].join(','),
     password_min_length: Math.max(8, c.password_min_length || 0),
     password_required_characters: ALL_CHARS,
+  };
+  // Branded emails need a custom sender on Supabase's free plan, so they go in together with Resend.
+  if (env.RESEND_API_KEY && senderReady) Object.assign(p, {
     mailer_subjects_confirmation: 'Confirm your Tap A Ride account',
     mailer_templates_confirmation_content: email('Confirm your email', 'Welcome to Tap A Ride. Tap the button to confirm {{ .Email }} and finish creating your account.', 'Confirm my account', 'The link works once and expires in 24 hours.'),
     mailer_subjects_recovery: 'Reset your Tap A Ride password',
@@ -79,9 +82,9 @@ function patchFor(c) {
     mailer_templates_email_change_content: email('Confirm your new email', 'Tap the button to change your Tap A Ride email from {{ .Email }} to {{ .NewEmail }}.', 'Confirm new email'),
     mailer_subjects_invite: "You're invited to Tap A Ride",
     mailer_templates_invite_content: email("You're invited", 'You have been invited to a Tap A Ride account for {{ .Email }}. Tap the button to accept and set your password.', 'Accept the invite'),
-  };
-  if (env.RESEND_API_KEY) {
-    const from = env.MAIL_FROM || 'Tap A Ride <no-reply@taparide.com>';
+  });
+  if (env.RESEND_API_KEY && senderReady) {
+    const from = sender;
     Object.assign(p, {
       smtp_host: 'smtp.resend.com',
       smtp_port: '465',
@@ -92,7 +95,8 @@ function patchFor(c) {
       rate_limit_email_sent: 100,
     });
   }
-  if (env.GOOGLE_OAUTH_CLIENT_ID && env.GOOGLE_OAUTH_CLIENT_SECRET) {
+  // Never overwrite a Google set-up that is already working.
+  if (env.GOOGLE_OAUTH_CLIENT_ID && env.GOOGLE_OAUTH_CLIENT_SECRET && !c.external_google_enabled) {
     Object.assign(p, { external_google_enabled: true, external_google_client_id: env.GOOGLE_OAUTH_CLIENT_ID, external_google_secret: env.GOOGLE_OAUTH_CLIENT_SECRET });
   }
   return p;
@@ -102,6 +106,20 @@ async function patch(body) {
   const r = await fetch(api, { method: 'PATCH', headers, body: JSON.stringify(body) });
   const text = await r.text();
   return { ok: r.ok, status: r.status, message: r.ok ? '' : text.slice(0, 300).replaceAll(env.SUPABASE_ACCESS_TOKEN, '***').replaceAll(env.RESEND_API_KEY || '\u0000', '***') };
+}
+
+// Resend only takes over sign-in emails once it can really send from this address; otherwise
+// switching would stop every confirmation and password-reset email.
+const sender = env.MAIL_FROM || 'Tap A Ride <no-reply@taparide.com>';
+let senderReady = false;
+if (env.RESEND_API_KEY) {
+  const t = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from: sender, to: ['delivered@resend.dev'], subject: 'Tap A Ride sender check', text: 'Sender check.' }),
+  }).catch(() => null);
+  senderReady = !!t?.ok;
+  if (!senderReady) console.log(`Resend can't send from the MAIL_FROM address yet (verify its domain in Resend > Domains); sign-in emails stay on Supabase's sender for now.`);
 }
 
 const before = await current();
