@@ -12,6 +12,7 @@ import '../../core/format.dart';
 import '../../core/models.dart';
 import '../../shared/ui.dart';
 import '../share/shared_trip_page.dart';
+import 'refund_widgets.dart';
 import 'rider_widgets.dart';
 
 /// Boarding pass for a transit seat, EV ride or Tag Along request.
@@ -185,6 +186,8 @@ class TicketPage extends StatelessWidget {
                   ),
                 ),
               ]),
+              const SizedBox(height: 14),
+              RefundSection(booking: booking),
               if (open) ...[
                 const SizedBox(height: 10),
                 TextButton(

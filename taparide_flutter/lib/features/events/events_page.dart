@@ -39,7 +39,7 @@ class _EventsPageState extends State<EventsPage> {
     final categories = {for (final e in all) e.category}.toList()..sort((a, b) => a.index.compareTo(b.index));
 
     return Scaffold(
-      appBar: AppBar(leading: const AppBackButton(), title: const Text('Events')),
+      appBar: AppBar(leading: const AppBackButton(), title: const Text('Event rides')),
       body: DataGate(
         builder: (context) => RefreshIndicator(
           color: AppColors.forest,
@@ -53,7 +53,7 @@ class _EventsPageState extends State<EventsPage> {
                 child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                   Text('What\'s on in Abuja', style: wide ? text.displaySmall : text.headlineLarge),
                   const SizedBox(height: 8),
-                  Text('Events from verified partners. Get your ticket, then book a seat on a bus from your area and pick the time that suits you.', style: text.bodyLarge),
+                  Text('Event rides from verified partners: book a seat on a bus from your area to the event, and get your ticket in one place.', style: text.bodyLarge),
                   const SizedBox(height: 16),
                   if (categories.length > 1)
                     Wrap(spacing: 8, runSpacing: 8, children: [
@@ -183,7 +183,7 @@ class EventDetailPage extends StatelessWidget {
       return Scaffold(
         appBar: AppBar(leading: const AppBackButton(fallback: '/events'), title: const Text('Event')),
         body: DataGate(
-          builder: (context) => EmptyState(icon: Icons.event_busy_rounded, title: 'Event not found', message: 'It may have ended or been removed.', action: 'All events', onAction: () => context.go('/events')),
+          builder: (context) => EmptyState(icon: Icons.event_busy_rounded, title: 'Event not found', message: 'It may have ended or been removed.', action: 'All event rides', onAction: () => context.go('/events')),
         ),
       );
     }
@@ -484,15 +484,15 @@ class EventsBanner extends StatelessWidget {
     final next = state.events.where((e) => e.startsAt.isAfter(state.now)).take(2).toList();
     return Panel(
       onTap: () => context.push('/events'),
-      semanticLabel: 'Events and event buses in Abuja.',
+      semanticLabel: 'Event rides in Abuja.',
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           const IconBadge(Icons.celebration_rounded, size: 40, radius: 12),
           const SizedBox(width: 12),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Events & event buses', style: text.titleLarge),
-              Text('Tickets and a bus seat from your area.', style: text.bodySmall),
+              Text('Event rides', style: text.titleLarge),
+              Text('A bus seat from your area, and your ticket.', style: text.bodySmall),
             ]),
           ),
           const Icon(Icons.chevron_right_rounded, color: AppColors.muted),

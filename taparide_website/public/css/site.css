@@ -100,8 +100,12 @@ h3 { font-weight: 700; letter-spacing: -0.01em; font-size: 22px; line-height: 1.
 .round-btn:disabled { opacity: 0.35; cursor: default; }
 
 /* ------------------------------------------------------------ notice + header */
-.notice { background: var(--lime-tint); border-bottom: 1px solid var(--lime-line); font-size: 15px; }
-.notice a { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; padding: 10px var(--gutter); text-decoration: none; text-align: center; }
+.notice { position: relative; display: flex; align-items: stretch; background: var(--lime-tint); border-bottom: 1px solid var(--lime-line); font-size: 15px; }
+.notice[hidden] { display: none; }
+.notice a { flex: 1; display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; padding: 10px 56px 10px var(--gutter); text-decoration: none; text-align: center; }
+.notice-close { position: absolute; right: max(6px, calc(var(--gutter) - 14px)); top: 50%; translate: 0 -50%; width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--forest); cursor: pointer; }
+.notice-close:hover { background: rgba(11, 90, 58, 0.1); }
+.notice-close .ic { width: 18px; height: 18px; }
 .notice-tag { background: var(--forest); color: #fff; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 99px; }
 .notice a:hover > span:not(.notice-tag) { text-decoration: underline; }
 .notice .ic { width: 16px; height: 16px; color: var(--forest); }
@@ -112,22 +116,36 @@ h3 { font-weight: 700; letter-spacing: -0.01em; font-size: 22px; line-height: 1.
 .brand { display: flex; align-items: center; gap: 10px; min-height: 44px; text-decoration: none; flex: none; }
 .brand-mark { width: 62px; }
 .brand-word { width: 116px; }
-.nav { display: none; margin-left: auto; gap: 2px; }
-.nav a { padding: 9px 13px; border-radius: 999px; text-decoration: none; font-weight: 600; font-size: 15px; color: var(--ink-soft); }
-.nav a:hover { background: var(--soft); color: var(--ink); }
 .top-cta { margin-left: auto; display: flex; align-items: center; gap: 10px; }
 .top-cta .btn { min-height: 42px; padding: 0 18px; font-size: 15px; }
-.menu-btn { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; border: 0; background: var(--soft); cursor: pointer; }
+.menu-btn { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; border: 0; background: var(--soft); cursor: pointer; transition: background-color 160ms ease; }
+.menu-btn:hover { background: var(--line); }
+.menu-btn[aria-expanded="true"] { background: var(--ink); color: #fff; }
 .lbl-short { display: none; }
-.menu { position: fixed; inset: var(--header-h) 0 auto 0; z-index: 29; max-height: calc(100dvh - var(--header-h)); overflow: auto; background: #fff; padding: 8px var(--gutter) 28px; display: grid; gap: 10px; box-shadow: 0 30px 40px -24px rgba(0, 0, 0, 0.3); }
-.menu[hidden] { display: none; }
+.menu { position: fixed; inset: var(--header-h) 0 auto 0; z-index: 29; max-height: calc(100dvh - var(--header-h)); overflow: auto; overscroll-behavior: contain; background: #fff; padding: 8px var(--gutter) 28px; display: grid; align-content: start; gap: 10px; box-shadow: 0 30px 40px -24px rgba(0, 0, 0, 0.3); }
+.menu[hidden], .menu-scrim[hidden] { display: none; }
+.menu-head { display: none; }
 .menu nav { display: grid; margin-bottom: 10px; }
 .menu nav a { padding: 14px 2px; font-size: 19px; font-weight: 600; text-decoration: none; border-bottom: 1px solid var(--line); }
+.menu nav a:hover { color: var(--forest); }
+.menu-scrim { position: fixed; inset: 0; z-index: 28; background: rgba(6, 18, 12, 0.28); }
+/* Desktop and tablets: the menu is a panel that slides in from the right side. */
+@media (min-width: 900px) {
+  .menu { inset: 0 0 0 auto; width: min(400px, 100vw); max-height: none; z-index: 40; padding: 18px 32px 32px; box-shadow: -24px 0 60px -30px rgba(0, 0, 0, 0.35); animation: menu-in 260ms var(--ease) both; }
+  .menu-scrim { z-index: 39; animation: scrim-in 200ms ease both; }
+  .menu-head { display: flex; align-items: center; justify-content: space-between; min-height: 52px; margin-bottom: 6px; }
+  .menu-title { font-weight: 700; font-size: 20px; }
+  .menu-x { width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 50%; background: var(--soft); cursor: pointer; }
+  .menu-x:hover { background: var(--line); }
+  .menu nav a { font-size: 18px; padding: 13px 2px; }
+}
+@keyframes menu-in { from { transform: translateX(24px); opacity: 0; } }
+@keyframes scrim-in { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .menu, .menu-scrim { animation: none; } }
 @media (max-width: 719px) {
   .top-cta .lbl-long, .quick .lbl-long { display: none; } .top-cta .lbl-short, .quick .lbl-short { display: inline; }
   .top-cta .btn { min-height: 44px; }
 }
-@media (min-width: 1120px) { .nav { display: flex; } .top-cta { margin-left: 8px; } .menu-btn, .menu { display: none !important; } }
 @media (max-width: 479px) {
   .top-in { gap: 10px; } .brand { gap: 6px; } .brand-mark { width: 44px; } .brand-word { width: 92px; }
   .top-cta { gap: 6px; } .top-cta .btn { padding: 0 13px; font-size: 14.5px; }
@@ -457,7 +475,8 @@ legend, .field label { display: block; font-weight: 700; font-size: 15px; margin
   .quick-row .btn { min-height: 50px; padding: 0 18px; flex: none; }
   .hero-offer { display: none; }
   .notice-tag { display: none; }
-  .notice a { padding: 9px 16px; font-size: 14px; flex-wrap: nowrap; }
+  .notice a { padding: 9px 52px 9px 16px; font-size: 14px; flex-wrap: nowrap; }
+  .notice a > .ic { display: none; }
 }
 
 /* ------------------------------------------------------------ Tech Week pick-up points */
@@ -573,7 +592,8 @@ body.has-cookie .wa-float { opacity: 0; pointer-events: none; }
 .pass-days { white-space: normal; }
 
 /* ------------------------------------------------------------ judges' demo links */
-.demo-note { margin-top: 18px; font-size: 15px; color: var(--muted); max-width: 46ch; }
-.demo-note a { font-weight: 700; color: var(--forest); }
-.menu-demo { display: grid; gap: 2px; padding: 12px 2px 4px; font-size: 17px; font-weight: 700; text-decoration: none; color: var(--forest); }
-.menu-demo small { font-size: 13px; font-weight: 500; color: var(--muted); }
+.foot-brand .foot-demo { margin-top: 6px; max-width: 34ch; font-size: 14px; line-height: 1.5; color: #B9D5C5; }
+.foot-demo a { color: #fff; font-weight: 700; text-underline-offset: 3px; }
+
+/* "Event rides" lands on the pass form below the sticky header and the services rail. */
+#book-seat { scroll-margin-top: calc(var(--header-h) + 80px); }

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import 'package:latlong2/latlong.dart';
 
+import 'account_models.dart';
 import 'admin_analytics.dart';
 import 'analytics.dart';
 import 'api_client.dart';
@@ -95,6 +96,13 @@ class AppState extends ChangeNotifier {
 
   /// Website sign-up reward for this rider ("Ride reward granted"; no money until full launch).
   SignupReward signupReward = SignupReward.none;
+
+  /// The rider's refund requests (newest first). Empty until the refunds update is on the server.
+  List<RefundRequest> myRefunds = const [];
+
+  /// Admin queues, for the counts in the dashboard menu.
+  int pendingVerifications = 0;
+  int pendingRefunds = 0;
   MetricBaselines? baselines;
 
   /// Popular routes for the public landing page.
@@ -280,6 +288,9 @@ class AppState extends ChangeNotifier {
     leavePlans.clear();
     wallet = null;
     signupReward = SignupReward.none;
+    myRefunds = const [];
+    pendingVerifications = 0;
+    pendingRefunds = 0;
     topUps = const [];
     _notify();
   }
@@ -320,6 +331,7 @@ class AppState extends ChangeNotifier {
         users = me.role == UserRole.admin ? await backend.fetchUsers() : const [];
         fleetDrivers = const {UserRole.admin, UserRole.operator, UserRole.fleetOwner, UserRole.fleetDriver}.contains(me.role) ? await backend.fetchFleetDrivers() : const [];
         partnerApplications = me.role.canVerify ? await backend.fetchPartnerApplications() : const [];
+        if (me.role == UserRole.admin) await _loadAdminQueues();
       } else {
         final rider = await Future.wait<Object>([backend.fetchWallet(), backend.fetchMyBookings(), backend.fetchRideRequests(), backend.fetchAds(), backend.fetchSignupReward()]);
         wallet = rider[0] as Wallet;
@@ -327,6 +339,7 @@ class AppState extends ChangeNotifier {
         rideRequests = rider[2] as List<Booking>;
         ads = HouseAds.merge(rider[3] as List<PromoAd>);
         signupReward = rider[4] as SignupReward;
+        await _loadMyRefunds();
       }
       myApplications = await backend.fetchMyApplications();
       dataState = LoadState.ready;
@@ -356,6 +369,74 @@ class AppState extends ChangeNotifier {
     } on BackendException {
       // Keep the cached data; the next full refresh reports the problem.
     }
+  }
+
+  // ------------------------------------------------------------ profile, verification, refunds
+
+  /// Optional extras: a server without the refunds update must not break the rest of the app.
+  Future<void> _loadMyRefunds() async {
+    try {
+      myRefunds = await backend.fetchMyRefunds();
+    } catch (_) {
+      myRefunds = const [];
+    }
+  }
+
+  Future<void> _loadAdminQueues() async {
+    try {
+      final r = await Future.wait([backend.fetchRiderVerifications('pending'), backend.fetchRefundRequests('pending')]);
+      pendingVerifications = r[0].length;
+      pendingRefunds = r[1].length;
+    } catch (_) {
+      pendingVerifications = 0;
+      pendingRefunds = 0;
+    }
+  }
+
+  /// The latest refund request for a booking, if any.
+  RefundRequest? refundFor(String bookingId) => myRefunds.where((r) => r.bookingId == bookingId).firstOrNull;
+
+  Future<void> updateMyProfile({required String fullName, String? phone, String? homeArea, String? emergencyName, String? emergencyPhone}) async {
+    user = await backend.updateMyProfile(fullName: fullName, phone: phone, homeArea: homeArea, emergencyName: emergencyName, emergencyPhone: emergencyPhone);
+    _notify();
+  }
+
+  Future<void> submitVerification({required String nin, required DateTime dateOfBirth, required String phone}) async {
+    user = await backend.submitVerification(nin: nin, dateOfBirth: dateOfBirth, phone: phone);
+    _notify();
+  }
+
+  Future<RefundRequest> requestRefund(String bookingId, String reason) async {
+    final r = await backend.requestRefund(bookingId, reason);
+    myRefunds = [r, ...myRefunds.where((x) => x.id != r.id)];
+    _notify();
+    return r;
+  }
+
+  Future<List<RiderVerification>> fetchRiderVerifications(String status) => backend.fetchRiderVerifications(status);
+
+  Future<void> reviewVerification(String userId, {required bool approve, String? note}) async {
+    await backend.reviewVerification(userId, approve: approve, note: note);
+    await _loadAdminQueues();
+    _notify();
+  }
+
+  Future<List<AdminRefund>> fetchRefundRequests(String status) => backend.fetchRefundRequests(status);
+
+  Future<int> reviewRefund(int requestId, {required bool approve, String? note}) async {
+    final amount = await backend.reviewRefund(requestId, approve: approve, note: note);
+    await _loadAdminQueues();
+    partnerBookings = await backend.fetchPartnerBookings();
+    _notify();
+    return amount;
+  }
+
+  Future<int> refundBooking(String bookingId, String reason) async {
+    final amount = await backend.refundBooking(bookingId, reason);
+    await _loadAdminQueues();
+    partnerBookings = await backend.fetchPartnerBookings();
+    _notify();
+    return amount;
   }
 
   // ------------------------------------------------------------ lookups

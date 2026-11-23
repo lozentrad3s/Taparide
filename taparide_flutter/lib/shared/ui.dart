@@ -481,8 +481,10 @@ class DemoBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final backend = context.read<AppState>().backend;
     final live = !backend.isDemo;
+    // Riders and partners on the real service never see a backend label; only the demo says so.
+    if (live) return const SizedBox.shrink();
     return Tooltip(
-      message: live ? 'Connected to the live Supabase project' : 'Figures, people and organisations are illustrative demo data',
+      message: live ? 'Live service' : 'Figures, people and organisations are illustrative demo data',
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(

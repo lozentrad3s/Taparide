@@ -19,6 +19,7 @@ import '../features/partner/partner_apply_page.dart';
 import '../features/partner/partner_status_page.dart';
 import '../features/passenger/home_page.dart';
 import '../features/passenger/payment_page.dart';
+import '../features/passenger/account_pages.dart';
 import '../features/passenger/profile_page.dart';
 import '../features/passenger/rider_shell.dart';
 import '../features/passenger/route_details_page.dart';
@@ -50,7 +51,7 @@ String _startFor(AppMode mode) => mode == AppMode.dashboard ? '/login?portal=par
 String _moved(bool toDashboard, Uri uri) => Uri(path: '/moved', queryParameters: {'to': toDashboard ? 'dashboard' : 'app', 'path': uri.toString()}).toString();
 
 bool _riderPath(String path) =>
-    path.startsWith('/app') || path.startsWith('/ride') || path.startsWith('/ticket') || path == '/ev' || path == '/tag-along' || path == '/live' || path.startsWith('/events');
+    path.startsWith('/app') || path.startsWith('/ride') || path.startsWith('/ticket') || path == '/ev' || path == '/tag-along' || path == '/live' || path.startsWith('/events') || path.startsWith('/profile/');
 
 final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 
@@ -183,12 +184,12 @@ GoRouter buildRouter(AppState state, {AppMode? mode}) {
             : const ComingSoonPage(
                 title: 'Live map',
                 icon: Icons.radar_rounded,
-                photo: AppPhoto.brtBerger,
-                photoLabel: 'Buses at the BRT park at Berger Bridge, Abuja',
                 message: 'See buses and cars near you move in real time, with arrival times. It switches on once our partner vehicles carry live tracking.',
               ),
       ),
       GoRoute(path: '/tag-along', parentNavigatorKey: _rootKey, builder: (context, s) => const TagAlongPage()),
+      GoRoute(path: '/profile/edit', parentNavigatorKey: _rootKey, builder: (context, s) => const EditProfilePage()),
+      GoRoute(path: '/profile/verify', parentNavigatorKey: _rootKey, builder: (context, s) => const RiderVerificationPage()),
       GoRoute(
         path: '/events',
         parentNavigatorKey: _rootKey,

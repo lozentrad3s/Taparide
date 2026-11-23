@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../account_models.dart';
 import '../fleet_drivers.dart';
 import '../live_models.dart';
 import '../models.dart';
@@ -669,5 +670,62 @@ class SupabaseBackend implements Backend {
         if (path == null) return document;
         final url = await _client.storage.from(_bucket).createSignedUrl(path, 600);
         return document.copyWith(url: url);
+      });
+
+  // ------------------------------------------------------------ profile, verification, refunds
+
+  List<Map<String, dynamic>> _list(dynamic result) => result is List ? _rows(result) : const [];
+
+  @override
+  Future<AppUser> updateMyProfile({required String fullName, String? phone, String? homeArea, String? emergencyName, String? emergencyPhone}) => _guard(() async {
+        final row = _row(await _client.rpc('update_my_profile', params: {
+          'p_full_name': fullName.trim(),
+          'p_phone': phone?.trim(),
+          'p_home_area': homeArea?.trim(),
+          'p_emergency_name': emergencyName?.trim(),
+          'p_emergency_phone': emergencyPhone?.trim(),
+        }));
+        return AppUser.fromJson(row);
+      });
+
+  @override
+  Future<AppUser> submitVerification({required String nin, required DateTime dateOfBirth, required String phone}) => _guard(() async {
+        final row = _row(await _client.rpc('submit_verification', params: {'p_nin': nin.trim(), 'p_date_of_birth': isoDay(dateOfBirth), 'p_phone': phone.trim()}));
+        return AppUser.fromJson(row);
+      });
+
+  @override
+  Future<List<RiderVerification>> fetchRiderVerifications(String status) => _guard(() async => [
+        for (final r in _list(await _client.rpc('admin_rider_verifications', params: {'p_status': status}))) RiderVerification.fromJson(r),
+      ]);
+
+  @override
+  Future<void> reviewVerification(String userId, {required bool approve, String? note}) =>
+      _guard(() => _client.rpc('admin_review_verification', params: {'p_user': userId, 'p_approve': approve, 'p_note': note}));
+
+  @override
+  Future<RefundRequest> requestRefund(String bookingId, String reason) =>
+      _guard(() async => RefundRequest.fromJson(_row(await _client.rpc('request_refund', params: {'p_booking': bookingId, 'p_reason': reason.trim()}))));
+
+  @override
+  Future<List<RefundRequest>> fetchMyRefunds() => _guard(() async => [
+        for (final r in _rows(await _client.from('refund_requests').select().eq('user_id', _uid).order('created_at', ascending: false).limit(50))) RefundRequest.fromJson(r),
+      ]);
+
+  @override
+  Future<List<AdminRefund>> fetchRefundRequests(String status) => _guard(() async => [
+        for (final r in _list(await _client.rpc('admin_refund_requests', params: {'p_status': status}))) AdminRefund.fromJson(r),
+      ]);
+
+  @override
+  Future<int> reviewRefund(int requestId, {required bool approve, String? note}) => _guard(() async {
+        final r = await _client.rpc('admin_review_refund', params: {'p_id': requestId, 'p_approve': approve, 'p_note': note});
+        return r is Map ? ((r['amount'] as num?)?.toInt() ?? 0) : 0;
+      });
+
+  @override
+  Future<int> refundBooking(String bookingId, String reason) => _guard(() async {
+        final r = await _client.rpc('admin_refund_booking', params: {'p_booking': bookingId, 'p_reason': reason.trim()});
+        return r is Map ? ((r['amount'] as num?)?.toInt() ?? 0) : 0;
       });
 }

@@ -12,6 +12,7 @@ import '../../core/live_models.dart';
 import '../../core/models.dart';
 import '../../core/partner_models.dart';
 import '../../shared/ui.dart';
+import 'account_pages.dart';
 import 'rider_widgets.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -116,21 +117,33 @@ class _ProfilePageState extends State<ProfilePage> {
                 Text('Profile', style: text.headlineLarge),
                 const SizedBox(height: 16),
                 Panel(
-                  child: Row(children: [
-                    Avatar(initials: user.initials, size: 56),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(user.fullName, style: text.titleLarge),
-                        const SizedBox(height: 2),
-                        Text(user.email, style: text.bodySmall),
-                        if (user.phone != null) Text(user.phone!, style: text.bodySmall),
-                        if (user.organisation != null) Text(user.organisation!, style: text.bodySmall),
-                      ]),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                    Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Avatar(initials: user.initials, size: 56),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text(user.fullName, style: text.titleLarge),
+                          const SizedBox(height: 6),
+                          VerificationPill(user.verificationStatus),
+                        ]),
+                      ),
+                    ]),
+                    const SizedBox(height: 14),
+                    _Detail(icon: Icons.mail_outline_rounded, value: user.email),
+                    if ((user.phone ?? '').isNotEmpty) _Detail(icon: Icons.phone_outlined, value: user.phone!),
+                    if ((user.homeArea ?? '').isNotEmpty) _Detail(icon: Icons.home_outlined, value: user.homeArea!),
+                    if ((user.organisation ?? '').isNotEmpty) _Detail(icon: Icons.apartment_rounded, value: user.organisation!),
+                    if ((user.emergencyName ?? '').isNotEmpty) _Detail(icon: Icons.contact_phone_outlined, value: 'Emergency: ${user.emergencyName}${(user.emergencyPhone ?? '').isEmpty ? '' : ' · ${user.emergencyPhone}'}'),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: OutlinedButton.icon(onPressed: () => context.push('/profile/edit'), icon: const Icon(Icons.edit_outlined, size: 18), label: const Text('Edit profile')),
                     ),
-                    StatusPill(user.verified ? 'Verified' : 'Unverified', tone: user.verified ? Tone.success : Tone.warning, icon: user.verified ? Icons.verified_rounded : Icons.pending_outlined),
                   ]),
                 ),
+                const SizedBox(height: 12),
+                const VerificationCard(),
                 const SizedBox(height: 22),
                 SectionHeader(title: 'Payment methods', subtitle: 'Spent on trips so far: ${Fmt.naira(spent)}'),
                 TapCardView(wallet: state.wallet, onTap: () => showTapAndPaySheet(context)),
@@ -246,14 +259,14 @@ class _ProfilePageState extends State<ProfilePage> {
                       trailing: const Icon(Icons.chevron_right_rounded),
                       onTap: () => context.push('/credits'),
                     ),
-                    const Divider(indent: 16, endIndent: 16),
-                    ListTile(
-                      leading: const Icon(Icons.storage_rounded),
-                      title: const Text('Data source'),
-                      subtitle: Text(state.backend.isDemo ? 'Demo data stored on this device' : 'Live Supabase project'),
-                      trailing: const DemoBadge(),
-                    ),
                     if (state.backend is DemoBackend) ...[
+                      const Divider(indent: 16, endIndent: 16),
+                      const ListTile(
+                        leading: Icon(Icons.storage_rounded),
+                        title: Text('Data source'),
+                        subtitle: Text('Demo data stored on this device'),
+                        trailing: DemoBadge(),
+                      ),
                       const Divider(indent: 16, endIndent: 16),
                       ListTile(
                         leading: const Icon(Icons.restart_alt_rounded),
@@ -277,4 +290,20 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
+}
+
+class _Detail extends StatelessWidget {
+  const _Detail({required this.icon, required this.value});
+  final IconData icon;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: Row(children: [
+          Icon(icon, size: 16, color: AppColors.muted),
+          const SizedBox(width: 10),
+          Expanded(child: Text(value, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.inkSoft), overflow: TextOverflow.ellipsis)),
+        ]),
+      );
 }

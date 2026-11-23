@@ -94,15 +94,15 @@ class HomePage extends StatelessWidget {
       const SizedBox(height: 18),
       const WhereToCard(),
       const SizedBox(height: 18),
-      // Every feature up front, so riders find Events and Tag Along without digging.
+      // Every feature up front, open ones first, so riders find Event rides and Tag Along without digging.
       _FeatureGrid(items: [
-        _Feature(Icons.directions_bus_rounded, 'Book a ride', () => context.go('/app/routes'), primary: true),
-        _Feature(Icons.radar_rounded, 'Live map', () => context.push('/live'), soon: !Launch.liveMap),
-        _Feature(Icons.electric_car_rounded, 'Electric', () => context.push('/ev'), soon: !Launch.electric),
+        _Feature(Icons.directions_bus_rounded, 'Bus routes', () => context.go('/app/routes'), primary: true),
+        _Feature(Icons.celebration_rounded, 'Event rides', () => context.push('/events')),
         _Feature(Icons.groups_rounded, 'Tag Along', () => context.push('/tag-along'), badge: state.pendingRideRequests.length),
-        _Feature(Icons.celebration_rounded, 'Events', () => context.push('/events')),
         _Feature(Icons.contactless_rounded, 'Tap & Pay', () => showTapAndPaySheet(context)),
         _Feature(Icons.confirmation_number_rounded, 'My trips', () => context.go('/app/trips')),
+        _Feature(Icons.radar_rounded, 'Live map', () => context.push('/live'), soon: !Launch.liveMap),
+        _Feature(Icons.electric_car_rounded, 'Electric', () => context.push('/ev'), soon: !Launch.electric),
         _Feature(Icons.more_horiz_rounded, 'More', () => _showMore(context)),
       ]),
       const SizedBox(height: 22),
@@ -111,11 +111,11 @@ class HomePage extends StatelessWidget {
         const SizedBox(height: 22),
       ],
       if (state.suggestions.isNotEmpty) ...[SmartSuggestions(suggestions: state.suggestions), const SizedBox(height: 12)],
-      SectionHeader(title: 'Popular Routes', action: 'View all', onAction: () => context.go('/app/routes')),
+      SectionHeader(title: 'Popular routes', action: 'All routes', onAction: () => context.go('/app/routes')),
       for (final r in routes)
         Padding(
           padding: const EdgeInsets.only(bottom: 10),
-          child: RouteRow(route: r, onTap: () => context.push('/ride/${r.id}')),
+          child: RouteRow(route: r, verifiedOperator: state.canBook(r), onTap: () => context.push('/ride/${r.id}')),
         ),
       const SizedBox(height: 14),
       _TravelSmart(onLearnMore: () => showTapAndPaySheet(context)),
@@ -164,7 +164,7 @@ class HomePage extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             for (final item in [
-              (Icons.celebration_rounded, 'Events', 'Tickets and event buses from your area', '/events'),
+              (Icons.celebration_rounded, 'Event rides', 'Buses from your area to events, and tickets', '/events'),
               (Icons.groups_rounded, 'Tag Along', 'Share the ride home with colleagues nearby', '/tag-along'),
               (Icons.electric_car_rounded, 'Book an electric vehicle', 'Zero-emission rides from verified EV operators', '/ev'),
               (Icons.radar_rounded, 'Live map', 'Buses and electric cars near you, with arrival times', '/live'),

@@ -60,7 +60,7 @@ class _RoutesPageState extends State<RoutesPage> {
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text('Routes', style: text.headlineLarge),
                   const SizedBox(height: 4),
-                  Text('Fixed fares and published departures from verified operators.', style: text.bodyMedium),
+                  Text("Abuja bus routes with today's fares. Routes with a verified Tap A Ride operator take seat bookings and tap to pay.", style: text.bodyMedium),
                   const SizedBox(height: 16),
                   TextField(
                     controller: _query,
@@ -119,7 +119,7 @@ class _RoutesPageState extends State<RoutesPage> {
                   return MaxWidth(
                     width: 900,
                     padding: EdgeInsets.fromLTRB(wide ? 32 : 18, 0, wide ? 32 : 18, 10),
-                    child: RouteRow(route: r, providerName: state.providerById(r.providerId)?.name, onTap: () => context.push('/ride/${r.id}')),
+                    child: RouteRow(route: r, providerName: state.providerById(r.providerId)?.name, verifiedOperator: state.canBook(r), onTap: () => context.push('/ride/${r.id}')),
                   );
                 },
               ),

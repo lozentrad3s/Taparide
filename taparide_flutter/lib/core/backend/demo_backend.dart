@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:latlong2/latlong.dart';
 
+import '../account_models.dart';
 import '../fleet_drivers.dart';
 import '../live_models.dart';
 import '../models.dart';
@@ -21,7 +22,7 @@ import 'demo_seed.dart';
 class DemoBackend implements Backend {
   DemoBackend._(this._prefs, this._latency, this._clock);
 
-  static const _storageKey = 'taparide_demo_state_v6';
+  static const _storageKey = 'taparide_demo_state_v7';
 
   static Future<DemoBackend> create({Duration latency = const Duration(milliseconds: 260), DateTime Function()? clock}) async {
     final prefs = await SharedPreferences.getInstance();
@@ -45,6 +46,9 @@ class DemoBackend implements Backend {
   late List<AuditEntry> _audit;
   List<PartnerApplication> _applications = [];
   List<FleetDriver> _drivers = [];
+
+  /// Refund requests: (owner user id, request). Kept with the rest of the demo state.
+  List<({String userId, RefundRequest request})> _refunds = [];
 
   /// Uploaded document bytes stay in memory in demo mode (too large for local storage).
   final Map<String, DocumentFile> _documents = {};
@@ -88,6 +92,10 @@ class DemoBackend implements Backend {
       };
       _sessionUserId = json['session'] as String?;
       _applications = json['applications'] is List ? list('applications', PartnerApplication.fromJson) : [];
+      _refunds = [
+        if (json['refunds'] is List)
+          for (final r in json['refunds'] as List) (userId: '${(r as Map)['user_id']}', request: RefundRequest.fromJson(Map<String, dynamic>.from(r))),
+      ];
       if (json['fleet_drivers'] is List) {
         _drivers = list('fleet_drivers', FleetDriver.fromJson);
       } else {
@@ -115,8 +123,33 @@ class DemoBackend implements Backend {
     _wallets = {DemoSeed.uAisha: const Wallet(cardNumber: '5061004219872500', balance: 5000)};
     _applications = DemoSeed.applications(now);
     _drivers = DemoSeed.fleetDrivers();
+    _seedVerificationsAndRefunds(now);
     _sessionUserId = null;
     _save();
+  }
+
+  /// Sample review queues so the admin demo shows verifications and a refund waiting.
+  void _seedVerificationsAndRefunds(DateTime now) {
+    AppUser? edit(String id, AppUser Function(AppUser) change) {
+      final i = _accounts.indexWhere((a) => a.user.id == id);
+      if (i < 0) return null;
+      _accounts[i] = _accounts[i].withUser(change(_accounts[i].user));
+      return _accounts[i].user;
+    }
+
+    edit(DemoSeed.uAisha, (u) => u.copyWith(nin: '12345678901', dateOfBirth: DateTime(1993, 4, 18), homeArea: 'Wuse 2', verificationStatus: VerificationStatus.verified, verified: true));
+    edit('u_emeka', (u) => u.copyWith(phone: '+234 803 555 0303', nin: '22345678902', dateOfBirth: DateTime(1996, 11, 2), homeArea: 'Lugbe', verificationStatus: VerificationStatus.pending, verified: false, verificationSubmittedAt: now.subtract(const Duration(hours: 5))));
+    edit('u_zainab', (u) => u.copyWith(verificationStatus: VerificationStatus.unverified, verified: false));
+    edit('u_musa', (u) => u.copyWith(nin: '32345678903', dateOfBirth: DateTime(2001, 2, 9), verificationStatus: VerificationStatus.pending, verified: false, verificationSubmittedAt: now.subtract(const Duration(days: 1))));
+    _refunds = [];
+    final paid = _bookings.where((b) => b.userId == DemoSeed.uAisha && b.paidFromWallet && b.status != BookingStatus.cancelled).toList()..sort((a, b) => b.departureAt.compareTo(a.departureAt));
+    final past = paid.where((b) => b.departureAt.isBefore(now)).firstOrNull;
+    if (past != null) {
+      _refunds.add((
+        userId: DemoSeed.uAisha,
+        request: RefundRequest(id: 1, bookingId: past.id, amount: past.fare, reason: 'The bus left before the time on my ticket, so I took another ride.', status: RefundStatus.pending, createdAt: now.subtract(const Duration(hours: 3))),
+      ));
+    }
   }
 
   /// Seeded Tag Along rides keep rolling forward so the demo always has rides to join.
@@ -146,6 +179,20 @@ class DemoBackend implements Backend {
         'session': _sessionUserId,
         'applications': [for (final a in _applications) a.toJson()],
         'fleet_drivers': [for (final d in _drivers) d.toJson()],
+        'refunds': [
+          for (final r in _refunds)
+            {
+              'user_id': r.userId,
+              'id': r.request.id,
+              'booking_id': r.request.bookingId,
+              'amount': r.request.amount,
+              'reason': r.request.reason,
+              'status': r.request.status.wire,
+              'admin_note': r.request.adminNote,
+              'created_at': r.request.createdAt.toUtc().toIso8601String(),
+              'reviewed_at': r.request.reviewedAt?.toUtc().toIso8601String(),
+            }
+        ],
       }),
     );
   }
@@ -1365,7 +1412,7 @@ class DemoBackend implements Backend {
         sponsor: 'Tap A Ride Events',
         headline: 'Event buses: skip the parking',
         body: 'Book a seat on a bus to the stadium or the conference centre and ride back together.',
-        ctaLabel: 'See events',
+        ctaLabel: 'See event rides',
         ctaLink: '/events',
         colour: Color(0xFF1F3A8A),
         icon: 'celebration',
@@ -2048,6 +2095,227 @@ class DemoBackend implements Backend {
     final app = _applications.where((a) => a.documents.any((d) => d.path == document.path)).firstOrNull;
     _require(app != null && (app.userId == me.id || me.role.canVerify), 'view this document');
     return _documents[document.path] ?? document;
+  }
+
+  // ------------------------------------------------------------ profile, verification, refunds
+
+  void _replaceUser(AppUser updated) {
+    final i = _accounts.indexWhere((a) => a.user.id == updated.id);
+    if (i >= 0) _accounts[i] = _accounts[i].withUser(updated);
+  }
+
+  static String _digits(String? v) => (v ?? '').replaceAll(RegExp(r'\D'), '');
+
+  @override
+  Future<AppUser> updateMyProfile({required String fullName, String? phone, String? homeArea, String? emergencyName, String? emergencyPhone}) async {
+    await _wait();
+    final me = _me;
+    final name = fullName.trim().replaceAll(RegExp(r'\s+'), ' ');
+    if (name.split(' ').length < 2) throw const BackendException(BackendErrorKind.validation, 'Enter your first and last name.');
+    if ((phone ?? '').trim().isNotEmpty && _digits(phone).length < 10) throw const BackendException(BackendErrorKind.validation, 'Enter a valid phone number, e.g. 0803 123 4567.');
+    if ((emergencyPhone ?? '').trim().isNotEmpty && _digits(emergencyPhone).length < 10) throw const BackendException(BackendErrorKind.validation, 'Enter a valid emergency contact number.');
+    final renamed = me.isVerified && me.role == UserRole.passenger && me.fullName.toLowerCase() != name.toLowerCase();
+    final updated = me.copyWith(
+      fullName: name,
+      phone: (phone ?? '').trim(),
+      homeArea: (homeArea ?? '').trim(),
+      emergencyName: (emergencyName ?? '').trim(),
+      emergencyPhone: (emergencyPhone ?? '').trim(),
+      verificationStatus: renamed ? VerificationStatus.pending : null,
+      verified: renamed ? false : null,
+    );
+    _replaceUser(updated);
+    _save();
+    return updated;
+  }
+
+  @override
+  Future<AppUser> submitVerification({required String nin, required DateTime dateOfBirth, required String phone}) async {
+    await _wait();
+    final me = _me;
+    final n = _digits(nin);
+    if (me.verificationStatus == VerificationStatus.pending) throw const BackendException(BackendErrorKind.validation, 'Your verification is already being reviewed.');
+    if (me.verificationStatus == VerificationStatus.verified) throw const BackendException(BackendErrorKind.validation, 'Your verification is already complete.');
+    if (n.length != 11) throw const BackendException(BackendErrorKind.validation, 'Your NIN has 11 digits.');
+    if (me.nin != null && me.nin != n) throw const BackendException(BackendErrorKind.validation, 'Your NIN is already on file; contact support to change it.');
+    if (_accounts.any((a) => a.user.id != me.id && a.user.nin == n)) throw const BackendException(BackendErrorKind.validation, 'This NIN is already used by another account.');
+    final now = _clock();
+    final sixteen = DateTime(now.year - 16, now.month, now.day);
+    if (dateOfBirth.isAfter(sixteen) || dateOfBirth.isBefore(DateTime(1920))) throw const BackendException(BackendErrorKind.validation, 'Enter your date of birth (you must be 16 or older).');
+    if (_digits(phone).length < 10) throw const BackendException(BackendErrorKind.validation, 'Enter your phone number.');
+    final updated = me.copyWith(nin: n, dateOfBirth: me.dateOfBirth ?? dateOfBirth, phone: phone.trim(), verificationStatus: VerificationStatus.pending, clearVerificationNote: true, verificationSubmittedAt: now);
+    _replaceUser(updated);
+    _save();
+    return updated;
+  }
+
+  @override
+  Future<List<RiderVerification>> fetchRiderVerifications(String status) async {
+    await _wait();
+    _require(_me.role == UserRole.admin, 'see rider verifications');
+    String key(String? p) {
+      final d = _digits(p);
+      return d.length >= 10 ? d.substring(d.length - 10) : d;
+    }
+
+    final riders = _accounts.map((a) => a.user).where((u) => u.role == UserRole.passenger && (status == 'all' || u.verificationStatus.wire == status)).toList()
+      ..sort((a, b) => (b.verificationSubmittedAt ?? b.createdAt).compareTo(a.verificationSubmittedAt ?? a.createdAt));
+    return [
+      for (final u in riders)
+        RiderVerification(
+          id: u.id,
+          name: u.fullName,
+          email: u.email,
+          status: u.verificationStatus.wire,
+          phone: u.phone,
+          nin: u.nin,
+          dateOfBirth: u.dateOfBirth,
+          homeArea: u.homeArea,
+          emergencyName: u.emergencyName,
+          emergencyPhone: u.emergencyPhone,
+          note: u.verificationNote,
+          submittedAt: u.verificationSubmittedAt,
+          createdAt: u.createdAt,
+          phoneShared: key(u.phone).isNotEmpty && _accounts.any((o) => o.user.id != u.id && key(o.user.phone) == key(u.phone)),
+        ),
+    ];
+  }
+
+  @override
+  Future<void> reviewVerification(String userId, {required bool approve, String? note}) async {
+    await _wait();
+    _require(_me.role == UserRole.admin, 'review rider verifications');
+    final account = _accounts.where((a) => a.user.id == userId).firstOrNull;
+    if (account == null || account.user.role != UserRole.passenger) throw const BackendException(BackendErrorKind.notFound, 'That rider has no verification to review.');
+    final n = (note ?? '').trim();
+    _replaceUser(account.user.copyWith(
+      verificationStatus: approve ? VerificationStatus.verified : VerificationStatus.rejected,
+      verified: approve,
+      verificationNote: n.isEmpty ? null : n,
+      clearVerificationNote: n.isEmpty,
+    ));
+    _log(approve ? 'Verified rider' : 'Declined rider verification', account.user.fullName);
+    _save();
+  }
+
+  @override
+  Future<RefundRequest> requestRefund(String bookingId, String reason) async {
+    await _wait();
+    final me = _me;
+    final b = _bookings.where((x) => x.id == bookingId && x.userId == me.id).firstOrNull;
+    if (b == null) throw const BackendException(BackendErrorKind.notFound, "That booking isn't on your account.");
+    final why = reason.trim();
+    if (why.length < 5) throw const BackendException(BackendErrorKind.validation, 'Tell us briefly what went wrong.');
+    if (b.refundedAt != null || b.status == BookingStatus.cancelled || b.status == BookingStatus.declined) throw const BackendException(BackendErrorKind.validation, 'This booking has already been refunded.');
+    if (!b.paidFromWallet) throw const BackendException(BackendErrorKind.validation, 'This booking was free; there is nothing to refund.');
+    if (b.createdAt.isBefore(_clock().subtract(const Duration(days: 14)))) throw const BackendException(BackendErrorKind.validation, 'Refunds can be requested up to 14 days after booking.');
+    if (_refunds.any((r) => r.request.bookingId == b.id && r.request.status == RefundStatus.pending)) {
+      throw const BackendException(BackendErrorKind.validation, "You already asked for a refund on this booking; we'll get back to you.");
+    }
+    final id = _refunds.fold<int>(0, (m, r) => max(m, r.request.id)) + 1;
+    final request = RefundRequest(id: id, bookingId: b.id, amount: b.fare, reason: why.length > 500 ? why.substring(0, 500) : why, status: RefundStatus.pending, createdAt: _clock());
+    _refunds.add((userId: me.id, request: request));
+    _save();
+    return request;
+  }
+
+  @override
+  Future<List<RefundRequest>> fetchMyRefunds() async {
+    await _wait();
+    final me = _me;
+    return [for (final r in _refunds.reversed) if (r.userId == me.id) r.request];
+  }
+
+  @override
+  Future<List<AdminRefund>> fetchRefundRequests(String status) async {
+    await _wait();
+    _require(_me.role == UserRole.admin, 'see refund requests');
+    final out = <AdminRefund>[];
+    for (final r in _refunds.reversed) {
+      if (status != 'all' && r.request.status.wire != status) continue;
+      final b = _bookings.where((x) => x.id == r.request.bookingId).firstOrNull;
+      final rider = _accounts.where((a) => a.user.id == r.userId).firstOrNull?.user;
+      out.add(AdminRefund(
+        id: r.request.id,
+        bookingId: r.request.bookingId,
+        amount: r.request.amount,
+        reason: r.request.reason,
+        status: r.request.status,
+        note: r.request.adminNote,
+        createdAt: r.request.createdAt,
+        reviewedAt: r.request.reviewedAt,
+        rider: rider?.fullName,
+        email: rider?.email,
+        phone: rider?.phone,
+        title: b?.title ?? (b == null ? null : '${b.origin} → ${b.destination}'),
+        kind: b?.kind.name,
+        departureAt: b?.departureAt,
+        bookingStatus: b?.status.name,
+        ticket: b?.ticketCode,
+        operator: b?.providerId == null ? null : _providers.where((p) => p.id == b!.providerId).firstOrNull?.name,
+      ));
+    }
+    return out;
+  }
+
+  /// Money back for one booking (wallet credited, booking cancelled and marked refunded).
+  int _refundBooking(String bookingId) {
+    final i = _bookings.indexWhere((b) => b.id == bookingId);
+    if (i < 0) throw const BackendException(BackendErrorKind.notFound, 'That booking no longer exists.');
+    final b = _bookings[i];
+    if (b.refundedAt != null) throw const BackendException(BackendErrorKind.validation, 'This booking was already refunded.');
+    if (!b.paidFromWallet) throw const BackendException(BackendErrorKind.validation, 'This booking was free or paid outside the wallet; there is nothing to refund here.');
+    if (b.status == BookingStatus.cancelled || b.status == BookingStatus.declined) throw const BackendException(BackendErrorKind.validation, 'This booking was cancelled and its fare already returned.');
+    _credit(b.userId, b.fare);
+    _bookings[i] = b.copyWith(status: BookingStatus.cancelled, refundedAt: _clock());
+    return b.fare;
+  }
+
+  @override
+  Future<int> reviewRefund(int requestId, {required bool approve, String? note}) async {
+    await _wait();
+    _require(_me.role == UserRole.admin, 'review refunds');
+    final i = _refunds.indexWhere((r) => r.request.id == requestId);
+    if (i < 0 || _refunds[i].request.status != RefundStatus.pending) throw const BackendException(BackendErrorKind.validation, 'That refund request was already handled.');
+    final r = _refunds[i];
+    final amount = approve ? _refundBooking(r.request.bookingId) : 0;
+    final n = (note ?? '').trim();
+    _refunds[i] = (
+      userId: r.userId,
+      request: RefundRequest(
+        id: r.request.id,
+        bookingId: r.request.bookingId,
+        amount: r.request.amount,
+        reason: r.request.reason,
+        status: approve ? RefundStatus.approved : RefundStatus.declined,
+        adminNote: n.isEmpty ? null : n,
+        createdAt: r.request.createdAt,
+        reviewedAt: _clock(),
+      ),
+    );
+    _log(approve ? 'Approved refund' : 'Declined refund', r.request.bookingId);
+    _save();
+    return amount;
+  }
+
+  @override
+  Future<int> refundBooking(String bookingId, String reason) async {
+    await _wait();
+    _require(_me.role == UserRole.admin, 'refund bookings');
+    if (reason.trim().isEmpty) throw const BackendException(BackendErrorKind.validation, 'Give a reason for the refund.');
+    final amount = _refundBooking(bookingId);
+    for (var i = 0; i < _refunds.length; i++) {
+      final r = _refunds[i];
+      if (r.request.bookingId == bookingId && r.request.status == RefundStatus.pending) {
+        _refunds[i] = (
+          userId: r.userId,
+          request: RefundRequest(id: r.request.id, bookingId: bookingId, amount: r.request.amount, reason: r.request.reason, status: RefundStatus.approved, adminNote: reason.trim(), createdAt: r.request.createdAt, reviewedAt: _clock()),
+        );
+      }
+    }
+    _log('Refunded booking', bookingId);
+    _save();
+    return amount;
   }
 }
 

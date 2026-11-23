@@ -36,6 +36,7 @@ abstract final class DemoSeed {
   static const demoAccounts = <(String, String, UserRole)>[
     ('Daniel Adeyemi · demo admin', demoAdminEmail, UserRole.admin),
     ('Aisha Bello', 'aisha@taparide.demo', UserRole.passenger),
+    ('Zainab Yusuf · new rider, not verified yet', 'zainab@taparide.demo', UserRole.passenger),
     ('Ibrahim Musa · Abuja Metro Bus Co. (sample)', 'ops@abujametro.demo', UserRole.operator),
     ('Chiamaka Obi · GreenFleet Logistics (sample)', 'fleet@greenfleet.demo', UserRole.fleetOwner),
     ('Tunde Bello · NaviRide Electric (sample)', 'ev@naviride.demo', UserRole.operator),

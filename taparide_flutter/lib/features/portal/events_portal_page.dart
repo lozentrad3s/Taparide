@@ -618,7 +618,7 @@ class _AllEvents extends StatelessWidget {
     final events = [...state.events]..sort((a, b) => a.startsAt.compareTo(b.startsAt));
     final admin = state.user!.role == UserRole.admin;
     return PortalScaffold(
-      title: 'Events & event buses',
+      title: 'Event rides',
       subtitle: 'Every partner event, its tickets and the buses going there',
       actions: [
         if (admin)

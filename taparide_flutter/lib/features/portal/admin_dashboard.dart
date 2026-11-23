@@ -197,7 +197,7 @@ class _SystemStrip extends StatelessWidget {
     final ai = services['ai'] as String?;
     final tiles = services['tiles'] as String?;
     final items = [
-      (Icons.storage_rounded, 'Data', demo ? 'Demo data on this device' : 'Live Supabase', demo ? Tone.warning : Tone.success),
+      (Icons.storage_rounded, 'Data', demo ? 'Demo data on this device' : 'Live database', demo ? Tone.warning : Tone.success),
       (Icons.auto_awesome_rounded, 'AI', ai == null ? (services.isEmpty ? 'Checking…' : 'Offline answers (add GEMINI_API_KEY)') : 'Live · ${ai[0].toUpperCase()}${ai.substring(1)}', ai == null ? Tone.warning : Tone.success),
       (Icons.map_rounded, 'Maps', tiles == null ? 'Checking…' : switch (tiles) { 'maptiler' => 'MapTiler', 'carto' => 'CARTO basemaps', _ => 'OpenStreetMap (add MAPTILER_API_KEY)' }, tiles == 'osm' ? Tone.info : Tone.success),
       (Icons.alt_route_rounded, 'Routing', 'FindMe AI road routes', Tone.success),
@@ -249,7 +249,7 @@ class _SecurityPanel extends StatelessWidget {
           Expanded(
             child: Text(
               demo
-                  ? 'Demo mode: data lives in each visitor\'s browser. The master admin sign-in is private (only a hash ships in the app) and is not listed on the login page. Connect Supabase for shared, server-enforced data.'
+                  ? 'Demo for judges: sample people, operators and money, kept in this browser only. Nothing you do here touches the real service.'
                   : 'Live mode: roles are enforced by the database (row-level security). Only accounts promoted to admin can open this page.',
               style: text.bodySmall,
             ),

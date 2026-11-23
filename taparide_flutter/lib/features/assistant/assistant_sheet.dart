@@ -157,15 +157,20 @@ class _AssistantViewState extends State<AssistantView> {
     _toBottom();
 
     final persona = widget.partner ? 'partner' : 'rider';
-    if (_offline) return _answerOffline(state, tools, message);
+    // The judges' demo has no account on the AI service: Tapi answers on the device straight away.
+    if (_offline || state.backend.isDemo) {
+      _offline = true;
+      return _answerOffline(state, tools, message);
+    }
     try {
       AssistantStep step;
       try {
         step = await state.api.assistant(persona: persona, history: _history, text: message, context: _context(state));
       } on BackendException {
-        // The AI service is unreachable or not configured: answer on the device instead.
-        if (_history.isNotEmpty) rethrow;
+        // The AI service is unreachable or not configured: answer on the device instead
+        // (also mid-conversation, so the rider never ends on an error).
         _offline = true;
+        _history = const [];
         if (mounted) setState(() => _lines.add(_Line.note('Quick answers on your device')));
         await _answerOffline(state, tools, message);
         return;

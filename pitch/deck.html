@@ -153,6 +153,23 @@ body.show-notes .notepanel { display: block; }
   <div class="notes">(30 s) Tap A Ride brings buses, shared cars and event transport into one app. Every vehicle is verified, every payment is cashless, and every seat is booked. The rider gets safety and a fair price, the operator gets full buses and guaranteed payment, the FCTA gets data.</div>
 </section>
 
+<!-- 3b INNOVATION -->
+<section class="slide">
+  <div class="head">
+    <p class="eyebrow">What is new</p>
+    <h2>Not another ride-hailing app.</h2>
+    <p class="lede">Bolt and Uber move one car at a time. Tap A Ride fills the buses and shared cars Abuja already has, and makes them safe and cashless.</p>
+  </div>
+  <div class="grid c4" style="flex:1;align-content:start">
+    <div class="card rise" style="--i:0"><p class="tag">Held fares</p><h3>Tap to pay with a safety net</h3><p class="body">The fare leaves the rider at once but is held, then released to the operator after the trip. A cancelled trip is refunded in seconds, not chased in cash.</p></div>
+    <div class="card rise" style="--i:1"><p class="tag">Personal passes</p><h3>One pass, every day, one person</h3><p class="body">Event passes carry the rider’s name and a QR code, cover every day they ride and are limited to one per WhatsApp number, so they can’t be resold.</p></div>
+    <div class="card rise" style="--i:2"><p class="tag">AI-assisted checks</p><h3>Verification in minutes, not weeks</h3><p class="body">Operators upload licence, plate, VIN and insurance; AI reads the documents and flags mismatches before a person approves.</p></div>
+    <div class="card rise" style="--i:3"><p class="tag">City data</p><h3>Every booked seat is a data point</h3><p class="body">Bookings become demand by route, day and pick-up point for operators, event organisers and the FCTA.</p></div>
+  </div>
+  <div class="foot"><p>Tap A Ride · National Innovation Challenge</p><p class="pnum"></p></div>
+  <div class="notes">(25 s) Innovation. We don’t compete with Bolt on cars; we organise the buses and shared seats people already use. Four things are new: held fares with instant refunds, personal non-transferable passes, AI-assisted operator checks, and demand data that comes with every booking.</div>
+</section>
+
 <!-- 4 PRODUCT -->
 <section class="slide">
   <div class="head">
@@ -162,13 +179,32 @@ body.show-notes .notepanel { display: block; }
   <div style="display:grid;grid-template-columns:560px 1fr;gap:56px;flex:1;min-height:0">
     <img class="photo rise" src="../taparide_website/public/img/photos/tap-to-pay.jpg" alt="A rider holding her phone, smiling." style="width:560px;height:620px">
     <div style="display:flex;flex-direction:column;gap:24px">
-      <div class="card rise" style="--i:1"><p class="tag">Riders · taparide.com/app</p><p class="body">Find routes and fares, book event seats, Tag Along, live map, share your trip with family, ₦1,000 ride credit for the first 5,000 sign-ups.</p></div>
+      <div class="card rise" style="--i:1"><p class="tag">Riders · taparide.com/app</p><p class="body">Find routes and fares, book event seats, Tag Along, share your trip with family, and a ride reward for everyone who signs up.</p></div>
       <div class="card rise" style="--i:2"><p class="tag">Operators, fleet owners & drivers · /dashboard</p><p class="body">Apply with documents (AI-assisted checks), manage vehicles and drivers, see bookings and a collection wallet that fills after each trip.</p></div>
       <div class="card rise" style="--i:3"><p class="tag">Organisers, FCTA & admin · /dashboard</p><p class="body">Event organisers see bookings by day, pick-up point and time. FCTA sees ridership, verified vehicles and route demand. Admin approves partners.</p></div>
     </div>
   </div>
   <div class="foot"><p>Tap A Ride · National Innovation Challenge</p><p class="pnum"></p></div>
   <div class="notes">(20 s) This is not a mock-up. The rider app, the partner dashboards and the payments are live at taparide.com. If the judges want, show the app on your phone here: book, pass, tap to pay.</div>
+</section>
+
+<!-- 4b TECHNICAL FEASIBILITY -->
+<section class="slide dark">
+  <div class="head">
+    <p class="eyebrow">Technical feasibility</p>
+    <h2>Built, running and secured.</h2>
+    <p class="lede">One codebase serves riders, operators, organisers, the FCTA and admins at taparide.com today.</p>
+  </div>
+  <div class="grid c3" style="flex:1;align-content:start">
+    <div class="card rise" style="--i:0"><p class="tag">App</p><h3>Flutter, one codebase</h3><p class="body">Web today (no download, low data); the same code ships to Android and iOS.</p></div>
+    <div class="card rise" style="--i:1"><p class="tag">Data & rules</p><h3>Postgres with row-level security</h3><p class="body">Every money movement runs in checked database functions: holds, releases, refunds, one pass per person.</p></div>
+    <div class="card rise" style="--i:2"><p class="tag">Payments</p><h3>Bachs, signed and verified</h3><p class="body">Card and bank top-ups through a licensed processor; webhooks are signed and re-checked before a wallet is credited.</p></div>
+    <div class="card rise" style="--i:3"><p class="tag">Safety</p><h3>Tested before launch</h3><p class="body">Security test done and fixes applied; two-step sign-in for admins and FCTA; rate limits shared across servers.</p></div>
+    <div class="card rise" style="--i:4"><p class="tag">AI</p><h3>Tapi, the assistant</h3><p class="body">Answers riders in plain English and reads partner documents; falls back gracefully when the network drops.</p></div>
+    <div class="card rise" style="--i:5"><p class="tag">Try it</p><h3>taparide.com/demo</h3><p class="body">Every role with sample data, so you can test it yourselves right now.</p></div>
+  </div>
+  <div class="foot"><p>Tap A Ride · National Innovation Challenge</p><p class="pnum"></p></div>
+  <div class="notes">(30 s) Technical feasibility. Everything you see is running: one Flutter codebase, a Postgres database where every naira moves through checked functions, Bachs for payments, and AI for support and document checks. We ran a security test and fixed what it found. You can try every role at taparide.com/demo.</div>
 </section>
 
 <!-- 5 TRACTION -->
@@ -203,6 +239,42 @@ body.show-notes .notepanel { display: block; }
   </div>
   <div class="foot"><p>Tap A Ride · National Innovation Challenge</p><p class="pnum"></p></div>
   <div class="notes">(35 s) Fill the [N] numbers on the morning of the pitch from the admin dashboard. Say: “We were chosen as the official ride partner of this event. Free buses ran every morning from University of Abuja Gwagwalada, the airport, Old Parade Ground, Nile University, Police Signboard Lugbe and Maraba–Nyanya. [N] people signed up, [N] got personal passes, and we carried [N] riders.” Only say numbers you can show on the dashboard.</div>
+</section>
+
+<!-- 5b IMPACT + DESIGN -->
+<section class="slide accent">
+  <div class="head">
+    <p class="eyebrow">Potential impact</p>
+    <h2>Safer, cheaper, cleaner trips.</h2>
+  </div>
+  <div class="grid c4" style="flex:1;align-content:start">
+    <div class="card rise" style="--i:0"><p class="tag">Riders</p><h3>No more “one chance”</h3><p class="body">Only verified vehicles and named drivers take bookings; riders share their live trip with family.</p></div>
+    <div class="card rise" style="--i:1"><p class="tag">Riders</p><h3>Fair, fixed fares</h3><p class="body">Seats are booked and paid in advance at the posted fare; no cash, no change, no overcharging.</p></div>
+    <div class="card rise" style="--i:2"><p class="tag">Operators</p><h3>Full buses, guaranteed pay</h3><p class="body">Demand is known before the bus leaves, and every fare lands in the operator’s collection wallet.</p></div>
+    <div class="card rise" style="--i:3"><p class="tag">City</p><h3>Fewer cars, better planning</h3><p class="body">A full 30-seat bus can replace up to 30 single-person car trips; the FCTA sees demand by route and time.</p></div>
+  </div>
+  <div class="grid c3 impact-stats" style="margin-top:48px;margin-bottom:96px">
+    <div style="display:flex;flex-direction:column;gap:20px"><p class="num" style="color:var(--deep)"><span class="ph">[N]</span></p><p class="label" style="color:var(--deep)">personal bus passes issued for Abuja Tech Week</p></div>
+    <div style="display:flex;flex-direction:column;gap:20px"><p class="num" style="color:var(--deep)">6</p><p class="label" style="color:var(--deep)">pick-up points across the FCT, from Gwagwalada to Nyanya</p></div>
+    <div style="display:flex;flex-direction:column;gap:20px"><p class="num" style="color:var(--deep)">3 days</p><p class="label" style="color:var(--deep)">on one pass per rider, booked in under a minute</p></div>
+  </div>
+  <div class="foot"><p>Tap A Ride · National Innovation Challenge</p><p class="pnum"></p></div>
+  <div class="notes">(25 s) Impact. For riders: safety and fair fares. For operators: full buses and guaranteed payment. For the city: a full bus can take up to thirty car trips off the road, and the FCTA finally gets data to plan routes.</div>
+</section>
+
+<section class="slide">
+  <div class="head">
+    <p class="eyebrow">User-centred design</p>
+    <h2>Built for how Abuja actually moves.</h2>
+  </div>
+  <div class="grid c4" style="flex:1;align-content:start">
+    <div class="card rise" style="--i:0"><p class="tag">No download needed</p><h3>Works in any phone browser</h3><p class="body">Opens straight from a WhatsApp link, light on data.</p></div>
+    <div class="card rise" style="--i:1"><p class="tag">Real feedback, shipped</p><h3>One pass for all three days</h3><p class="body">Riders didn’t want to book each day separately; we changed it the next day.</p></div>
+    <div class="card rise" style="--i:2"><p class="tag">Familiar channels</p><h3>WhatsApp and email first</h3><p class="body">Passes and updates go where people already are; support is one tap away.</p></div>
+    <div class="card rise" style="--i:3"><p class="tag">Trust you can see</p><h3>Verified badges and plain words</h3><p class="body">Verified riders, drivers and vehicles are marked; every error says what to do next.</p></div>
+  </div>
+  <div class="foot"><p>Tap A Ride · National Innovation Challenge</p><p class="pnum"></p></div>
+  <div class="notes">(20 s) User-centred design. People here live on WhatsApp and data is expensive, so Tap A Ride opens from a link with no download. When Tech Week riders didn’t want to book each day, we shipped one pass for all three days the next day.</div>
 </section>
 
 <!-- 6 MARKET -->
@@ -271,7 +343,7 @@ body.show-notes .notepanel { display: block; }
     <div class="card rise" style="--i:3"><p class="pill">Step 4</p><h3>FCTA</h3><p class="body">Verified-vehicle data and ridership dashboards for planning and enforcement.</p></div>
   </div>
   <div class="foot"><p>Tap A Ride · National Innovation Challenge</p><p class="pnum"></p></div>
-  <div class="notes">(20 s) Events are our wedge: one event puts the app on thousands of phones, and the organiser pays for it. The ₦1,000 ride credit and invite links convert them into commuters. Commuter demand on a corridor is what convinces operators to join. And once enough vehicles run through us, the FCTA gets the data it has never had.</div>
+  <div class="notes">(20 s) Events are our wedge: one event puts the app on thousands of phones, and the organiser pays for it. The sign-up ride reward and invite links convert them into commuters. Commuter demand on a corridor is what convinces operators to join. And once enough vehicles run through us, the FCTA gets the data it has never had.</div>
 </section>
 
 <!-- 10 ROADMAP -->
@@ -337,6 +409,26 @@ body.show-notes .notepanel { display: block; }
 </section>
 
 <!-- APPENDIX -->
+<section class="slide">
+  <div class="head">
+    <p class="eyebrow">Appendix · For the judges</p>
+    <h2>Where to find each criterion.</h2>
+  </div>
+  <div class="grid c2" style="flex:1;align-content:start;gap:18px 28px">
+    <div class="card"><p class="tag">Problem &amp; relevance · 15</p><p class="body">The problem slide: fares up 38.6% in a year (NBS), “one chance” warnings (FCT Police), no data for planners.</p></div>
+    <div class="card"><p class="tag">Innovation &amp; originality · 15</p><p class="body">“What is new”: held fares, personal passes, AI-assisted checks, demand data.</p></div>
+    <div class="card"><p class="tag">Technical feasibility · 15</p><p class="body">“Built, running and secured”: live stack, security test, licensed payments partner.</p></div>
+    <div class="card"><p class="tag">Potential impact · 15</p><p class="body">The impact slide, plus real Tech Week passes on the traction slide.</p></div>
+    <div class="card"><p class="tag">Scalability &amp; sustainability · 10</p><p class="body">Business model, go-to-market and the three-year plan (appendix).</p></div>
+    <div class="card"><p class="tag">User-centred design · 10</p><p class="body">Browser-first, WhatsApp-first, rider feedback shipped the next day.</p></div>
+    <div class="card"><p class="tag">Prototype / demo quality · 10</p><p class="body">Live at taparide.com; every role at taparide.com/demo.</p></div>
+    <div class="card"><p class="tag">Pitch &amp; communication · 10</p><p class="body">Five-minute story with a live demo; answers to likely questions in the business model pack.</p></div>
+  </div>
+  <div class="foot"><p>Tap A Ride · National Innovation Challenge</p><p class="pnum"></p></div>
+  <div class="notes">Backup slide. Leave it up during questions while the judges fill in their sheets.</div>
+</section>
+
+
 <section class="slide dark">
   <div style="margin:auto 0;display:flex;flex-direction:column;gap:24px">
     <p class="eyebrow">Appendix</p>
@@ -365,7 +457,7 @@ body.show-notes .notepanel { display: block; }
       <tr><td>Paid trips a month (assumption)</td><td style="text-align:right">6</td></tr>
       <tr><td>Contribution a month</td><td style="text-align:right">₦405</td></tr>
       <tr><td>Cost to win a rider (assumption)</td><td style="text-align:right">₦1,500</td></tr>
-      <tr><td>Free ride credit (first 5,000)</td><td style="text-align:right">₦1,000</td></tr>
+      <tr><td>Sign-up ride reward</td><td style="text-align:right">Set at launch</td></tr>
       <tr class="us"><td>Payback without credit</td><td style="text-align:right">~3.7 months</td></tr>
     </table>
   </div>

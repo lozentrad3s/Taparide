@@ -146,8 +146,22 @@ class ApiClient {
 
   /// Starts a card or bank top-up and returns the payment page to send the rider to.
   Future<TopUpStart> startTopUp(int amount) async {
-    final data = await _post('/api/pay?action=init', {'amount': amount}, timeout: const Duration(seconds: 30));
-    return TopUpStart(url: '${data['url']}', reference: '${data['reference']}');
+    try {
+      final data = await _post('/api/pay?action=init', {'amount': amount}, timeout: const Duration(seconds: 30));
+      return TopUpStart(url: '${data['url']}', reference: '${data['reference']}');
+    } on BackendException catch (e) {
+      throw BackendException(e.kind, topUpMessage(e.message));
+    }
+  }
+
+  /// Payment-partner errors in words a rider understands (the raw provider text stays in our logs).
+  static String topUpMessage(String raw) {
+    final m = raw.toLowerCase();
+    if (m.contains('not yet approved') || m.contains('live payments') || m.contains('finish onboarding') || m.contains('not switched on')) {
+      return 'Card and bank top-ups are being switched on by our payment partner. Try again soon.';
+    }
+    if (m.contains('payment service is unavailable')) return 'Our payment partner is not answering right now. Try again in a few minutes.';
+    return raw;
   }
 
   /// Asks the server to confirm a payment with the provider and credit the wallet (safe to repeat).

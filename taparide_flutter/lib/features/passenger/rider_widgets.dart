@@ -12,11 +12,14 @@ import '../../shared/ui.dart';
 
 /// A route in a list: the route line, fare, time and next departures.
 class RouteRow extends StatelessWidget {
-  const RouteRow({super.key, required this.route, required this.onTap, this.providerName, this.showDepartures = true});
+  const RouteRow({super.key, required this.route, required this.onTap, this.providerName, this.showDepartures = true, this.verifiedOperator});
   final TransitRoute route;
   final VoidCallback onTap;
   final String? providerName;
   final bool showDepartures;
+
+  /// true: a verified Tap A Ride operator runs it (seats bookable); false: no operator yet; null: don't say.
+  final bool? verifiedOperator;
 
   @override
   Widget build(BuildContext context) {
@@ -48,6 +51,12 @@ class RouteRow extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
+            if (verifiedOperator != null) ...[
+              const SizedBox(height: 6),
+              verifiedOperator!
+                  ? const StatusPill('Verified operator · book a seat', tone: Tone.success, icon: Icons.verified_rounded)
+                  : const StatusPill("No operator yet · fare shown is today's", tone: Tone.neutral, icon: Icons.schedule_rounded),
+            ],
           ]),
         ),
         const SizedBox(width: 10),
@@ -378,7 +387,7 @@ class BookingTile extends StatelessWidget {
         Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
           Text(Fmt.naira(booking.fare), style: text.titleSmall?.copyWith(fontWeight: FontWeight.w800, fontFeatures: tabular)),
           const SizedBox(height: 6),
-          StatusPill(booking.statusLabel, tone: toneFor(booking.status)),
+          booking.refundedAt != null ? const StatusPill('Refunded', tone: Tone.info) : StatusPill(booking.statusLabel, tone: toneFor(booking.status)),
         ]),
       ]),
     );

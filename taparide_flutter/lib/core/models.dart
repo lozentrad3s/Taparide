@@ -61,7 +61,16 @@ class AppUser {
     this.organisation,
     this.verified = true,
     DateTime? createdAt,
-  }) : _createdAt = createdAt;
+    this.nin,
+    this.dateOfBirth,
+    this.homeArea,
+    this.emergencyName,
+    this.emergencyPhone,
+    VerificationStatus? verificationStatus,
+    this.verificationNote,
+    this.verificationSubmittedAt,
+  })  : _createdAt = createdAt,
+        _verificationStatus = verificationStatus;
 
   final String id;
   final String fullName;
@@ -75,6 +84,20 @@ class AppUser {
   final bool verified;
   final DateTime? _createdAt;
 
+  /// National Identification Number (11 digits). Set once by verification; never editable after.
+  final String? nin;
+  final DateTime? dateOfBirth;
+  final String? homeArea;
+  final String? emergencyName;
+  final String? emergencyPhone;
+  final VerificationStatus? _verificationStatus;
+  final String? verificationNote;
+  final DateTime? verificationSubmittedAt;
+
+  /// Rider identity check. Older rows without the column follow [verified].
+  VerificationStatus get verificationStatus => _verificationStatus ?? (verified ? VerificationStatus.verified : VerificationStatus.unverified);
+  bool get isVerified => verificationStatus == VerificationStatus.verified;
+
   DateTime get createdAt => _createdAt ?? DateTime(2026, 9, 1);
   String get firstName => fullName.trim().split(RegExp(r'\s+')).first;
   String get initials {
@@ -83,16 +106,42 @@ class AppUser {
     return (parts.first[0] + (parts.length > 1 ? parts.last[0] : '')).toUpperCase();
   }
 
-  AppUser copyWith({UserRole? role, String? providerId, bool clearProvider = false, String? organisation}) => AppUser(
+  AppUser copyWith({
+    UserRole? role,
+    String? providerId,
+    bool clearProvider = false,
+    String? organisation,
+    String? fullName,
+    String? phone,
+    String? homeArea,
+    String? emergencyName,
+    String? emergencyPhone,
+    String? nin,
+    DateTime? dateOfBirth,
+    bool? verified,
+    VerificationStatus? verificationStatus,
+    String? verificationNote,
+    bool clearVerificationNote = false,
+    DateTime? verificationSubmittedAt,
+  }) =>
+      AppUser(
         id: id,
-        fullName: fullName,
+        fullName: fullName ?? this.fullName,
         email: email,
-        phone: phone,
+        phone: phone ?? this.phone,
         role: role ?? this.role,
         providerId: clearProvider ? null : providerId ?? this.providerId,
         organisation: organisation ?? this.organisation,
-        verified: verified,
+        verified: verified ?? this.verified,
         createdAt: _createdAt,
+        nin: nin ?? this.nin,
+        dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+        homeArea: homeArea ?? this.homeArea,
+        emergencyName: emergencyName ?? this.emergencyName,
+        emergencyPhone: emergencyPhone ?? this.emergencyPhone,
+        verificationStatus: verificationStatus ?? _verificationStatus,
+        verificationNote: clearVerificationNote ? null : verificationNote ?? this.verificationNote,
+        verificationSubmittedAt: verificationSubmittedAt ?? this.verificationSubmittedAt,
       );
 
   Map<String, Object?> toJson() => {
@@ -105,6 +154,14 @@ class AppUser {
         'organisation': organisation,
         'verified': verified,
         'created_at': createdAt.toUtc().toIso8601String(),
+        'nin': nin,
+        'date_of_birth': dateOfBirth == null ? null : isoDay(dateOfBirth!),
+        'home_area': homeArea,
+        'emergency_name': emergencyName,
+        'emergency_phone': emergencyPhone,
+        'verification_status': verificationStatus.wire,
+        'verification_note': verificationNote,
+        'verification_submitted_at': verificationSubmittedAt?.toUtc().toIso8601String(),
       };
 
   factory AppUser.fromJson(Map<String, dynamic> json) => AppUser(
@@ -117,8 +174,33 @@ class AppUser {
         organisation: json['organisation'] as String?,
         verified: (json['verified'] as bool?) ?? true,
         createdAt: _date(json['created_at']),
+        nin: json['nin'] as String?,
+        dateOfBirth: json['date_of_birth'] == null ? null : DateTime.tryParse('${json['date_of_birth']}'),
+        homeArea: json['home_area'] as String?,
+        emergencyName: json['emergency_name'] as String?,
+        emergencyPhone: json['emergency_phone'] as String?,
+        verificationStatus: json['verification_status'] == null ? null : VerificationStatusX.fromWire('${json['verification_status']}'),
+        verificationNote: json['verification_note'] as String?,
+        verificationSubmittedAt: json['verification_submitted_at'] == null ? null : DateTime.tryParse('${json['verification_submitted_at']}'),
       );
 }
+
+/// Rider identity check (NIN + date of birth), reviewed by a Tap A Ride admin.
+enum VerificationStatus { unverified, pending, verified, rejected }
+
+extension VerificationStatusX on VerificationStatus {
+  String get wire => name;
+  String get label => switch (this) {
+        VerificationStatus.unverified => 'Not verified',
+        VerificationStatus.pending => 'Under review',
+        VerificationStatus.verified => 'Verified',
+        VerificationStatus.rejected => 'Declined',
+      };
+  static VerificationStatus fromWire(String v) => VerificationStatus.values.firstWhere((s) => s.name == v, orElse: () => VerificationStatus.unverified);
+}
+
+/// A calendar day as YYYY-MM-DD (what Postgres `date` expects).
+String isoDay(DateTime d) => '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
 // ---------------------------------------------------------------- providers
 
@@ -623,6 +705,7 @@ class Booking {
     this.providerId,
     this.eventId,
     this.eventBusId,
+    this.refundedAt,
   });
 
   final String id;
@@ -646,6 +729,12 @@ class Booking {
   final String? eventId;
   final String? eventBusId;
 
+  /// Set when the fare was given back to the rider's wallet (refund approved).
+  final DateTime? refundedAt;
+
+  /// Paid from the wallet (tap card or QR), so a refund is possible.
+  bool get paidFromWallet => fare > 0 && (paymentMethod == PaymentMethod.tapCard || paymentMethod == PaymentMethod.qr);
+
   /// Status as riders read it (an event-bus seat waits for the operator to fix the time).
   String get statusLabel => kind == BookingKind.eventBus && status == BookingStatus.requested ? 'Seat held' : status.label;
 
@@ -654,7 +743,7 @@ class Booking {
   /// Payload encoded in the boarding QR code.
   String get qrPayload => 'TAPARIDE:$ticketCode:${routeId ?? vehicleId ?? rideId ?? '-'}:${departureAt.toUtc().toIso8601String()}';
 
-  Booking copyWith({BookingStatus? status, DateTime? departureAt}) => Booking(
+  Booking copyWith({BookingStatus? status, DateTime? departureAt, DateTime? refundedAt}) => Booking(
         id: id,
         userId: userId,
         passengerName: passengerName,
@@ -675,6 +764,7 @@ class Booking {
         providerId: providerId,
         eventId: eventId,
         eventBusId: eventBusId,
+        refundedAt: refundedAt ?? this.refundedAt,
       );
 
   Map<String, Object?> toJson() => {
@@ -698,6 +788,7 @@ class Booking {
         'provider_id': providerId,
         'event_id': eventId,
         'event_bus_id': eventBusId,
+        'refunded_at': refundedAt?.toUtc().toIso8601String(),
       };
 
   factory Booking.fromJson(Map<String, dynamic> json) => Booking(
@@ -721,6 +812,7 @@ class Booking {
         providerId: json['provider_id'] as String?,
         eventId: json['event_id'] as String?,
         eventBusId: json['event_bus_id'] as String?,
+        refundedAt: json['refunded_at'] == null ? null : DateTime.tryParse('${json['refunded_at']}'),
       );
 }
 

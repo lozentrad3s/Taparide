@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../app/theme.dart';
 import '../../core/app_state.dart';
 import '../../core/models.dart';
+import '../../core/partner_models.dart';
 import '../../shared/brand.dart';
 import '../../shared/ui.dart';
 import 'portal_shell.dart';
@@ -14,8 +15,35 @@ const _groups = <(String, Set<String>)>[
   ('Overview', {'/portal/overview', '/portal/fcta', '/portal/operator', '/portal/fleet', '/portal/insights'}),
   ('Operations', {'/portal/routes', '/portal/vehicles', '/portal/bookings', '/portal/evs', '/portal/events'}),
   ('Oversight', {'/portal/providers', '/portal/verification', '/portal/applications', '/portal/audit'}),
-  ('Admin', {'/portal/users', '/portal/waitlist'}),
+  ('Admin', {'/portal/users', '/portal/waitlist', '/portal/money', '/portal/refunds', '/portal/rider-verification'}),
 ];
+
+/// Items waiting for someone, shown as a count next to the section.
+int portalBadgeFor(PortalSection s, AppState state) => switch (s.path) {
+      '/portal/refunds' => state.pendingRefunds,
+      '/portal/rider-verification' => state.pendingVerifications,
+      '/portal/applications' => state.partnerApplications.where((a) => a.status == ApplicationStatus.submitted || a.status == ApplicationStatus.underReview).length,
+      _ => 0,
+    };
+
+class _CountBadge extends StatelessWidget {
+  const _CountBadge(this.count, {this.onDark = true});
+  final int count;
+  final bool onDark;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        constraints: const BoxConstraints(minWidth: 22),
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+        decoration: BoxDecoration(color: onDark ? AppLime.lime : AppColors.forest, borderRadius: BorderRadius.circular(99)),
+        child: Text(
+          count > 99 ? '99+' : '$count',
+          textAlign: TextAlign.center,
+          semanticsLabel: '$count waiting',
+          style: TextStyle(color: onDark ? AppColors.forestDeep : Colors.white, fontSize: 12, fontWeight: FontWeight.w800, height: 1.3),
+        ),
+      );
+}
 
 /// The group a section sits in (for the sidebar and the breadcrumb).
 String portalGroupOf(PortalSection s) => _groups.where((g) => g.$2.contains(s.path)).firstOrNull?.$1 ?? 'More';
@@ -152,6 +180,10 @@ class _NavItem extends StatelessWidget {
                     style: TextStyle(color: selected ? Colors.white : const Color(0xFFD5E6DC), fontWeight: selected ? FontWeight.w700 : FontWeight.w500, fontSize: 14.5),
                   ),
                 ),
+                Builder(builder: (context) {
+                  final n = portalBadgeFor(section, context.watch<AppState>());
+                  return n > 0 ? Padding(padding: const EdgeInsets.only(right: 8), child: _CountBadge(n)) : const SizedBox.shrink();
+                }),
               ]),
             ),
           ),
@@ -272,7 +304,9 @@ Future<void> showPortalMenu(BuildContext context, {required AppUser user, requir
                   selected: s == current,
                   selectedTileColor: AppColors.mint,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
-                  trailing: s == current ? const Icon(Icons.check_rounded, color: AppColors.forest, size: 20) : null,
+                  trailing: portalBadgeFor(s, context.read<AppState>()) > 0
+                      ? _CountBadge(portalBadgeFor(s, context.read<AppState>()), onDark: false)
+                      : (s == current ? const Icon(Icons.check_rounded, color: AppColors.forest, size: 20) : null),
                   onTap: () {
                     Navigator.pop(sheet);
                     context.go(s.path);

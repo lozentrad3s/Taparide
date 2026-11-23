@@ -1,3 +1,4 @@
+import '../account_models.dart';
 import '../fleet_drivers.dart';
 import '../live_models.dart';
 import '../models.dart';
@@ -193,4 +194,31 @@ abstract class Backend {
 
   /// Bytes or a short-lived URL to show an uploaded document to its owner or a reviewer.
   Future<DocumentFile> openDocument(DocumentFile document);
+
+  // ---- profile and rider verification
+  /// The signed-in person edits their own details. Email can't change; NIN and date of birth are
+  /// set by [submitVerification]. Renaming a verified rider sends them back for review.
+  Future<AppUser> updateMyProfile({required String fullName, String? phone, String? homeArea, String? emergencyName, String? emergencyPhone});
+
+  /// Sends NIN, date of birth and phone for an admin to check.
+  Future<AppUser> submitVerification({required String nin, required DateTime dateOfBirth, required String phone});
+
+  /// Riders by verification status ('pending', 'verified', 'rejected', 'unverified' or 'all'). Admins only.
+  Future<List<RiderVerification>> fetchRiderVerifications(String status);
+  Future<void> reviewVerification(String userId, {required bool approve, String? note});
+
+  // ---- refunds
+  Future<RefundRequest> requestRefund(String bookingId, String reason);
+
+  /// The signed-in rider's own refund requests.
+  Future<List<RefundRequest>> fetchMyRefunds();
+
+  /// Admins: refund requests by status ('pending', 'approved', 'declined' or 'all').
+  Future<List<AdminRefund>> fetchRefundRequests(String status);
+
+  /// Approve (money back to the rider's wallet) or decline. Returns the amount refunded.
+  Future<int> reviewRefund(int requestId, {required bool approve, String? note});
+
+  /// Admin refund of a paid booking without a request (e.g. the bus never came).
+  Future<int> refundBooking(String bookingId, String reason);
 }

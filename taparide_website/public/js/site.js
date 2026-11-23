@@ -49,24 +49,84 @@
   solid();
   addEventListener("scroll", solid, { passive: true });
 
+  // ---------------------------------------------------------------- announcement bar (can be hidden)
+  const notice = $("[data-notice]");
+  const NOTICE_KEY = "tar.notice-hidden";
+  if (notice && store.get(NOTICE_KEY) === "tech-week-2026") notice.hidden = true;
+  $("[data-notice-close]")?.addEventListener("click", () => {
+    notice.hidden = true;
+    store.set(NOTICE_KEY, "tech-week-2026");
+    // Keep keyboard users in the header rather than dropping focus on the page.
+    $(".brand")?.focus();
+  });
+
+  // ---------------------------------------------------------------- menu: side panel on desktop, sheet on phones
   const menuBtn = $("[data-menu-btn]");
   const menu = $("[data-menu]");
-  // The menu opens right under the header, wherever it is (the Tech Week notice can sit above it).
+  const scrim = $("[data-menu-scrim]");
+  const wide = () => matchMedia("(min-width: 900px)").matches;
+  // On phones the menu opens right under the header, wherever it is (the notice can sit above it).
   const placeMenu = () => {
+    if (!menu) return;
+    if (wide()) { menu.style.top = ""; menu.style.maxHeight = ""; return; }
     const bottom = Math.max(0, Math.round($("[data-top]")?.getBoundingClientRect().bottom || 0));
     menu.style.top = bottom + "px";
     menu.style.maxHeight = `calc(100dvh - ${bottom}px)`;
   };
-  const setMenu = (open) => {
+  const focusables = () => $$("a[href], button:not([disabled])", menu).filter((el) => el.offsetParent !== null);
+  const setMenu = (open, { restore = true } = {}) => {
+    if (!menu || !menuBtn) return;
     if (open) placeMenu();
     menu.hidden = !open;
+    if (scrim) scrim.hidden = !open;
+    document.body.classList.toggle("menu-open", open);
     menuBtn.setAttribute("aria-expanded", String(open));
-    menuBtn.querySelector("use").setAttribute("href", open ? "#i-close" : "#i-menu");
+    menuBtn.setAttribute("aria-label", open ? "Close menu" : "Menu");
+    menuBtn.querySelector("use")?.setAttribute("href", open ? "#i-close" : "#i-menu");
+    if (open) requestAnimationFrame(() => focusables()[0]?.focus({ preventScroll: true }));
+    else if (restore) menuBtn.focus({ preventScroll: true });
   };
   menuBtn?.addEventListener("click", () => setMenu(menu.hidden));
+  $("[data-menu-close]")?.addEventListener("click", () => setMenu(false));
+  scrim?.addEventListener("click", () => setMenu(false));
   addEventListener("scroll", () => { if (menu && !menu.hidden) placeMenu(); }, { passive: true });
-  menu?.addEventListener("click", (e) => { if (e.target.closest("a")) setMenu(false); });
-  addEventListener("keydown", (e) => { if (e.key === "Escape" && menu && !menu.hidden) { setMenu(false); menuBtn.focus(); } });
+  addEventListener("resize", () => { if (menu && !menu.hidden) placeMenu(); });
+  menu?.addEventListener("click", (e) => { if (e.target.closest("a")) setMenu(false, { restore: false }); });
+  addEventListener("keydown", (e) => {
+    if (!menu || menu.hidden) return;
+    if (e.key === "Escape") { setMenu(false); return; }
+    // Keep Tab inside the open menu.
+    if (e.key === "Tab") {
+      const f = focusables();
+      if (!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  });
+
+  // ---------------------------------------------------------------- "Event rides" goes straight to the free pass form
+  const goToSeatForm = () => {
+    const form = $("#book-seat");
+    if (!form) return false;
+    form.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "start" });
+    // Focus the first thing to fill in once the scroll has settled.
+    setTimeout(() => {
+      const first = $("#seat-area", form) || $("input, select", form);
+      first?.focus({ preventScroll: true });
+    }, reduced() ? 0 : 450);
+    return true;
+  };
+  for (const a of $$("[data-event-ride]")) {
+    a.addEventListener("click", (e) => {
+      if (goToSeatForm()) {
+        e.preventDefault();
+        history.replaceState(null, "", "#book-seat");
+      }
+    });
+  }
+  // Arriving from a shared link (taparide.com/#book-seat).
+  if (location.hash === "#book-seat" || location.hash === "#tech-week") addEventListener("load", () => goToSeatForm(), { once: true });
 
   // ---------------------------------------------------------------- hero slideshow
   const hero = $("[data-hero]");

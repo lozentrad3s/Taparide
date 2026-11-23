@@ -10,6 +10,7 @@ import '../../core/photos.dart';
 import '../../shared/ui.dart';
 import 'dashboard_pages.dart';
 import 'portal_widgets.dart';
+import 'refunds_pages.dart';
 
 String _routeLabel(TransitRoute r) => r.name ?? '${r.origin} – ${r.destination}';
 
@@ -576,7 +577,11 @@ class PortalBookingsPage extends StatelessWidget {
             Col('Departure', flex: 3, (b) => Text(Fmt.dayTime(b.departureAt), style: text.bodyMedium)),
             Col('Type', (b) => Text(b.kind.label, style: text.bodySmall)),
             Col('Fare', numeric: true, (b) => Text(Fmt.naira(b.fare), style: text.titleSmall?.copyWith(fontFeatures: tabular))),
-            Col('Status', (b) => StatusPill(b.status.label, tone: b.status.isOpen ? Tone.success : (b.status == BookingStatus.completed ? Tone.neutral : Tone.danger))),
+            Col('Status', (b) => b.refundedAt != null ? const StatusPill('Refunded', tone: Tone.info) : StatusPill(b.status.label, tone: b.status.isOpen ? Tone.success : (b.status == BookingStatus.completed ? Tone.neutral : Tone.danger))),
+            if (state.user?.role == UserRole.admin)
+              Col('Refund', flex: 1, (b) => adminCanRefund(b)
+                  ? IconButton(tooltip: 'Refund ${Fmt.naira(b.fare)} to ${b.passengerName}', onPressed: () => refundBookingDialog(context, b), icon: const Icon(Icons.undo_rounded, size: 20))
+                  : const SizedBox.shrink()),
           ],
         ),
       ],

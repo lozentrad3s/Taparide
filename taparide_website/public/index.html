@@ -49,12 +49,13 @@
 
 <a class="skip" href="#main">Skip to content</a>
 
-<div class="notice">
-  <a href="#tech-week">
+<div class="notice" data-notice>
+  <a href="#book-seat" data-event-ride>
     <span class="notice-tag">Official ride partner</span>
-    <span>Free buses to <strong>Abuja Tech Week</strong>, 24–26 November. Reserve your seat.</span>
+    <span>Free buses to <strong>Abuja Tech Week</strong>, 24–26 November. Get your free pass.</span>
     <svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg>
   </a>
+  <button class="notice-close" type="button" aria-label="Hide this announcement" data-notice-close><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
 </div>
 
 <header class="top" data-top>
@@ -63,28 +64,25 @@
       <img class="brand-mark" src="/img/brand/taparide_mark.png" width="92" height="32" alt="">
       <img class="brand-word" src="/img/brand/taparide_wordmark.png" width="120" height="18" alt="Tap A Ride">
     </a>
-    <nav class="nav" aria-label="Main">
-      <a href="#bus">Bus rides</a>
-      <a href="#tech-week">Event rides</a>
-      <a href="#tagalong">Tagalong</a>
-      <a href="#tap-pay">Tap to Pay</a>
-      <a href="#safety">Safety</a>
-      <a href="#partners">Partners</a>
-    </nav>
     <div class="top-cta">
       <a class="btn btn-line btn-app" href="/app" data-app="/"><span class="lbl-long">Open the app</span><span class="lbl-short">Open app</span></a>
       <a class="btn btn-go btn-join" href="#join"><span class="lbl-long">Claim your ride reward</span><span class="lbl-short">Join</span></a>
-      <button class="menu-btn" type="button" aria-expanded="false" aria-controls="menu" data-menu-btn>
-        <svg class="ic" aria-hidden="true"><use href="#i-menu"/></svg><span class="sr">Menu</span>
+      <button class="menu-btn" type="button" aria-expanded="false" aria-controls="menu" aria-label="Menu" data-menu-btn>
+        <svg class="ic" aria-hidden="true"><use href="#i-menu"/></svg>
       </button>
     </div>
   </div>
 </header>
 
-<div class="menu" id="menu" hidden data-menu>
-  <nav aria-label="Menu">
-    <a href="#bus">Bus rides</a>
-    <a href="#tech-week">Event rides · Tech Week</a>
+<div class="menu-scrim" hidden data-menu-scrim></div>
+<div class="menu" id="menu" hidden data-menu role="dialog" aria-modal="true" aria-label="Menu">
+  <div class="menu-head">
+    <span class="menu-title">Menu</span>
+    <button class="menu-x" type="button" aria-label="Close menu" data-menu-close><svg class="ic" aria-hidden="true"><use href="#i-close"/></svg></button>
+  </div>
+  <nav aria-label="Main">
+    <a href="/app/#/app/routes" data-app="/#/app/routes">Book a bus ride</a>
+    <a href="#book-seat" data-event-ride>Event rides · Tech Week</a>
     <a href="#tagalong">Tagalong</a>
     <a href="#tap-pay">Tap to Pay</a>
     <a href="#more">Electric &amp; live map</a>
@@ -94,7 +92,6 @@
   </nav>
   <a class="btn btn-go btn-lg" href="#join">Claim your ride reward</a>
   <a class="btn btn-line btn-lg" href="/app" data-app="/">Open the app</a>
-  <a class="menu-demo" href="/demo/">Try the demo <small>Sample data, for judges and visitors</small></a>
 </div>
 
 <main id="main">
@@ -126,12 +123,12 @@
         <div class="story-slide is-on" data-story-slide>
           <p class="hero-title">Move more.<br>Worry less.</p>
           <p class="hero-lede">Fixed fares, verified drivers and a seat that's yours before you leave home. The ride across Abuja becomes the easy part of your day.</p>
-          <a class="hero-link" href="#bus">How bus rides work<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+          <a class="hero-link" href="/app/#/app/routes" data-app="/#/app/routes">Book a bus ride<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
         </div>
         <div class="story-slide" data-story-slide aria-hidden="true">
           <p class="hero-title">Free buses to<br>Abuja Tech Week.</p>
           <p class="hero-lede">Six pick-up points across the city, 7:00 AM sharp, 24–26 November. Tap A Ride is the official ride partner, powered by Pi-CNG &amp; EV.</p>
-          <a class="hero-link" href="#tech-week">Reserve a free seat<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+          <a class="hero-link" href="#book-seat" data-event-ride>Get your free pass<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
         </div>
         <div class="story-slide" data-story-slide aria-hidden="true">
           <p class="hero-title">Going your way?<br>Hop on.</p>
@@ -168,8 +165,8 @@
 <!-- ============================================================ SERVICE RAIL -->
 <nav class="rail" aria-label="Services" data-rail>
   <div class="rail-in">
-    <a href="#bus" data-rail-link="bus"><svg class="ic" aria-hidden="true"><use href="#i-bus"/></svg>Bus rides</a>
-    <a href="#tech-week" data-rail-link="tech-week"><svg class="ic" aria-hidden="true"><use href="#i-calendar"/></svg>Event rides<em>Free</em></a>
+    <a href="/app/#/app/routes" data-app="/#/app/routes" data-rail-link="bus"><svg class="ic" aria-hidden="true"><use href="#i-bus"/></svg>Bus rides</a>
+    <a href="#book-seat" data-event-ride data-rail-link="tech-week"><svg class="ic" aria-hidden="true"><use href="#i-calendar"/></svg>Event rides<em>Free</em></a>
     <a href="#tagalong" data-rail-link="tagalong"><svg class="ic" aria-hidden="true"><use href="#i-users"/></svg>Tagalong</a>
     <a href="#tap-pay" data-rail-link="tap-pay"><svg class="ic" aria-hidden="true"><use href="#i-tap"/></svg>Tap to Pay</a>
     <a href="#more" data-rail-link="more"><svg class="ic" aria-hidden="true"><use href="#i-bolt"/></svg>Electric &amp; live map</a>
@@ -212,7 +209,6 @@
           <div><dt><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg>Drop-off</dt><dd>Velodrome, National Stadium</dd></div>
           <div><dt><svg class="ic" aria-hidden="true"><use href="#i-ticket"/></svg>Fare</dt><dd>Free · <span data-countdown>starts soon</span></dd></div>
         </dl>
-        <p class="demo-note">Judging at Tech Week? <a href="/demo/">Try the demo app</a>, with sample riders, buses and dashboards. No real money or data.</p>
       </div>
       <figure class="event-flyer">
         <img src="/img/flyers/tech-week-event-ride.jpg" width="900" height="1125" alt="Flyer: Abuja Tech Week x Taparide presents Event Ride, with a green Taparide bus. Rate: free. 24th to 26th November. Drop-off point: Abuja Velodrome Stadium. Departure time: 7:00 AM." loading="lazy">
@@ -241,7 +237,7 @@
         <p class="fine">Be at your pick-up point by 7:00 AM. Buses leave on time.</p>
       </div>
 
-      <form class="seat card" data-seat novalidate>
+      <form class="seat card" id="book-seat" data-seat novalidate>
         <h3>Get your free bus pass</h3>
         <p class="seat-lede">One pass covers every day you pick. No need to book each day.</p>
         <fieldset>
@@ -550,11 +546,12 @@
       </a>
       <p>Abuja Smart Mobility Platform</p>
       <p class="foot-tag">Ride • Connect • Go</p>
+      <p class="foot-demo">Judging at Tech Week, or just curious? <a href="/demo/">Try the demo</a> with sample riders, buses and dashboards. No real money or data.</p>
     </div>
     <nav class="foot-links" aria-label="Footer">
       <div>
         <h3>Ride</h3>
-        <a href="#bus">Bus rides</a><a href="#tech-week">Event rides</a><a href="#tagalong">Tagalong</a><a href="#tap-pay">Tap to Pay</a><a href="/app" data-app="/">Open the app</a><a href="/demo/">Try the demo</a>
+        <a href="/app/#/app/routes" data-app="/#/app/routes">Bus rides</a><a href="#book-seat" data-event-ride>Event rides</a><a href="#tagalong">Tagalong</a><a href="#tap-pay">Tap to Pay</a><a href="/app" data-app="/">Open the app</a>
       </div>
       <div>
         <h3>Partners</h3>

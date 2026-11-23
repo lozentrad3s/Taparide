@@ -10,6 +10,7 @@ import 'insights_page.dart';
 import 'manage_pages.dart';
 import 'money_page.dart';
 import 'portal_shell.dart';
+import 'refunds_pages.dart';
 import 'waitlist_page.dart';
 
 export 'portal_shell.dart' show PortalSection;
@@ -33,6 +34,8 @@ Widget portalPageFor(PortalSection section, Map<String, String> query) => switch
       '/portal/events' => const EventsPortalPage(),
       '/portal/waitlist' => const WaitlistPage(),
       '/portal/money' => const MoneyPage(),
+      '/portal/refunds' => const RefundsPage(),
+      '/portal/rider-verification' => const RiderChecksPage(),
       '/portal/drivers' => FleetDriversPage(providerId: query['provider']),
       '/portal/driver' => FleetDriverDashboard(driverId: query['driver']),
       _ => const OverviewPage(),
