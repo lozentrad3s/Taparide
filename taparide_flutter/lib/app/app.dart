@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/app_state.dart';
+import '../shared/keyboard/keyboard.dart';
 import 'app_mode.dart';
 import 'router.dart';
 import 'theme.dart';
@@ -22,6 +23,13 @@ class TapARideApp extends StatefulWidget {
 class _TapARideAppState extends State<TapARideApp> {
   late final GoRouter _router = buildRouter(widget.state, mode: widget.mode);
   late final ThemeData _theme = buildAppTheme();
+
+  @override
+  void initState() {
+    super.initState();
+    // Phone browsers: tapping a text field after closing the keyboard must open it again.
+    installKeyboardFix();
+  }
 
   @override
   void dispose() {
